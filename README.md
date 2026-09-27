@@ -51,6 +51,7 @@ db/
 ├── 05_security_and_code_attempts.sql # Historial de PIN y bloqueo por códigos inválidos
 ├── 06_push_notifications.sql        # Cola de envío de push
 ├── 07_device_integrity.sql          # Señales de root/jailbreak/emulador
+├── 08_risk_engine.sql               # Reglas de riesgo v1 (shadow), casos de fraude
 └── tests/
     ├── invariants_test.sql          # 36 comprobaciones de reglas críticas
     └── run.sh                       # crea una BD temporal, aplica y prueba

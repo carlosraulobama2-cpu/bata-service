@@ -352,6 +352,46 @@ export interface AgentNotificationPreferencesTable {
   push_enabled: boolean;
 }
 
+export interface FraudRulesTable {
+  id: Generated<string>;
+  code: string;
+  version: number;
+  description: string;
+  enabled: boolean;
+  mode: 'shadow' | 'active';
+  weight: ColumnType<number, number | string, number | string>;
+  params: Json;
+  created_by: string | null;
+  created_at: Timestamp;
+}
+
+export interface RiskAssessmentsTable {
+  id: Generated<string>;
+  transaction_id: string | null;
+  agent_id: string;
+  subject: 'transaction' | 'login' | 'device';
+  score: ColumnType<number, number | string, number | string>;
+  level: 'low' | 'medium' | 'high';
+  decision: 'allow' | 'step_up' | 'review' | 'block';
+  signals: Json<unknown[]>;
+  rules_version: string;
+  compliance_hook: Json | null;
+  created_at: Timestamp;
+}
+
+export interface FraudCasesTable {
+  id: Generated<string>;
+  reference: Generated<string>;
+  agent_id: string;
+  transaction_id: string | null;
+  risk_assessment_id: string | null;
+  status: Generated<'open' | 'investigating' | 'cleared' | 'confirmed' | 'escalated'>;
+  assigned_to: string | null;
+  resolution_notes: string | null;
+  created_at: Timestamp;
+  closed_at: Date | null;
+}
+
 export interface IdempotencyKeysTable {
   agent_id: string;
   key: string;
@@ -411,6 +451,9 @@ export interface AgentDatabase {
   'agent.agent_limit_usage': AgentLimitUsageTable;
   'agent.agent_balances': AgentBalancesTable;
   'agent.agent_qr': AgentQrTable;
+  'agent.fraud_rules': FraudRulesTable;
+  'agent.risk_assessments': RiskAssessmentsTable;
+  'agent.fraud_cases': FraudCasesTable;
   'agent.agent_pin_history': AgentPinHistoryTable;
   'agent.agent_code_failures': AgentCodeFailuresTable;
   'agent.agent_transactions': AgentTransactionsTable;

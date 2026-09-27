@@ -33,7 +33,8 @@ Stack: Node.js 22 · TypeScript · NestJS 11 (Fastify) · Kysely · PostgreSQL. 
 | Notificaciones push: registro del token del dispositivo, preferencias por tipo (las de seguridad no se pueden desactivar), cola de envío con reintentos y sin datos del cliente; proveedor Expo push (FCM/APNs) | ✅ |
 | Teléfono rooteado/jailbreak/emulador: lectura sí, operaciones no (`DEVICE_COMPROMISED`); desbloqueo de la app con PIN verificado en el servidor | ✅ |
 | Contactos de soporte configurables, públicos (`GET /public/config`) | ✅ |
-| Motor de riesgo, KYC en la app, liquidaciones, soporte, Admin API | ⏳ fases siguientes |
+| Motor de riesgo básico: duplicados (confirmación del agente), velocidad, importe inusual, circularidad, fraccionamiento, cliente en muchos agentes, dispositivo nuevo; HIGH bloquea antes de mover dinero y abre un caso | ✅ |
+| Revisión de casos y activación de reglas desde un panel, KYC en la app, liquidaciones, soporte, Admin API | ⏳ fases siguientes |
 
 ## Integraciones
 

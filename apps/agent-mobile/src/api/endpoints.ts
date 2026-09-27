@@ -30,9 +30,9 @@ export const endpoints = {
       body: { withdrawal_request_id: input.withdrawalRequestId, amount: input.amount, currency: config.currency },
       signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
     }),
-  cashIn: (input: { customer: { type: 'phone' | 'token'; value: string }; amount: number; key: string; stepUp: StepUp; prompt: string }) =>
+  cashIn: (input: { customer: { type: 'phone' | 'token'; value: string }; amount: number; confirmDuplicate?: boolean; key: string; stepUp: StepUp; prompt: string }) =>
     api<{ transaction: Transaction }>('/agent/v1/cash-in', {
-      body: { customer: input.customer, amount: input.amount, currency: config.currency },
+      body: { customer: input.customer, amount: input.amount, currency: config.currency, ...(input.confirmDuplicate ? { confirm_duplicate: true } : {}) },
       signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
     }),
   createCollectQr: (input: { amount: number; key: string }) =>

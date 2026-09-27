@@ -9,6 +9,7 @@ import { CoreClient } from '../../integrations/core/core.client';
 import { agentFloat, LedgerClient, LedgerInsufficientFundsError } from '../../integrations/ledger/ledger.client';
 import { assertCanOperate } from './cash-out.service';
 import { CommissionsService } from './commissions.service';
+import { RiskService } from '../risk/risk.service';
 import { LimitsService } from './limits.service';
 import { OperationLifecycleService } from './operation-lifecycle.service';
 
@@ -28,17 +29,24 @@ export class CashInService {
     private readonly limits: LimitsService,
     private readonly commissions: CommissionsService,
     private readonly lifecycle: OperationLifecycleService,
+    private readonly risk: RiskService,
     private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env
   ) {}
 
-  async create(agent: AgentContext, input: { customer: { type: 'phone' | 'token'; value: string }; amount: number; currency: string }, idempotencyKey: string): Promise<AgentTransaction> {
+  async create(agent: AgentContext, input: { customer: { type: 'phone' | 'token'; value: string }; amount: number; currency: string; confirm_duplicate?: boolean }, idempotencyKey: string): Promise<AgentTransaction> {
     assertCanOperate(agent);
     const existing = await this.db.selectFrom('agent.agent_transactions').selectAll().where('agent_id', '=', agent.agentId).where('idempotency_key', '=', idempotencyKey).executeTakeFirst();
     if (existing) return existing;
 
     const customer = await this.core.resolveCustomer(input.customer.type === 'phone' ? { phone: input.customer.value } : { customerToken: input.customer.value });
     if (!customer || !customer.canReceive) throw Errors.customerUnavailable();
+
+    // Risk, before anything is reserved.
+    const riskInput = { agent, type: 'cash_in' as const, amount: input.amount, currency: input.currency, customerRef: customer.customerRef };
+    await this.risk.assertNotDuplicate(riskInput, !!input.confirm_duplicate);
+    const assessment = await this.risk.assess(riskInput);
+    if (assessment.decision === 'block') await this.risk.blockAndOpenCase(riskInput, assessment);
 
     const expiresAt = new Date(this.clock.now().getTime() + this.env.CASH_IN_CONFIRMATION_TTL_SECONDS * 1000);
     let tx = await this.db.transaction().execute(async (trx) => {
@@ -67,7 +75,7 @@ export class CashInService {
           idempotency_key: idempotencyKey,
           ledger_hold_id: null,
           ledger_transaction_id: null,
-          risk_level: null,
+          risk_level: assessment.level,
           expires_at: expiresAt,
           completed_at: null,
           created_at: createdAt
@@ -78,6 +86,7 @@ export class CashInService {
         .insertInto('agent.agent_transaction_events')
         .values({ transaction_id: inserted.id, from_status: null, to_status: 'pending', event: 'created', actor_type: 'agent', actor_id: agent.agentCode, details: '{}' })
         .execute();
+      await this.risk.record(trx, agent.agentId, assessment, inserted.id);
       return inserted;
     });
 

@@ -42,7 +42,9 @@ export default function CashInScreen() {
   const phone = `${PREFIX}${digits}`;
   const customer = fromQr ? { type: 'token' as const, value: scanned.token! } : { type: 'phone' as const, value: phone };
   const customerMasked = fromQr ? (scanned.masked ?? '****') : `****${digits.slice(-4)}`;
-  const op = useOperation((key, stepUp) => endpoints.cashIn({ customer, amount, key, stepUp, prompt: t('confirm.biometricPrompt') }));
+  // Set when the agent confirms that a deposit flagged as a possible repeat is a new one.
+  const [confirmDuplicate, setConfirmDuplicate] = useState(false);
+  const op = useOperation((key, stepUp) => endpoints.cashIn({ customer, amount, confirmDuplicate, key, stepUp, prompt: t('confirm.biometricPrompt') }));
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
   const limit = limits.data?.limits.find((l) => l.operation_type === 'cash_in');
@@ -58,7 +60,7 @@ export default function CashInScreen() {
     return null;
   }, [amount, limit, available, t]);
 
-  if (op.phase.kind === 'done') return <Following tx={op.phase.tx} onClose={close} onRestart={() => { op.reset(); setAmount(0); setDigits(''); if (fromQr) router.setParams({ token: '', masked: '' }); setStep('customer'); }} />;
+  if (op.phase.kind === 'done') return <Following tx={op.phase.tx} onClose={close} onRestart={() => { op.reset(); setConfirmDuplicate(false); setAmount(0); setDigits(''); if (fromQr) router.setParams({ token: '', masked: '' }); setStep('customer'); }} />;
 
   if (op.phase.kind === 'verifying') {
     return (
@@ -66,6 +68,41 @@ export default function CashInScreen() {
         <ResultView tone="pending" title={t('cashOut.processingTitle')}>
           <ActivityIndicator color={colors.warning} size="large" style={{ marginTop: space.xl }} />
         </ResultView>
+      </Screen>
+    );
+  }
+
+  if (op.phase.kind === 'error' && op.phase.code === 'POSSIBLE_DUPLICATE') {
+    const d = op.phase.details;
+    return (
+      <Screen
+        header={<Header leading="close" onLeading={close} />}
+        footer={
+          <>
+            <Button
+              label={t('cashIn.duplicateYes')}
+              onPress={() => {
+                setConfirmDuplicate(true);
+                op.reset();
+                setStep('review');
+                op.open();
+              }}
+              testID="cashin-duplicate-yes"
+            />
+            <Button variant="ghost" label={t('cashIn.duplicateNo')} onPress={close} />
+          </>
+        }
+      >
+        <ResultView
+          tone="pending"
+          title={t('cashIn.duplicateTitle')}
+          amount={money(amount)}
+          instruction={t('cashIn.duplicateBody', {
+            when: typeof d.minutes_ago === 'number' && d.minutes_ago >= 1 ? t('cashIn.duplicateMinutesAgo', { count: d.minutes_ago }) : t('cashIn.duplicateJustNow'),
+            amount: money(amount),
+            reference: String(d.previous_reference ?? '')
+          })}
+        />
       </Screen>
     );
   }

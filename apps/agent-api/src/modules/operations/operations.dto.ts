@@ -18,7 +18,9 @@ export const CashInSchema = z.object({
   customer: z.object({ type: z.enum(['phone', 'token']), value: z.string().min(4).max(200) }),
   amount,
   currency: z.literal('XAF'),
-  agent_auth: AgentAuthSchema
+  agent_auth: AgentAuthSchema,
+  /** The agent confirmed it isn't a repeat of a recent identical deposit (after 409 POSSIBLE_DUPLICATE). */
+  confirm_duplicate: z.boolean().optional()
 });
 
 export const ListTransactionsSchema = z.object({

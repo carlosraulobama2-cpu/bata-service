@@ -208,6 +208,22 @@ Evento ─▶ Análisis asíncrono (patrones en ventanas largas) ─▶ fraud_ca
 | Duplicados | Mismo agente, cliente e importe en < N min |
 | Comportamiento | Desviación fuerte del patrón habitual del agente |
 
+### Implementación (Fase 1)
+
+`RiskService` evalúa cada depósito y retiro **antes de reservar o mover dinero**, con las reglas de `fraud_rules` (última versión activa de cada una; versionadas, no se editan: `db/08_risk_engine.sql`):
+
+| Regla | Qué mira (parámetros iniciales) | Peso |
+|---|---|---:|
+| `duplicate` | Depósito con el mismo cliente e importe en 10 min → `409 POSSIBLE_DUPLICATE`; el agente confirma con PIN (`confirm_duplicate`). Solo depósitos: cada retiro lo inicia el cliente con su PIN | — |
+| `velocity_agent` | Más de 5 operaciones del agente en 5 min | 30 |
+| `amount_unusual` | Importe > 5× la media de 30 días (con ≥ 10 operaciones de historial) | 25 |
+| `circular` | Depósito y retiro del mismo cliente en el mismo agente en 30 min | 45 |
+| `structuring` | 3+ operaciones ≥ 90 % del máximo por operación en 1 h | 40 |
+| `customer_velocity` | El cliente con más de 6 operaciones o en más de 3 agentes en 1 h | 30 |
+| `new_device` | Dispositivo en periodo de enfriamiento | 15 |
+
+Puntuación = suma de reglas **activas** que se cumplen. `< 40` LOW, `40–69` MEDIUM (se permite y queda registrado), `≥ 70` HIGH (umbrales `RISK_MEDIUM_SCORE` / `RISK_HIGH_SCORE`). HIGH **bloquea** la operación sin crear nada ni reservar dinero, abre un caso `FRC-000001` para revisión y el agente ve un mensaje neutro (`OPERATION_UNDER_REVIEW`). La opción «review» (operación retenida hasta que COMPLIANCE decida) llegará con el Admin Panel, que es donde se decide. Todas las reglas de puntuación empiezan en modo **shadow**; se activan cambiando `mode` a `active` (sin tocar sus parámetros).
+
 ### Integración de compliance
 
 El motor expone un punto de extensión (`ComplianceHook`) llamado en alta de agente, en operaciones y periódicamente, para integrar screening de listas, reglas AML o reportes regulatorios **cuando se definan con el proveedor regulado y la normativa aplicable (por confirmar)**. El resultado se guarda en `risk_assessments.compliance_hook`. No se inventan umbrales legales.

@@ -130,7 +130,14 @@ export const es = {
     notCompletedBody: 'No se ha movido dinero. Devuelve el efectivo al cliente si ya lo recibiste.',
     successTitle: 'Depósito completado',
     keepCash: 'Ya puedes guardar el efectivo',
-    simulateConfirm: 'Simular confirmación del cliente'
+    simulateConfirm: 'Simular confirmación del cliente',
+    duplicateTitle: '¿Es otro depósito?',
+    duplicateBody: '{{when}} ya hiciste un depósito de {{amount}} a este cliente ({{reference}}). Si es un depósito distinto, confírmalo de nuevo con tu PIN.',
+    duplicateJustNow: 'Hace un momento',
+    duplicateMinutesAgo_one: 'Hace {{count}} minuto',
+    duplicateMinutesAgo_other: 'Hace {{count}} minutos',
+    duplicateYes: 'Sí, es otro depósito',
+    duplicateNo: 'No, cancelar'
   },
   qr: {
     title: 'QR',
@@ -396,6 +403,8 @@ export const es = {
     OTP_INVALID: 'Código incorrecto.',
     OTP_EXPIRED: 'El código ha caducado. Solicita uno nuevo.',
     FORBIDDEN: 'No tienes permiso para realizar esta acción.',
+    POSSIBLE_DUPLICATE: 'Ya hiciste un depósito igual a este cliente hace poco.',
+    OPERATION_UNDER_REVIEW: 'No podemos completar esta operación ahora. Contacta con soporte.',
     DEVICE_COMPROMISED: 'No puedes operar desde este teléfono porque su sistema está modificado (root, jailbreak o emulador). Puedes consultar tu saldo e historial; para operar, usa otro teléfono.',
     DEVICE_IS_CURRENT: 'Este es el dispositivo que estás usando. Para salir, cierra la sesión.',
     DEVICE_NOT_TRUSTED: 'Este dispositivo no está autorizado.',

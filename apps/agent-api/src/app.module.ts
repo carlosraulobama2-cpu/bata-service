@@ -42,6 +42,7 @@ import { PushTokensController } from './modules/notifications/push-tokens.contro
 import { ExpoPushSender, InMemoryPushSender, PushSender } from './integrations/push/push.sender';
 import { SecurityController } from './modules/security/security.controller';
 import { SecurityService } from './modules/security/security.service';
+import { RiskService } from './modules/risk/risk.service';
 import { QrCodec } from './modules/qr/qr-codec';
 import { QrController } from './modules/qr/qr.controller';
 import { QrService } from './modules/qr/qr.service';
@@ -106,6 +107,7 @@ export class AppModule {
       LimitsService,
       CommissionsService,
       CodeAttemptsService,
+      RiskService,
       OperationLifecycleService,
       CashOutService,
       CashInService,

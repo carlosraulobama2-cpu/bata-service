@@ -14,7 +14,7 @@ export type OperationPhase =
   | { kind: 'confirming'; busy: boolean; error: string | null }
   | { kind: 'verifying' } // outcome unknown (network): never assume success
   | { kind: 'done'; tx: Transaction }
-  | { kind: 'error'; message: string; code: string };
+  | { kind: 'error'; message: string; code: string; details: Record<string, unknown> };
 
 /**
  * Drives a money operation:
@@ -85,7 +85,7 @@ export function useOperation(send: (key: string, stepUp: StepUp) => Promise<{ tr
       }
       if (err instanceof ApiError && err.code === 'OPERATION_IN_PROGRESS') return startVerifying();
       keyRef.current = null; // definite answer: a new attempt is a new operation
-      setPhase({ kind: 'error', message: errorMessage(err, t), code: err instanceof ApiError ? err.code : 'INTERNAL_ERROR' });
+      setPhase({ kind: 'error', message: errorMessage(err, t), code: err instanceof ApiError ? err.code : 'INTERNAL_ERROR', details: err instanceof ApiError ? err.details : {} });
     }
   };
 

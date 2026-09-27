@@ -7,6 +7,7 @@ import { Clock } from '../../common/time/clock';
 import { CoreClient, CoreConflictError, WithdrawalRequest } from '../../integrations/core/core.client';
 import { CodeAttemptsService } from './code-attempts.service';
 import { CommissionsService } from './commissions.service';
+import { RiskService } from '../risk/risk.service';
 import { LimitsService } from './limits.service';
 import { OperationLifecycleService } from './operation-lifecycle.service';
 
@@ -25,6 +26,7 @@ export class CashOutService {
     private readonly commissions: CommissionsService,
     private readonly lifecycle: OperationLifecycleService,
     private readonly codeAttempts: CodeAttemptsService,
+    private readonly risk: RiskService,
     private readonly clock: Clock
   ) {}
 
@@ -60,6 +62,12 @@ export class CashOutService {
     const w = this.checkUsable(await this.core.getWithdrawal(input.withdrawal_request_id));
     if (w.amount !== input.amount || w.currency !== input.currency) throw Errors.amountMismatch();
 
+    // Risk, before the customer's request is claimed. No duplicate prompt here: each
+    // withdrawal is started by the customer with their PIN and its code works once.
+    const riskInput = { agent, type: 'cash_out' as const, amount: w.amount, currency: w.currency, customerRef: w.customerRef };
+    const assessment = await this.risk.assess(riskInput);
+    if (assessment.decision === 'block') await this.risk.blockAndOpenCase(riskInput, assessment);
+
     const tx = await this.db.transaction().execute(async (trx) => {
       await setActor(trx, 'agent', agent.agentCode);
       const commission = await this.commissions.quote(trx, 'cash_out', w.amount, w.currency, agent.tierCode);
@@ -86,7 +94,7 @@ export class CashOutService {
           idempotency_key: idempotencyKey,
           ledger_hold_id: null,
           ledger_transaction_id: null,
-          risk_level: null,
+          risk_level: assessment.level,
           expires_at: null,
           completed_at: null,
           created_at: createdAt
@@ -101,6 +109,7 @@ export class CashOutService {
         .insertInto('agent.agent_transaction_events')
         .values({ transaction_id: inserted.id, from_status: null, to_status: 'processing', event: 'created', actor_type: 'agent', actor_id: agent.agentCode, details: JSON.stringify({ withdrawal_request_id: w.id }) })
         .execute();
+      await this.risk.record(trx, agent.agentId, assessment, inserted.id);
       return inserted;
     });
     return this.process(tx);

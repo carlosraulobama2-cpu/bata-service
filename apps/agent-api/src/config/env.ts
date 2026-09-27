@@ -41,6 +41,9 @@ const schema = z.object({
   ENABLE_DEV_ENDPOINTS: bool,
   /** Redis for rate limits (shared by all replicas). Empty = in-process counters (development only). */
   REDIS_URL: z.string().default(''),
+  /** Risk score thresholds (0–100): MEDIUM from, HIGH from (HIGH blocks). */
+  RISK_MEDIUM_SCORE: z.coerce.number().int().min(1).max(100).default(40),
+  RISK_HIGH_SCORE: z.coerce.number().int().min(1).max(100).default(70),
   /** Support contacts shown in the app (E.164, e.g. +240222123456). Empty = the app hides the buttons. */
   SUPPORT_PHONE: z.union([z.literal(''), z.string().regex(/^\+[1-9]\d{6,14}$/)]).default(''),
   SUPPORT_WHATSAPP: z.union([z.literal(''), z.string().regex(/^\+[1-9]\d{6,14}$/)]).default(''),
