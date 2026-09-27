@@ -44,6 +44,8 @@ export class AuthController {
   @UseGuards(AgentAuthGuard)
   async logout(@CurrentAgent() agent: AgentContext, @Meta() meta: RequestMeta): Promise<void> {
     await this.sessions.revoke(agent.sessionId, 'logout');
+    // A signed-out phone (maybe lent or shared) must not keep showing this agent's operations.
+    await this.db.updateTable('agent.agent_devices').set({ push_token: null }).where('id', '=', agent.deviceId).execute();
     await this.db.insertInto('agent.agent_access_events').values({ agent_id: agent.agentId, phone_hmac: null, event: 'logout', device_id: agent.deviceId, ip: meta.ip, approx_location: null }).execute();
     await this.audit.record(this.db, { actorType: 'agent', actorId: agent.agentCode, agentId: agent.agentId, action: 'LOGOUT', resourceType: 'session', resourceId: agent.sessionId, result: 'success', deviceId: agent.deviceId, ip: meta.ip, requestId: meta.requestId });
   }

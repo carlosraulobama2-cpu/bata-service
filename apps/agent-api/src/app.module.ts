@@ -36,6 +36,9 @@ import { ReconcilerService } from './modules/operations/reconciler.service';
 import { TransactionsService } from './modules/operations/transactions.service';
 import { CommissionsController } from './modules/commissions/commissions.controller';
 import { NotificationsController } from './modules/notifications/notifications.controller';
+import { PushDispatcher } from './modules/notifications/push-dispatcher.service';
+import { PushTokensController } from './modules/notifications/push-tokens.controller';
+import { ExpoPushSender, InMemoryPushSender, PushSender } from './integrations/push/push.sender';
 import { SecurityController } from './modules/security/security.controller';
 import { SecurityService } from './modules/security/security.service';
 import { QrCodec } from './modules/qr/qr-codec';
@@ -60,6 +63,7 @@ export interface AppOverrides {
   sms?: SmsSender;
   /** Tests only: wrap the ledger client (fault injection). */
   wrapLedger?: (ledger: LedgerClient) => LedgerClient;
+  push?: PushSender;
 }
 
 @Module({})
@@ -83,6 +87,8 @@ export class AppModule {
         inject: [Clock]
       },
       { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
+      { provide: PushSender, useValue: overrides.push ?? (env.PUSH_MODE === 'expo' ? new ExpoPushSender(env.EXPO_ACCESS_TOKEN) : new InMemoryPushSender()) },
+      PushDispatcher,
       { provide: SmsSender, useValue: overrides.sms ?? new InMemorySmsSender() },
       { provide: PinHasher, useValue: new PinHasher(env.PIN_PEPPER) },
       { provide: QrCodec, useValue: new QrCodec(env.QR_SIGNING_PRIVATE_KEY_PEM) },
@@ -108,7 +114,7 @@ export class AppModule {
       ReconcilerService,
       JobsService
     ];
-    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, OperationsController, QrController, CommissionsController, NotificationsController, SecurityController, CoreEventsController];
+    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, OperationsController, QrController, CommissionsController, NotificationsController, PushTokensController, SecurityController, CoreEventsController];
     if (env.ENABLE_DEV_ENDPOINTS && env.NODE_ENV !== 'production') controllers.push(DevController);
     return { module: AppModule, providers, controllers };
   }

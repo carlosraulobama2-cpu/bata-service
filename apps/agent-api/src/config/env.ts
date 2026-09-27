@@ -39,6 +39,9 @@ const schema = z.object({
   ENABLE_DEV_ENDPOINTS: bool,
   /** Redis for rate limits (shared by all replicas). Empty = in-process counters (development only). */
   REDIS_URL: z.string().default(''),
+  /** Push provider: "expo" (Expo push service -> FCM/APNs) or "memory" (development, nothing leaves the process). */
+  PUSH_MODE: z.enum(['memory', 'expo']).default('memory'),
+  EXPO_ACCESS_TOKEN: z.string().optional(),
   RATE_LIMITS_ENABLED: z
     .string()
     .optional()
@@ -66,6 +69,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     if (env.CORE_MODE === 'fake') throw new Error('CORE_MODE=fake is not allowed in production');
     if (env.ENABLE_DEV_ENDPOINTS) throw new Error('ENABLE_DEV_ENDPOINTS is not allowed in production');
     if (!env.REDIS_URL) throw new Error('REDIS_URL is required in production (rate limits shared by all replicas)');
+    if (env.PUSH_MODE === 'memory') throw new Error('PUSH_MODE=memory is not allowed in production');
     if (!env.RATE_LIMITS_ENABLED) throw new Error('RATE_LIMITS_ENABLED=false is not allowed in production');
   }
   return env;

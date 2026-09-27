@@ -323,6 +323,26 @@ export interface AgentCodeFailuresTable {
   created_at: Timestamp;
 }
 
+export interface AgentNotificationDeliveriesTable {
+  id: Generated<string>;
+  notification_id: string;
+  channel: 'push' | 'sms' | 'email';
+  status: Generated<'queued' | 'sent' | 'failed' | 'skipped'>;
+  provider_ref: string | null;
+  attempts: Generated<number>;
+  last_error: string | null;
+  sent_to: Generated<number>;
+  next_attempt_at: Timestamp;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+}
+
+export interface AgentNotificationPreferencesTable {
+  agent_id: string;
+  type: string;
+  push_enabled: boolean;
+}
+
 export interface IdempotencyKeysTable {
   agent_id: string;
   key: string;
@@ -391,6 +411,8 @@ export interface AgentDatabase {
   'agent.agent_commissions': AgentCommissionsTable;
   'agent.agent_commission_daily': AgentCommissionDailyTable;
   'agent.agent_notifications': AgentNotificationsTable;
+  'agent.agent_notification_deliveries': AgentNotificationDeliveriesTable;
+  'agent.agent_notification_preferences': AgentNotificationPreferencesTable;
   'agent.idempotency_keys': IdempotencyKeysTable;
   'agent.outbox_events': OutboxEventsTable;
   'agent.agent_audit_logs': AgentAuditLogsTable;

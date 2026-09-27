@@ -11,6 +11,8 @@ import { CoreClient } from '../../src/integrations/core/core.client';
 import { FakeCoreClient } from '../../src/integrations/core/fake-core.client';
 import { LedgerClient } from '../../src/integrations/ledger/ledger.client';
 import { InMemorySmsSender } from '../../src/integrations/sms/sms.sender';
+import { InMemoryPushSender } from '../../src/integrations/push/push.sender';
+import { PushDispatcher } from '../../src/modules/notifications/push-dispatcher.service';
 import { createActiveAgent, seedReferenceData } from '../../scripts/seed-lib';
 import { adminUrl, TEMPLATE_DB, urlFor } from './global-setup';
 
@@ -65,6 +67,7 @@ export class Harness {
   ledger!: LedgerClient;
   core!: FakeCoreClient;
   sms = new InMemorySmsSender();
+  push = new InMemoryPushSender();
   clock = new TestClock();
   staff!: { compliance: string; admin: string; finance: string; finance2: string };
   private dbName = `bata_test_${randomBytes(6).toString('hex')}`;
@@ -91,7 +94,7 @@ export class Harness {
       RATE_LIMITS_ENABLED: 'false',
       ...overrides.env
     });
-    h.app = await createApp(h.env, { clock: h.clock, sms: h.sms, wrapLedger: overrides.wrapLedger });
+    h.app = await createApp(h.env, { clock: h.clock, sms: h.sms, push: h.push, wrapLedger: overrides.wrapLedger });
     h.db = h.app.get(AGENT_DB);
     h.ledger = h.app.get(LedgerClient);
     h.core = h.app.get(CoreClient) as FakeCoreClient;
@@ -193,6 +196,11 @@ export class Harness {
     const { createHmac } = require('node:crypto');
     const sig = createHmac('sha256', this.env.CORE_EVENTS_HMAC_SECRET).update(`${ts}.${raw}`).digest('hex');
     return this.request('POST', path, { rawBody: raw, headers: { 'x-core-timestamp': ts, 'x-core-signature': sig } });
+  }
+
+  /** Runs the push worker once (what the 2 s loop does in production). */
+  dispatchPush() {
+    return this.app.get(PushDispatcher).run();
   }
 
   async balance(ownerType: string, ownerRef: string, purpose: string) {

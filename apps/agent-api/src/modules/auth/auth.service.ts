@@ -227,7 +227,7 @@ export class AuthService {
           type: 'new_device_detected',
           title_key: 'notif.new_device_detected.title',
           body_key: 'notif.new_device_detected.body',
-          params: JSON.stringify({ model: ctx.model ?? null, platform: ctx.platform }),
+          params: JSON.stringify({ model: ctx.model ?? null, platform: ctx.platform, device_id: device.id }),
           related_transaction_id: null,
           read_at: null
         })

@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { sql } from 'kysely';
 import { z } from 'zod';
 import { AgentAuthGuard } from '../../common/auth/agent-auth.guard';
@@ -7,6 +7,9 @@ import { AGENT_DB, AgentDb } from '../../common/db/database';
 import { Errors } from '../../common/errors/app-error';
 import { decodeCursor, encodeCursor, isUuid } from '../../common/pagination';
 import { Clock } from '../../common/time/clock';
+import { MANDATORY_TYPES, OPTIONAL_TYPES } from './push-templates';
+
+const PreferencesSchema = z.object({ preferences: z.record(z.string(), z.boolean()) });
 
 const ListSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
@@ -53,6 +56,37 @@ export class NotificationsController {
       unread_count: unread,
       next_cursor: rows.length > q.limit && last ? encodeCursor(last.created_at, last.id) : null
     };
+  }
+
+  /** Which notifications also arrive as push. Security and account ones can't be switched off. */
+  @Get('preferences')
+  async preferences(@CurrentAgent() agent: AgentContext) {
+    const rows = await this.db.selectFrom('agent.agent_notification_preferences').select(['type', 'push_enabled']).where('agent_id', '=', agent.agentId).execute();
+    const off = new Set(rows.filter((r) => !r.push_enabled).map((r) => r.type));
+    return {
+      data: [
+        ...OPTIONAL_TYPES.map((type) => ({ type, push_enabled: !off.has(type), locked: false })),
+        ...MANDATORY_TYPES.map((type) => ({ type, push_enabled: true, locked: true }))
+      ]
+    };
+  }
+
+  @Put('preferences')
+  async setPreferences(@CurrentAgent() agent: AgentContext, @Body() body: unknown) {
+    const { preferences } = PreferencesSchema.parse(body);
+    for (const [type, enabled] of Object.entries(preferences)) {
+      if ((MANDATORY_TYPES as readonly string[]).includes(type)) {
+        if (!enabled) throw Errors.validation({ fields: [type], reason: 'mandatory_notification' });
+        continue;
+      }
+      if (!(OPTIONAL_TYPES as readonly string[]).includes(type)) throw Errors.validation({ fields: [type] });
+      await this.db
+        .insertInto('agent.agent_notification_preferences')
+        .values({ agent_id: agent.agentId, type, push_enabled: enabled })
+        .onConflict((oc) => oc.columns(['agent_id', 'type']).doUpdateSet({ push_enabled: enabled }))
+        .execute();
+    }
+    return this.preferences(agent);
   }
 
   /** Cheap call for the bell badge. */
