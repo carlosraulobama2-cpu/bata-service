@@ -24,12 +24,17 @@ import { DevController } from './modules/dev/dev.controller';
 import { CoreEventsController } from './modules/internal/core-events.controller';
 import { CashInService } from './modules/operations/cash-in.service';
 import { CashOutService } from './modules/operations/cash-out.service';
+import { CodeAttemptsService } from './modules/operations/code-attempts.service';
 import { CommissionsService } from './modules/operations/commissions.service';
 import { LimitsService } from './modules/operations/limits.service';
 import { OperationLifecycleService } from './modules/operations/operation-lifecycle.service';
 import { OperationsController } from './modules/operations/operations.controller';
 import { ReconcilerService } from './modules/operations/reconciler.service';
 import { TransactionsService } from './modules/operations/transactions.service';
+import { CommissionsController } from './modules/commissions/commissions.controller';
+import { NotificationsController } from './modules/notifications/notifications.controller';
+import { SecurityController } from './modules/security/security.controller';
+import { SecurityService } from './modules/security/security.service';
 import { QrCodec } from './modules/qr/qr-codec';
 import { QrController } from './modules/qr/qr.controller';
 import { QrService } from './modules/qr/qr.service';
@@ -83,15 +88,17 @@ export class AppModule {
       StepUpService,
       LimitsService,
       CommissionsService,
+      CodeAttemptsService,
       OperationLifecycleService,
       CashOutService,
       CashInService,
       TransactionsService,
       QrService,
+      SecurityService,
       ReconcilerService,
       JobsService
     ];
-    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, OperationsController, QrController, CoreEventsController];
+    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, OperationsController, QrController, CommissionsController, NotificationsController, SecurityController, CoreEventsController];
     if (env.ENABLE_DEV_ENDPOINTS && env.NODE_ENV !== 'production') controllers.push(DevController);
     return { module: AppModule, providers, controllers };
   }

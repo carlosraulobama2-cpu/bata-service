@@ -8,6 +8,7 @@ import { AppError, Errors } from '../../common/errors/app-error';
 import { Clock } from '../../common/time/clock';
 import { CoreClient } from '../../integrations/core/core.client';
 import { assertCanOperate, CashOutService } from '../operations/cash-out.service';
+import { CodeAttemptsService } from '../operations/code-attempts.service';
 import { CommissionsService } from '../operations/commissions.service';
 import { LimitsService } from '../operations/limits.service';
 import { OperationLifecycleService } from '../operations/operation-lifecycle.service';
@@ -40,6 +41,7 @@ export class QrService {
     private readonly commissions: CommissionsService,
     private readonly lifecycle: OperationLifecycleService,
     private readonly audit: AuditService,
+    private readonly codeAttempts: CodeAttemptsService,
     private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env
   ) {}
@@ -174,13 +176,14 @@ export class QrService {
     try {
       if (parsed?.type === 'W') {
         outcome = { action: 'cash_out', withdrawal: await this.cashOut.resolve(agent, { type: 'qr', value: parsed.raw }) };
-      } else if (parsed?.type === 'C') {
-        const customer = await this.core.resolveCustomerQr(parsed.raw);
-        if (!customer) throw Errors.qrInvalid();
-        outcome = { action: 'cash_in', customer: { customer_token: customer.customerToken, customer_masked: customer.masked } };
       } else {
-        // Agent codes (A/K) are for customers to pay with; anything else is unknown.
-        throw Errors.qrInvalid();
+        outcome = await this.codeAttempts.guard(agent.agentId, 'qr', async () => {
+          // Agent codes (A/K) are for customers to pay with; anything else is unknown.
+          if (parsed?.type !== 'C') throw Errors.qrInvalid();
+          const customer = await this.core.resolveCustomerQr(parsed.raw);
+          if (!customer) throw Errors.qrInvalid();
+          return { action: 'cash_in', customer: { customer_token: customer.customerToken, customer_masked: customer.masked } };
+        });
       }
       return outcome;
     } catch (err) {

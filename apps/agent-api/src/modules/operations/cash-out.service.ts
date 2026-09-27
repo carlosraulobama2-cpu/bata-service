@@ -5,6 +5,7 @@ import type { AgentTransaction } from '../../common/db/schema';
 import { Errors } from '../../common/errors/app-error';
 import { Clock } from '../../common/time/clock';
 import { CoreClient, CoreConflictError, WithdrawalRequest } from '../../integrations/core/core.client';
+import { CodeAttemptsService } from './code-attempts.service';
 import { CommissionsService } from './commissions.service';
 import { LimitsService } from './limits.service';
 import { OperationLifecycleService } from './operation-lifecycle.service';
@@ -22,6 +23,7 @@ export class CashOutService {
     private readonly limits: LimitsService,
     private readonly commissions: CommissionsService,
     private readonly lifecycle: OperationLifecycleService,
+    private readonly codeAttempts: CodeAttemptsService,
     private readonly clock: Clock
   ) {}
 
@@ -35,7 +37,7 @@ export class CashOutService {
   /** What is behind this QR / code? No side effects. */
   async resolve(agent: AgentContext, code: { type: 'qr' | 'code'; value: string }) {
     assertCanOperate(agent);
-    const w = this.checkUsable(await this.core.findWithdrawalByCode(code.value));
+    const w = await this.codeAttempts.guard(agent.agentId, code.type === 'qr' ? 'qr' : 'withdrawal_code', async () => this.checkUsable(await this.core.findWithdrawalByCode(code.value)));
     const commission = await this.commissions.quote(this.db, 'cash_out', w.amount, w.currency, agent.tierCode);
     return {
       withdrawal_request_id: w.id,

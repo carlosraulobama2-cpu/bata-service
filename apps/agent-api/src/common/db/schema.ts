@@ -308,6 +308,20 @@ export interface AgentNotificationsTable {
   read_at: Date | null;
 }
 
+export interface AgentPinHistoryTable {
+  id: Generated<string>;
+  agent_id: string;
+  pin_hash: string;
+  created_at: Timestamp;
+}
+
+export interface AgentCodeFailuresTable {
+  id: Generated<string>;
+  agent_id: string;
+  kind: 'withdrawal_code' | 'qr';
+  created_at: Timestamp;
+}
+
 export interface IdempotencyKeysTable {
   agent_id: string;
   key: string;
@@ -367,6 +381,8 @@ export interface AgentDatabase {
   'agent.agent_limit_usage': AgentLimitUsageTable;
   'agent.agent_balances': AgentBalancesTable;
   'agent.agent_qr': AgentQrTable;
+  'agent.agent_pin_history': AgentPinHistoryTable;
+  'agent.agent_code_failures': AgentCodeFailuresTable;
   'agent.agent_transactions': AgentTransactionsTable;
   'agent.agent_transaction_events': AgentTransactionEventsTable;
   'agent.commission_plans': CommissionPlansTable;

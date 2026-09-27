@@ -54,6 +54,9 @@ export const Errors = {
   qrAlreadyUsed: E('QR_ALREADY_USED', 409, 'Este código ya se ha utilizado.'),
   withdrawalCodeInvalid: E('WITHDRAWAL_CODE_INVALID', 404, 'El código de retiro no es válido.'),
   operationNotCancellable: E('OPERATION_NOT_CANCELLABLE', 409, 'Esta operación ya no se puede cancelar.'),
+  rateLimited: E('RATE_LIMITED', 429, 'Demasiados intentos. Espera un momento.'),
+  pinTooWeak: E('PIN_TOO_WEAK', 422, 'Elige un PIN más seguro: sin repeticiones ni secuencias.'),
+  pinReused: E('PIN_REUSED', 422, 'El nuevo PIN debe ser distinto de los últimos que has usado.'),
   unsupportedCurrency: E('UNSUPPORTED_CURRENCY', 422, 'Moneda no soportada.'),
   appUpdateRequired: E('APP_UPDATE_REQUIRED', 426, 'Actualiza la app para seguir operando.'),
   internal: E('INTERNAL_ERROR', 500, 'No hemos podido completar la acción. Inténtalo de nuevo.')
