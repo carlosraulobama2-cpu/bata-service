@@ -1,3 +1,4 @@
+import { useNoScreenCapture } from '../../../security/useNoScreenCapture';
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -26,6 +27,7 @@ export default function ChangePinScreen() {
   const { colors } = useTheme();
   const qc = useQueryClient();
   const [step, setStep] = useState<Step>('current');
+  useNoScreenCapture();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [value, setValue] = useState('');

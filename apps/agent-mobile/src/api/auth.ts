@@ -30,7 +30,8 @@ export async function bootSession(): Promise<void> {
     const data = await api<{ access_token: string; refresh_token: string }>('/agent/v1/auth/refresh', { body: { refresh_token: refreshToken }, auth: false });
     await secureStorage.set(KEYS.refreshToken, data.refresh_token);
     useSession.getState().setBiometricEnabled(await biometricsAvailable());
-    useSession.getState().setSignedIn(data.access_token, deviceId);
+    // Resuming a saved session on app start: someone else may be holding the phone.
+    useSession.getState().setSignedIn(data.access_token, deviceId, { locked: true });
   } catch (err) {
     // Offline at start: keep the refresh token and let the user retry from login.
     if (!(err instanceof Error && err.message === 'NETWORK_OFFLINE')) await secureStorage.remove(KEYS.refreshToken);

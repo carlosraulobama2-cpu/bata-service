@@ -25,6 +25,20 @@ export class SecurityController {
     private readonly idempotency: IdempotencyService
   ) {}
 
+  /**
+   * The app locked itself after a while in the background. The PIN is
+   * checked here (never on the phone), so failures count toward the
+   * account lock like any other PIN entry.
+   */
+  @Post('unlock')
+  @HttpCode(200)
+  @UseGuards(DeviceSignatureGuard)
+  async unlock(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Req() req: FastifyRequest) {
+    const input = RevokeOthersSchema.parse(body);
+    await this.stepUp.verify(agent, input.agent_auth, req);
+    return { unlocked: true };
+  }
+
   @Post('device-integrity')
   @HttpCode(200)
   integrity(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Req() req: FastifyRequest) {

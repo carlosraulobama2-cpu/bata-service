@@ -68,3 +68,32 @@ describe('Rooted / jailbroken / emulated phones can read but not operate', () =>
     expect(me.body.device.compromised).toBe(true);
   });
 });
+
+describe('Unlocking the app after inactivity', () => {
+  let h: Harness;
+  let s: Session;
+  const phone = '+240222000961';
+  beforeAll(async () => {
+    h = await Harness.start();
+    await h.createAgent(phone);
+    s = await h.login(phone);
+  });
+  afterAll(() => h.stop());
+
+  const unlock = (pin: string) => h.signedPost(s, '/agent/v1/security/unlock', { agent_auth: { method: 'pin', pin } });
+
+  it('checks the PIN on the server and counts failures toward the lock', async () => {
+    expect((await unlock(PIN)).body).toEqual({ unlocked: true });
+    const wrong = await unlock('000111');
+    expect(wrong.body.error).toMatchObject({ code: 'PIN_INVALID', details: { attempts_left: 4 } });
+    for (let i = 0; i < 3; i++) await unlock('000111');
+    const locked = await unlock('000111');
+    expect(locked.body.error.code).toBe('ACCOUNT_LOCKED');
+    expect((await unlock(PIN)).body.error.code).toBe('ACCOUNT_LOCKED');
+  });
+
+  it('requires the device signature', async () => {
+    const unsigned = await h.request('POST', '/agent/v1/security/unlock', { body: { agent_auth: { method: 'pin', pin: PIN } }, headers: { authorization: `Bearer ${s.accessToken}` } });
+    expect(unsigned.status).toBe(401);
+  });
+});

@@ -1,3 +1,4 @@
+import { useNoScreenCapture } from '../security/useNoScreenCapture';
 import { Fingerprint } from 'lucide-react-native';
 import { ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from 'react-native';
@@ -32,6 +33,7 @@ export function ConfirmSheet({ visible, summary, busy, error, onSubmit, onClose 
   const { t } = useTranslation();
   const biometricEnabled = useSession((s) => s.biometricEnabled);
   const [pin, setPin] = useState('');
+  useNoScreenCapture(visible);
 
   useEffect(() => {
     if (!visible || error) setPin('');

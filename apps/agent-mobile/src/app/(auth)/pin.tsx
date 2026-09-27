@@ -1,3 +1,4 @@
+import { useNoScreenCapture } from '../../security/useNoScreenCapture';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
@@ -22,6 +23,7 @@ export default function PinScreen() {
   const { colors } = useTheme();
   const pending = useSession((s) => s.pendingLogin);
   const [pin, setPin] = useState('');
+  useNoScreenCapture();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

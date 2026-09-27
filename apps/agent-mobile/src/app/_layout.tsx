@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ApiError } from '../api/client';
 import { bootSession } from '../api/auth';
+import { protectAppSwitcher } from '../security/useNoScreenCapture';
 import { useSession } from '../state/session';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 
@@ -35,6 +36,7 @@ export default function RootLayout() {
   const status = useSession((s) => s.status);
 
   useEffect(() => {
+    protectAppSwitcher();
     void bootSession();
   }, []);
 

@@ -167,6 +167,12 @@ export const es = {
     mineBody: 'El cliente lo escanea para identificar tu punto de servicio. No sirve para cobrar un importe: para eso usa «Cobrar».',
     customerFromQr: 'Cliente identificado por QR'
   },
+  lock: {
+    title: 'Sesión bloqueada',
+    body: 'Por seguridad, la app se bloquea cuando vuelves después de unos minutos o al abrirla.',
+    notMe: 'No soy yo · Cerrar sesión',
+    biometricPrompt: 'Desbloquea BATA SERVICES'
+  },
   confirm: {
     title: 'Confirma con tu PIN',
     useBiometrics: 'Usar huella o rostro',

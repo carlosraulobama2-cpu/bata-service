@@ -1,3 +1,4 @@
+import { useNoScreenCapture } from '../../security/useNoScreenCapture';
 import { Redirect, router } from 'expo-router';
 import { ShieldCheck } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -21,6 +22,7 @@ export default function OtpScreen() {
   const { colors } = useTheme();
   const pending = useSession((s) => s.pendingLogin);
   const [code, setCode] = useState('');
+  useNoScreenCapture();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [seconds, setSeconds] = useState(RESEND_AFTER);

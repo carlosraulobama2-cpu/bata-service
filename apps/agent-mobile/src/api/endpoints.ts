@@ -51,6 +51,8 @@ export const endpoints = {
   readNotification: (id: string) => api<{ unread_count: number }>(`/agent/v1/notifications/${id}/read`, { method: 'POST' }),
   readAllNotifications: () => api<{ unread_count: number }>('/agent/v1/notifications/read-all', { method: 'POST' }),
 
+  unlock: (input: { key: string; stepUp: StepUp; prompt: string }) =>
+    api<{ unlocked: true }>('/agent/v1/security/unlock', { body: {}, signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt } }),
   reportIntegrity: (integrity: { rooted: boolean; emulator: boolean }) => api<{ compromised: boolean }>('/agent/v1/security/device-integrity', { body: integrity }),
   registerPushToken: (token: string) => api<{ registered: boolean }>('/agent/v1/push-tokens', { body: { token } }),
   notificationPreferences: () => api<{ data: { type: string; push_enabled: boolean; locked: boolean }[] }>('/agent/v1/notifications/preferences'),
