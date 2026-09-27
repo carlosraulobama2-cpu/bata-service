@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, Bell, QrCode, ShieldAlert, Smartphone } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, Bell, QrCode, Settings, ShieldAlert, Smartphone } from 'lucide-react-native';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { endpoints } from '../../api/endpoints';
@@ -49,7 +49,16 @@ export default function NotificationsScreen() {
 
   return (
     <Screen
-      header={<Header title={t('notifications.title')} />}
+      header={
+        <Header
+          title={t('notifications.title')}
+          trailing={
+            <Pressable onPress={() => router.push('/notification-settings')} accessibilityRole="button" accessibilityLabel={t('notifications.settings')} hitSlop={10} testID="notifications-settings">
+              <Settings size={22} color={colors.text} />
+            </Pressable>
+          }
+        />
+      }
       padded={false}
       footer={
         unread > 0 ? (

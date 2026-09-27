@@ -51,6 +51,11 @@ export const endpoints = {
   readNotification: (id: string) => api<{ unread_count: number }>(`/agent/v1/notifications/${id}/read`, { method: 'POST' }),
   readAllNotifications: () => api<{ unread_count: number }>('/agent/v1/notifications/read-all', { method: 'POST' }),
 
+  registerPushToken: (token: string) => api<{ registered: boolean }>('/agent/v1/push-tokens', { body: { token } }),
+  notificationPreferences: () => api<{ data: { type: string; push_enabled: boolean; locked: boolean }[] }>('/agent/v1/notifications/preferences'),
+  setNotificationPreferences: (preferences: Record<string, boolean>) =>
+    api<{ data: { type: string; push_enabled: boolean; locked: boolean }[] }>('/agent/v1/notifications/preferences', { method: 'PUT', body: { preferences } }),
+
   securityOverview: () => api<SecurityOverview>('/agent/v1/security/overview'),
   devices: () => api<{ data: DeviceInfo[] }>('/agent/v1/security/devices'),
   sessions: () => api<{ data: SessionInfo[] }>('/agent/v1/security/sessions'),

@@ -12,6 +12,7 @@ import { Screen } from '../../../components/Screen';
 import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { TransactionRow } from '../../../components/TransactionRow';
+import { usePushPermission } from '../../../features/push';
 import { useBalance, useMe, useToday, useUnreadCount } from '../../../features/queries';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
@@ -26,6 +27,7 @@ export default function Dashboard() {
   const balance = useBalance();
   const today = useToday();
   const unread = useUnreadCount().data?.unread_count ?? 0;
+  const push = usePushPermission();
   const [infoOpen, setInfoOpen] = useState(false);
 
   const refreshing = me.isRefetching || balance.isRefetching || today.isRefetching;
@@ -113,6 +115,11 @@ export default function Dashboard() {
         </View>
 
         {offline ? <Banner tone="offline">{t('common.offline')}</Banner> : null}
+        {push.status === 'undetermined' && canOperate ? (
+          <Banner tone="info" onPress={() => void push.enable()} action={t('notifications.enableAction')}>
+            {t('notifications.enableBanner')}
+          </Banner>
+        ) : null}
         {agent && agent.status === 'suspended' ? <Banner tone="danger">{t('errors.ACCOUNT_SUSPENDED')}</Banner> : null}
         {agent && !['active', 'suspended'].includes(agent.status) ? <Banner tone="info">{t('errors.ACCOUNT_NOT_ACTIVE')}</Banner> : null}
         {pending.length > 0 ? (

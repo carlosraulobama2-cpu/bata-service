@@ -10,7 +10,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.batapay.services",
       "infoPlist": {
-        "NSCameraUsageDescription": "La c\u00e1mara se usa solo para escanear c\u00f3digos QR de clientes.",
+        "NSCameraUsageDescription": "La cámara se usa solo para escanear códigos QR de clientes.",
         "NSFaceIDUsageDescription": "Usamos Face ID para confirmar tus operaciones."
       }
     },
@@ -25,7 +25,8 @@
       "package": "com.batapay.services",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.USE_BIOMETRIC"
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
@@ -45,7 +46,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "La c\u00e1mara se usa solo para escanear c\u00f3digos QR de clientes.",
+          "cameraPermission": "La cámara se usa solo para escanear códigos QR de clientes.",
           "recordAudioAndroid": false
         }
       ],
@@ -64,7 +65,14 @@
           "imageWidth": 160
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#0B5FFF"
+        }
+      ]
     ],
     "scheme": "bataservices",
     "experiments": {

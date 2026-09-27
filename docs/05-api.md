@@ -576,7 +576,9 @@ No existe ningún endpoint de edición o borrado de operaciones.
 
 ## 13. Notificaciones
 
-`GET /notifications?cursor&unread` (incluye `unread_count`) · `GET /notifications/unread-count` · `POST /notifications/{id}/read` · `POST /notifications/read-all` · `PUT /notifications/preferences` (no permite desactivar seguridad/cuenta) · `POST /push-tokens` (registrar token FCM/APNs del dispositivo).
+`GET /notifications?cursor&unread` (incluye `unread_count`) · `GET /notifications/unread-count` · `POST /notifications/{id}/read` · `POST /notifications/read-all` · `GET|PUT /notifications/preferences` (no permite desactivar seguridad/cuenta) · `POST /push-tokens` / `DELETE /push-tokens` (token push del dispositivo actual; cerrar sesión también lo borra).
+
+Entrega: cada aviso encola un push en la misma transacción; un worker lo envía (reintentos 30 s, 2 min, 10 min, 30 min; se abandona tras 5), descarta tokens que el proveedor ya no reconoce y no envía avisos de más de 24 h. «Nuevo dispositivo» se envía solo a los **otros** teléfonos.
 
 ## 14. Soporte
 

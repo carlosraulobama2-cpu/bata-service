@@ -49,6 +49,7 @@ db/
 ├── 03_roles_and_reference_data.sql  # Roles de BD (mínimo privilegio) + RBAC
 ├── 04_qr_payments.sql               # Cobros QR: un uso, cliente fijado una vez, QR inmutables
 ├── 05_security_and_code_attempts.sql # Historial de PIN y bloqueo por códigos inválidos
+├── 06_push_notifications.sql        # Cola de envío de push
 └── tests/
     ├── invariants_test.sql          # 36 comprobaciones de reglas críticas
     └── run.sh                       # crea una BD temporal, aplica y prueba

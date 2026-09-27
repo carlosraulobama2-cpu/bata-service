@@ -30,12 +30,14 @@ Stack: Node.js 22 · TypeScript · NestJS 11 (Fastify) · Kysely · PostgreSQL. 
 | Bloqueo tras 5 códigos de retiro/QR inexistentes en 10 min (15 min, `RATE_LIMITED` con `retry_after_seconds`) | ✅ |
 | Límite de peticiones por grupo (login por teléfono e IP, OTP, refresh, operaciones, consultas de códigos, lecturas, escrituras) en Redis compartido por todas las réplicas; cabeceras `X-RateLimit-*` y `Retry-After` | ✅ |
 | Desconectar otro dispositivo del agente | ✅ |
+| Notificaciones push: registro del token del dispositivo, preferencias por tipo (las de seguridad no se pueden desactivar), cola de envío con reintentos y sin datos del cliente; proveedor Expo push (FCM/APNs) | ✅ |
 | Motor de riesgo, KYC en la app, liquidaciones, soporte, Admin API | ⏳ fases siguientes |
 
 ## Integraciones
 
 - **Ledger**: `LedgerClient`. `LocalLedgerClient` llama a las funciones SQL de [`db/01_ledger.sql`](../../db/01_ledger.sql). Cuando el ledger sea un servicio propio se añade un cliente HTTP con la misma interfaz.
 - **BataPay Core**: `CoreClient`. `FakeCoreClient` simula Core **moviendo dinero real en el ledger** (carteras y holds de clientes) para desarrollo y pruebas. El contrato real con Core está **por confirmar**; la configuración impide usar el simulador en producción.
+- **Push**: `PushSender`. `ExpoPushSender` (servicio de push de Expo, que entrega por FCM/APNs con las credenciales configuradas en EAS; `PUSH_MODE=expo`, `EXPO_ACCESS_TOKEN` opcional). `InMemoryPushSender` en desarrollo. Cambiar a FCM/APNs directos solo requiere otra implementación.
 - **SMS**: `SmsSender`. `InMemorySmsSender` no envía nada (proveedor **por confirmar**).
 
 ## Desarrollo local

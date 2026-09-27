@@ -26,7 +26,7 @@ export async function createApp(env: Env, overrides: AppOverrides = {}): Promise
       origin: origins,
       allowedHeaders: ['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Timestamp', 'X-Device-Signature', 'X-Device-Id', 'X-App-Version', 'X-Request-Id'],
       exposedHeaders: ['X-Request-Id', 'Idempotent-Replayed', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'Retry-After'],
-      methods: ['GET', 'POST', 'DELETE']
+      methods: ['GET', 'POST', 'PUT', 'DELETE']
     });
   }
   app.enableShutdownHooks();

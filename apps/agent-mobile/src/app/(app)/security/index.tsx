@@ -206,14 +206,9 @@ function Item({
   action?: { label: string; onPress: () => void; testID?: string };
 }) {
   const { colors } = useTheme();
-  return (
-    <Pressable
-      disabled={!onPress}
-      onPress={onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-      testID={testID}
-      style={({ pressed }) => [styles.item, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, pressed && { opacity: 0.7 }]}
-    >
+  const rowStyle = [styles.item, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }];
+  const content = (
+    <>
       {icon}
       <View style={styles.flex}>
         <Text variant="bodyStrong">{title}</Text>
@@ -231,6 +226,13 @@ function Item({
         </Pressable>
       ) : null}
       {onPress ? <ChevronRight size={20} color={colors.textMuted} /> : null}
+    </>
+  );
+  // Only rows that navigate are pressable: a disabled parent would also disable the action button inside.
+  if (!onPress) return <View style={rowStyle}>{content}</View>;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" testID={testID} style={({ pressed }) => [...rowStyle, pressed && { opacity: 0.7 }]}>
+      {content}
     </Pressable>
   );
 }
