@@ -2,7 +2,7 @@
   "name": "@bata/money",
   "version": "0.1.0",
   "private": true,
-  "description": "Importes enteros en unidades mínimas, formato y cálculo de comisiones",
+  "description": "Importes enteros en unidades m\u00ednimas, formato y c\u00e1lculo de comisiones",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -20,6 +20,9 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/test"]
-  }
+    "roots": [
+      "<rootDir>/test"
+    ]
+  },
+  "react-native": "src/index.ts"
 }

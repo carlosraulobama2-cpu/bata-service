@@ -33,7 +33,9 @@ const schema = z.object({
   DEFAULT_CURRENCY: z.literal('XAF').default('XAF'),
   OPERATING_TIMEZONE: z.string().default('Africa/Malabo'),
   MIN_APP_VERSION: z.string().default('1.0.0'),
-  ENABLE_DEV_ENDPOINTS: bool
+  ENABLE_DEV_ENDPOINTS: bool,
+  /** Comma-separated browser origins allowed to call the API (web tooling only). Empty = none. */
+  CORS_ORIGINS: z.string().default('')
 });
 
 export type Env = z.infer<typeof schema>;

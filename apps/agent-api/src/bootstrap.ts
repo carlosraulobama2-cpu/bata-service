@@ -20,6 +20,15 @@ export async function createApp(env: Env, overrides: AppOverrides = {}): Promise
     logger: env.NODE_ENV === 'test' ? false : ['log', 'warn', 'error']
   });
   app.useGlobalFilters(new HttpExceptionFilter());
+  const origins = env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean);
+  if (origins.length) {
+    app.enableCors({
+      origin: origins,
+      allowedHeaders: ['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Timestamp', 'X-Device-Signature', 'X-Device-Id', 'X-App-Version', 'X-Request-Id'],
+      exposedHeaders: ['X-Request-Id', 'Idempotent-Replayed'],
+      methods: ['GET', 'POST', 'DELETE']
+    });
+  }
   app.enableShutdownHooks();
   const fastify = app.getHttpAdapter().getInstance();
   fastify.addHook('onSend', async (request, reply) => {
