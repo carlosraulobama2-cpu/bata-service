@@ -28,7 +28,9 @@ Stack: Node.js 22 · TypeScript · NestJS 11 (Fastify) · Kysely · PostgreSQL. 
 | Bandeja de avisos: lista paginada, sin leer, marcar como leído (uno / todos) | ✅ |
 | Seguridad: resumen, dispositivos, sesiones, historial de accesos (IP enmascarada), cerrar las demás sesiones (PIN/biometría), cambio de PIN (reglas, distinto de los 3 últimos, cierra otras sesiones, aviso) | ✅ |
 | Bloqueo tras 5 códigos de retiro/QR inexistentes en 10 min (15 min, `RATE_LIMITED` con `retry_after_seconds`) | ✅ |
-| Rate limiting general con Redis, motor de riesgo, KYC en la app, liquidaciones, soporte, Admin API, push (FCM/APNs) | ⏳ fases siguientes |
+| Límite de peticiones por grupo (login por teléfono e IP, OTP, refresh, operaciones, consultas de códigos, lecturas, escrituras) en Redis compartido por todas las réplicas; cabeceras `X-RateLimit-*` y `Retry-After` | ✅ |
+| Desconectar otro dispositivo del agente | ✅ |
+| Motor de riesgo, KYC en la app, liquidaciones, soporte, Admin API | ⏳ fases siguientes |
 
 ## Integraciones
 
@@ -59,6 +61,7 @@ Endpoints de desarrollo (solo con `ENABLE_DEV_ENDPOINTS=true`; la configuración
 ```bash
 # PostgreSQL con un usuario que pueda crear bases de datos
 export TEST_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres
+export TEST_REDIS_URL=redis://localhost:6379/15   # opcional: repite las pruebas de límites contra Redis real (se vacía esa BD)
 pnpm --filter @bata/agent-api test
 ```
 

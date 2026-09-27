@@ -1,3 +1,4 @@
+import { RateLimit } from '../../common/rate-limit/rate-limit.policies';
 import { Body, Controller, Get, Headers, Param, Post, Res, UseGuards } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import { AgentAuthGuard } from '../../common/auth/agent-auth.guard';
@@ -17,6 +18,7 @@ export class QrController {
 
   /** Collect QR (creates the pending QR payment) or the agent's static QR. Signed by the device. */
   @Post('create')
+  @RateLimit('financial')
   @UseGuards(DeviceSignatureGuard)
   async create(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Headers('idempotency-key') key: string | undefined, @Res({ passthrough: true }) reply: FastifyReply) {
     const input = QrCreateSchema.parse(body);
@@ -29,6 +31,7 @@ export class QrController {
   }
 
   @Post('scan')
+  @RateLimit('code_lookup')
   async scan(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Res({ passthrough: true }) reply: FastifyReply) {
     const input = QrScanSchema.parse(body);
     reply.status(200);

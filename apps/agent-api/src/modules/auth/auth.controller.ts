@@ -1,3 +1,4 @@
+import { RateLimit } from '../../common/rate-limit/rate-limit.policies';
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { AgentAuthGuard } from '../../common/auth/agent-auth.guard';
 import { AgentContext, CurrentAgent, Meta, RequestMeta } from '../../common/auth/request-context';
@@ -18,18 +19,21 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @RateLimit('login')
   @HttpCode(200)
   login(@Body() body: unknown, @Meta() meta: RequestMeta) {
     return this.auth.login(LoginSchema.parse(body), meta);
   }
 
   @Post('verify-otp')
+  @RateLimit('verify_otp')
   @HttpCode(200)
   verifyOtp(@Body() body: unknown, @Meta() meta: RequestMeta) {
     return this.auth.verifyOtp(VerifyOtpSchema.parse(body), meta);
   }
 
   @Post('refresh')
+  @RateLimit('refresh')
   @HttpCode(200)
   refresh(@Body() body: unknown, @Meta() meta: RequestMeta) {
     return this.sessions.refresh(RefreshSchema.parse(body).refresh_token, meta.ip);

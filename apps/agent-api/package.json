@@ -2,7 +2,7 @@
   "name": "@bata/agent-api",
   "version": "0.1.0",
   "private": true,
-  "description": "BATA SERVICES \u2014 Agent Backend (Agent API)",
+  "description": "BATA SERVICES — Agent Backend (Agent API)",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -21,6 +21,7 @@
     "@nestjs/platform-fastify": "^11.2.6",
     "argon2": "^0.45.1",
     "fastify": "5.11.3",
+    "ioredis": "^6.0.0",
     "kysely": "^0.28.17",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",

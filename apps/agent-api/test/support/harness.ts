@@ -87,6 +87,8 @@ export class Harness {
       PIN_PEPPER: 'dev-only-test-pepper-0123456789abcdef',
       LOOKUP_HMAC_KEY: 'dev-only-test-lookup-0123456789abcdef',
       ENABLE_DEV_ENDPOINTS: 'false',
+      // Off by default so functional tests aren't throttled; rate-limit.test.ts turns it on.
+      RATE_LIMITS_ENABLED: 'false',
       ...overrides.env
     });
     h.app = await createApp(h.env, { clock: h.clock, sms: h.sms, wrapLedger: overrides.wrapLedger });

@@ -1,3 +1,4 @@
+import { RateLimit } from '../../common/rate-limit/rate-limit.policies';
 import { Controller, HttpCode, Inject, Post, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -27,6 +28,7 @@ const EventSchema = z.discriminatedUnion('type', [
 const QrResolveSchema = z.object({ payload: z.string().min(6).max(500) });
 
 /** Internal API used by BataPay Core (docs/05-api.md §17). */
+@RateLimit('none')
 @Controller('internal/v1')
 export class CoreEventsController {
   constructor(

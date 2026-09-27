@@ -1,4 +1,5 @@
 import { DynamicModule, Inject, Injectable, Module, OnApplicationShutdown, Provider } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ENV, Env } from './config/env';
 import { AuditService } from './common/audit/audit.service';
 import { AgentAuthGuard } from './common/auth/agent-auth.guard';
@@ -8,6 +9,8 @@ import { PinHasher } from './common/crypto/secrets';
 import { AGENT_DB, AgentDb, createAgentDb } from './common/db/database';
 import { IdempotencyService } from './common/idempotency/idempotency.service';
 import { JobsService } from './common/jobs.service';
+import { MemoryRateLimiter, RateLimiter, RedisRateLimiter } from './common/rate-limit/rate-limiter';
+import { RateLimitInterceptor } from './common/rate-limit/rate-limit.interceptor';
 import { Clock, SystemClock } from './common/time/clock';
 import { CoreClient } from './integrations/core/core.client';
 import { FakeCoreClient } from './integrations/core/fake-core.client';
@@ -43,11 +46,12 @@ import { QrService } from './modules/qr/qr.service';
 class ResourcesLifecycle implements OnApplicationShutdown {
   constructor(
     @Inject(AGENT_DB) private readonly db: AgentDb,
-    private readonly ledger: LedgerClient
+    private readonly ledger: LedgerClient,
+    private readonly limiter: RateLimiter
   ) {}
 
   async onApplicationShutdown(): Promise<void> {
-    await Promise.allSettled([this.db.destroy(), this.ledger.close()]);
+    await Promise.allSettled([this.db.destroy(), this.ledger.close(), this.limiter.close()]);
   }
 }
 
@@ -73,6 +77,12 @@ export class AppModule {
         }
       },
       { provide: CoreClient, useFactory: (ledger: LedgerClient, clock: Clock) => new FakeCoreClient(ledger, clock), inject: [LedgerClient, Clock] },
+      {
+        provide: RateLimiter,
+        useFactory: (clock: Clock) => (env.REDIS_URL ? new RedisRateLimiter(env.REDIS_URL, clock) : new MemoryRateLimiter(clock)),
+        inject: [Clock]
+      },
+      { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
       { provide: SmsSender, useValue: overrides.sms ?? new InMemorySmsSender() },
       { provide: PinHasher, useValue: new PinHasher(env.PIN_PEPPER) },
       { provide: QrCodec, useValue: new QrCodec(env.QR_SIGNING_PRIVATE_KEY_PEM) },

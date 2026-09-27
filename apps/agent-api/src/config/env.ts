@@ -37,6 +37,12 @@ const schema = z.object({
   OPERATING_TIMEZONE: z.string().default('Africa/Malabo'),
   MIN_APP_VERSION: z.string().default('1.0.0'),
   ENABLE_DEV_ENDPOINTS: bool,
+  /** Redis for rate limits (shared by all replicas). Empty = in-process counters (development only). */
+  REDIS_URL: z.string().default(''),
+  RATE_LIMITS_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v !== 'false' && v !== '0'),
   /** Comma-separated browser origins allowed to call the API (web tooling only). Empty = none. */
   CORS_ORIGINS: z.string().default('')
 });
@@ -59,6 +65,8 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     if (devSecrets.length) throw new Error(`Development secrets used in production: ${devSecrets.join(', ')}`);
     if (env.CORE_MODE === 'fake') throw new Error('CORE_MODE=fake is not allowed in production');
     if (env.ENABLE_DEV_ENDPOINTS) throw new Error('ENABLE_DEV_ENDPOINTS is not allowed in production');
+    if (!env.REDIS_URL) throw new Error('REDIS_URL is required in production (rate limits shared by all replicas)');
+    if (!env.RATE_LIMITS_ENABLED) throw new Error('RATE_LIMITS_ENABLED=false is not allowed in production');
   }
   return env;
 }

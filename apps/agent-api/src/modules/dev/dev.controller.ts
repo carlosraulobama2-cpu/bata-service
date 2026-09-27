@@ -1,3 +1,4 @@
+import { RateLimit } from '../../common/rate-limit/rate-limit.policies';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { hmacHex } from '../../common/crypto/secrets';
@@ -17,6 +18,7 @@ import { ENV, Env } from '../../config/env';
  * Registered only when ENABLE_DEV_ENDPOINTS=true, which config refuses in
  * production.
  */
+@RateLimit('none')
 @Controller('dev')
 export class DevController {
   constructor(

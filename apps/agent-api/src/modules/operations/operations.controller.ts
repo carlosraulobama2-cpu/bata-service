@@ -1,3 +1,4 @@
+import { RateLimit } from '../../common/rate-limit/rate-limit.policies';
 import { Body, Controller, Get, Headers, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AgentAuthGuard } from '../../common/auth/agent-auth.guard';
@@ -23,6 +24,7 @@ export class OperationsController {
   ) {}
 
   @Post('cash-out/resolve')
+  @RateLimit('code_lookup')
   async resolve(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Res({ passthrough: true }) reply: FastifyReply) {
     const input = CashOutResolveSchema.parse(body);
     reply.status(200);
@@ -30,6 +32,7 @@ export class OperationsController {
   }
 
   @Post('cash-out')
+  @RateLimit('financial')
   @UseGuards(DeviceSignatureGuard)
   async executeCashOut(
     @CurrentAgent() agent: AgentContext,
@@ -50,6 +53,7 @@ export class OperationsController {
   }
 
   @Post('cash-in')
+  @RateLimit('financial')
   @UseGuards(DeviceSignatureGuard)
   async createCashIn(
     @CurrentAgent() agent: AgentContext,
