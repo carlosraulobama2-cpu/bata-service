@@ -4,7 +4,7 @@ Aplicación profesional para **agentes autorizados de BataPay**: cash-in, cash-o
 
 Bata Services es un producto **independiente** de la app BataPay (propio frontend, backend, autenticación y permisos), conectado a la infraestructura de BataPay mediante APIs internas seguras. **Todo movimiento de dinero se valida en el servidor y se registra en el ledger central de doble partida.** El agente nunca puede modificar un saldo.
 
-> Estado: **diseño técnico** listo para empezar el desarrollo. Incluye el esquema de base de datos ejecutable y probado.
+> Estado: diseño técnico completo y **Fase 1 en desarrollo**. El backend de agentes ([`apps/agent-api`](apps/agent-api)) ya implementa login seguro, cash-in, cash-out, límites, comisiones, historial y saldos sobre el ledger, con pruebas contra PostgreSQL real.
 
 ## Documentación
 
@@ -21,6 +21,21 @@ Bata Services es un producto **independiente** de la app BataPay (propio fronten
 | 9 | [Estructura de código](docs/09-estructura-codigo.md) | Monorepo, app Expo, backend NestJS, admin, variables de entorno |
 | 10 | [Pruebas](docs/10-pruebas.md) | Estrategia y casos obligatorios |
 | 11 | [Roadmap](docs/11-roadmap.md) | Fases 0–4 |
+
+## Código
+
+```
+apps/agent-api/     # Agent Backend (NestJS + Kysely + PostgreSQL); ver su README
+packages/money/     # Importes enteros, formato "2.450.000 XAF", cálculo de comisiones
+packages/tsconfig/  # Configuración TypeScript compartida
+db/                 # Esquemas SQL (migraciones) y pruebas de invariantes
+```
+
+```bash
+pnpm install
+pnpm -r typecheck && pnpm -r build
+TEST_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres pnpm -r test
+```
 
 ## Base de datos
 
