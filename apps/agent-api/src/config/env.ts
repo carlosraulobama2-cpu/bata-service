@@ -12,6 +12,8 @@ const schema = z.object({
   LEDGER_MODE: z.enum(['local']).default('local'),
   LEDGER_DATABASE_URL: z.string().min(1),
   CORE_MODE: z.enum(['fake']).default('fake'),
+  /** SMS provider (por confirmar). "memory" keeps messages in the process: OTPs never reach the phone. */
+  SMS_MODE: z.enum(['memory']).default('memory'),
   CORE_EVENTS_HMAC_SECRET: z.string().min(32),
   JWT_PRIVATE_KEY_PEM: z.string().min(1),
   JWT_ISSUER: z.string().default('bata-services'),
@@ -71,6 +73,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
       env[k].includes(DEV_ONLY_MARKER)
     );
     if (devSecrets.length) throw new Error(`Development secrets used in production: ${devSecrets.join(', ')}`);
+    if (env.SMS_MODE === 'memory') throw new Error('SMS_MODE=memory is not allowed in production (login codes would never be delivered)');
     if (env.CORE_MODE === 'fake') throw new Error('CORE_MODE=fake is not allowed in production');
     if (env.ENABLE_DEV_ENDPOINTS) throw new Error('ENABLE_DEV_ENDPOINTS is not allowed in production');
     if (!env.REDIS_URL) throw new Error('REDIS_URL is required in production (rate limits shared by all replicas)');
