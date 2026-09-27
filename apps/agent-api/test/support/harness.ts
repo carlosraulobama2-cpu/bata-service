@@ -69,7 +69,7 @@ export class Harness {
   staff!: { compliance: string; admin: string; finance: string; finance2: string };
   private dbName = `bata_test_${randomBytes(6).toString('hex')}`;
 
-  static async start(overrides: { wrapLedger?: (real: LedgerClient) => LedgerClient } = {}): Promise<Harness> {
+  static async start(overrides: { wrapLedger?: (real: LedgerClient) => LedgerClient; env?: Record<string, string> } = {}): Promise<Harness> {
     const h = new Harness();
     const admin = new Client({ connectionString: adminUrl() });
     await admin.connect();
@@ -86,7 +86,8 @@ export class Harness {
       QR_SIGNING_PRIVATE_KEY_PEM: generateKeyPairSync('ed25519').privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
       PIN_PEPPER: 'dev-only-test-pepper-0123456789abcdef',
       LOOKUP_HMAC_KEY: 'dev-only-test-lookup-0123456789abcdef',
-      ENABLE_DEV_ENDPOINTS: 'false'
+      ENABLE_DEV_ENDPOINTS: 'false',
+      ...overrides.env
     });
     h.app = await createApp(h.env, { clock: h.clock, sms: h.sms, wrapLedger: overrides.wrapLedger });
     h.db = h.app.get(AGENT_DB);
@@ -151,13 +152,14 @@ export class Harness {
   }
 
   /** Signed financial POST, as the app does it. */
-  signedPost(session: Session, path: string, body: unknown, opts: { key?: string; timestamp?: number; tamper?: boolean; signWith?: KeyObject } = {}) {
+  signedPost(session: Session, path: string, body: unknown, opts: { key?: string; timestamp?: number; tamper?: boolean; signWith?: KeyObject; method?: 'POST' | 'DELETE' } = {}) {
+    const method = opts.method ?? 'POST';
     const raw = JSON.stringify(body);
     const key = opts.key ?? randomUUID();
     const ts = String(opts.timestamp ?? this.clock.now().getTime());
-    const canonical = ['POST', path, createHash('sha256').update(raw).digest('hex'), ts, key].join('\n');
+    const canonical = [method, path, createHash('sha256').update(raw).digest('hex'), ts, key].join('\n');
     const signature = sign('sha256', Buffer.from(canonical), opts.signWith ?? session.device.privateKey).toString('base64url');
-    return this.request('POST', path, {
+    return this.request(method, path, {
       rawBody: opts.tamper ? raw.replace(/\d{3}(?=[,}])/, '999') : raw,
       headers: {
         authorization: `Bearer ${session.accessToken}`,

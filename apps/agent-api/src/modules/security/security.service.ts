@@ -135,6 +135,49 @@ export class SecurityService {
     };
   }
 
+  /**
+   * Disconnects one of the agent's other devices: it stops being trusted,
+   * its sessions end immediately (checked on every request) and it no
+   * longer receives push notifications. Logging in from it again needs
+   * PIN + SMS code, like any new device.
+   */
+  async revokeDevice(agent: AgentContext, deviceId: string, ip: string | null): Promise<{ revoked: true; sessions_revoked: number }> {
+    if (deviceId === agent.deviceId) throw Errors.deviceIsCurrent();
+    return this.db.transaction().execute(async (trx) => {
+      const now = this.clock.now();
+      const device = await trx
+        .updateTable('agent.agent_devices')
+        .set({ status: 'revoked', revoked_at: now, revoked_by: 'agent', revoked_reason: 'revoked_by_agent', push_token: null })
+        .where('id', '=', deviceId)
+        .where('agent_id', '=', agent.agentId)
+        .where('status', '=', 'trusted')
+        .returning('id')
+        .executeTakeFirst();
+      if (!device) throw Errors.notFound();
+      const sessions = await trx
+        .updateTable('agent.agent_sessions')
+        .set({ status: 'revoked', revoked_at: now, revoked_reason: 'device_revoked' })
+        .where('device_id', '=', deviceId)
+        .where('status', '=', 'active')
+        .returning('id')
+        .execute();
+      await trx.insertInto('agent.agent_access_events').values({ agent_id: agent.agentId, phone_hmac: null, event: 'device_revoked', device_id: deviceId, ip, approx_location: null }).execute();
+      await this.audit.record(trx, {
+        actorType: 'agent',
+        actorId: agent.agentCode,
+        agentId: agent.agentId,
+        action: 'DEVICE_REVOKED',
+        resourceType: 'device',
+        resourceId: deviceId,
+        result: 'success',
+        deviceId: agent.deviceId,
+        ip,
+        metadata: { sessions_revoked: sessions.length }
+      });
+      return { revoked: true as const, sessions_revoked: sessions.length };
+    });
+  }
+
   /** Closes every other session of the agent (step-up already verified by the caller). */
   async revokeOtherSessions(agent: AgentContext, ip: string | null): Promise<{ revoked: number }> {
     return this.db.transaction().execute(async (trx) => {

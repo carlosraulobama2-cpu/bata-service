@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ApiError, newIdempotencyKey } from '../../../api/client';
 import { endpoints } from '../../../api/endpoints';
-import type { StepUp } from '../../../api/types';
+import type { DeviceInfo, StepUp } from '../../../api/types';
 import { Banner } from '../../../components/Banner';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -31,7 +31,8 @@ export default function SecurityScreen() {
   const sessions = useSessions();
   const devices = useDevices();
   const history = useAccessHistory();
-  const [sheet, setSheet] = useState<{ busy: boolean; error: string | null } | null>(null);
+  // One confirmation sheet for both sensitive actions.
+  const [sheet, setSheet] = useState<{ action: 'others' | { device: DeviceInfo }; busy: boolean; error: string | null } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const keyRef = useRef<string | null>(null);
 
@@ -39,18 +40,27 @@ export default function SecurityScreen() {
   const others = (sessions.data?.data ?? []).filter((x) => !x.current);
   const events = history.data?.pages.flatMap((p) => p.data) ?? [];
 
-  const revokeOthers = async (stepUp: StepUp) => {
+  const deviceName = (d: DeviceInfo) => d.model ?? d.platform;
+
+  const confirm = async (stepUp: StepUp) => {
+    if (!sheet) return;
+    const action = sheet.action;
     keyRef.current ??= newIdempotencyKey();
-    setSheet({ busy: true, error: null });
+    setSheet({ action, busy: true, error: null });
     try {
-      const res = await endpoints.revokeOtherSessions({ key: keyRef.current, stepUp, prompt: t('confirm.biometricPrompt') });
+      if (action === 'others') {
+        const res = await endpoints.revokeOtherSessions({ key: keyRef.current, stepUp, prompt: t('confirm.biometricPrompt') });
+        setNotice(t('security.revokeOthersDone', { count: res.revoked }));
+      } else {
+        await endpoints.revokeDevice({ deviceId: action.device.id, key: keyRef.current, stepUp, prompt: t('confirm.biometricPrompt') });
+        setNotice(t('security.disconnectDone', { device: deviceName(action.device) }));
+      }
       keyRef.current = null;
       setSheet(null);
-      setNotice(t('security.revokeOthersDone', { count: res.revoked }));
       void qc.invalidateQueries({ queryKey: ['security'] });
     } catch (err) {
       if (!(err instanceof ApiError && err.isNetwork)) keyRef.current = null;
-      setSheet({ busy: false, error: err instanceof ApiError && err.code === 'BIOMETRIC_CANCELLED' ? null : errorMessage(err, t) });
+      setSheet({ action, busy: false, error: err instanceof ApiError && err.code === 'BIOMETRIC_CANCELLED' ? null : errorMessage(err, t) });
     }
   };
 
@@ -102,7 +112,7 @@ export default function SecurityScreen() {
       </Card>
       <View style={{ marginTop: space.sm }}>
         {others.length > 0 ? (
-          <Button variant="danger" label={t('security.revokeOthers')} onPress={() => setSheet({ busy: false, error: null })} testID="security-revoke-others" />
+          <Button variant="danger" label={t('security.revokeOthers')} onPress={() => setSheet({ action: 'others', busy: false, error: null })} testID="security-revoke-others" />
         ) : sessions.data ? (
           <Text variant="caption" color="textMuted" align="center">
             {t('security.noOtherSessions')}
@@ -121,6 +131,11 @@ export default function SecurityScreen() {
             title={`${d.model ?? d.platform}${d.current ? ` · ${t('security.thisDevice')}` : ''}`}
             caption={d.status === 'revoked' ? `${t('security.deviceRevoked')}${d.revoked_at ? ` · ${formatDate(d.revoked_at)}` : ''}` : [d.os_version, d.app_version && `v${d.app_version}`, d.last_seen_at && t('security.lastUsed', { date: formatDateTime(d.last_seen_at) })].filter(Boolean).join(' · ')}
             last={i === all.length - 1}
+            action={
+              d.status === 'trusted' && !d.current
+                ? { label: t('security.disconnect'), onPress: () => setSheet({ action: { device: d }, busy: false, error: null }), testID: `device-disconnect-${d.id}` }
+                : undefined
+            }
           />
         ))}
         {devices.isLoading ? <Skeleton height={48} /> : null}
@@ -150,19 +165,46 @@ export default function SecurityScreen() {
         visible={!!sheet}
         busy={!!sheet?.busy}
         error={sheet?.error ?? null}
-        onSubmit={revokeOthers}
+        onSubmit={confirm}
         onClose={() => setSheet((x) => (x?.busy ? x : null))}
         summary={
-          <Text variant="headline" align="center">
-            {t('security.revokeOthers')}
-          </Text>
+          sheet && sheet.action !== 'others' ? (
+            <View style={{ gap: space.xs }}>
+              <Text variant="headline" align="center">
+                {t('security.disconnectTitle', { device: deviceName(sheet.action.device) })}
+              </Text>
+              <Text variant="caption" color="textMuted" align="center">
+                {t('security.disconnectBody')}
+              </Text>
+            </View>
+          ) : (
+            <Text variant="headline" align="center">
+              {t('security.revokeOthers')}
+            </Text>
+          )
         }
       />
     </Screen>
   );
 }
 
-function Item({ icon, title, caption, onPress, last, testID }: { icon: React.ReactNode; title: string; caption?: string; onPress?: () => void; last?: boolean; testID?: string }) {
+function Item({
+  icon,
+  title,
+  caption,
+  onPress,
+  last,
+  testID,
+  action
+}: {
+  icon: React.ReactNode;
+  title: string;
+  caption?: string;
+  onPress?: () => void;
+  last?: boolean;
+  testID?: string;
+  action?: { label: string; onPress: () => void; testID?: string };
+}) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -181,6 +223,13 @@ function Item({ icon, title, caption, onPress, last, testID }: { icon: React.Rea
           </Text>
         ) : null}
       </View>
+      {action ? (
+        <Pressable onPress={action.onPress} accessibilityRole="button" accessibilityLabel={`${action.label}: ${title}`} hitSlop={8} testID={action.testID} style={styles.action}>
+          <Text variant="label" color="danger">
+            {action.label}
+          </Text>
+        </Pressable>
+      ) : null}
       {onPress ? <ChevronRight size={20} color={colors.textMuted} /> : null}
     </Pressable>
   );
@@ -189,5 +238,6 @@ function Item({ icon, title, caption, onPress, last, testID }: { icon: React.Rea
 const styles = StyleSheet.create({
   section: { marginTop: space.xl, marginBottom: space.sm },
   item: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md, minHeight: 56 },
-  flex: { flex: 1, gap: 2 }
+  flex: { flex: 1, gap: 2 },
+  action: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.sm }
 });

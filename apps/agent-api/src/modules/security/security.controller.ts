@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, HttpCode, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, HttpCode, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { AgentAuthGuard } from '../../common/auth/agent-auth.guard';
@@ -7,6 +7,8 @@ import { AgentContext, CurrentAgent } from '../../common/auth/request-context';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
 import { AgentAuthSchema } from '../auth/auth.dto';
 import { StepUpService } from '../auth/step-up.service';
+import { isUuid } from '../../common/pagination';
+import { Errors } from '../../common/errors/app-error';
 import { SecurityService } from './security.service';
 
 const Pin = z.string().regex(/^\d{6}$/);
@@ -41,6 +43,17 @@ export class SecurityController {
   @Get('access-history')
   history(@CurrentAgent() agent: AgentContext, @Query() raw: unknown) {
     return this.security.accessHistory(agent, HistorySchema.parse(raw));
+  }
+
+  /** Disconnect another device. Requires PIN or biometrics and the device signature. */
+  @Delete('devices/:id')
+  @HttpCode(200)
+  @UseGuards(DeviceSignatureGuard)
+  async revokeDevice(@CurrentAgent() agent: AgentContext, @Param('id') id: string, @Body() body: unknown, @Req() req: FastifyRequest) {
+    if (!isUuid(id)) throw Errors.notFound();
+    const input = RevokeOthersSchema.parse(body);
+    await this.stepUp.verify(agent, input.agent_auth, req);
+    return this.security.revokeDevice(agent, id, req.ip);
   }
 
   /** Close every other session. Requires PIN or biometrics and the device signature. */

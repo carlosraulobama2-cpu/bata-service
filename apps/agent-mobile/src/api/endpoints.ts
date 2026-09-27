@@ -57,6 +57,12 @@ export const endpoints = {
   accessHistory: (cursor?: string | null) => api<{ data: AccessEvent[]; next_cursor: string | null }>(`/agent/v1/security/access-history?limit=20${cursor ? `&cursor=${cursor}` : ''}`),
   revokeOtherSessions: (input: { key: string; stepUp: StepUp; prompt: string }) =>
     api<{ revoked: number }>('/agent/v1/security/sessions/revoke-others', { body: {}, signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt } }),
+  revokeDevice: (input: { deviceId: string; key: string; stepUp: StepUp; prompt: string }) =>
+    api<{ revoked: true; sessions_revoked: number }>(`/agent/v1/security/devices/${input.deviceId}`, {
+      method: 'DELETE',
+      body: {},
+      signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
+    }),
   changePin: (input: { currentPin: string; newPin: string; key: string }) =>
     api<{ changed: true; other_sessions_revoked: number }>('/agent/v1/security/pin/change', { body: { current_pin: input.currentPin, new_pin: input.newPin }, signed: { idempotencyKey: input.key } }),
 

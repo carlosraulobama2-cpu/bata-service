@@ -100,6 +100,7 @@ export interface AgentDevicesTable {
   os_version: string | null;
   app_version: string | null;
   biometric_enabled: Generated<boolean>;
+  push_token: string | null;
   status: string;
   trusted_at: Date | null;
   cooldown_until: Date | null;
