@@ -18,6 +18,7 @@ import { LedgerClient } from './integrations/ledger/ledger.client';
 import { LocalLedgerClient } from './integrations/ledger/local-ledger.client';
 import { InMemorySmsSender, SmsSender } from './integrations/sms/sms.sender';
 import { AgentController } from './modules/agent/agent.controller';
+import { PublicController } from './modules/agent/public.controller';
 import { AuthController } from './modules/auth/auth.controller';
 import { AuthService } from './modules/auth/auth.service';
 import { CredentialsService } from './modules/auth/credentials.service';
@@ -114,7 +115,7 @@ export class AppModule {
       ReconcilerService,
       JobsService
     ];
-    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, OperationsController, QrController, CommissionsController, NotificationsController, PushTokensController, SecurityController, CoreEventsController];
+    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, PublicController, OperationsController, QrController, CommissionsController, NotificationsController, PushTokensController, SecurityController, CoreEventsController];
     if (env.ENABLE_DEV_ENDPOINTS && env.NODE_ENV !== 'production') controllers.push(DevController);
     return { module: AppModule, providers, controllers };
   }

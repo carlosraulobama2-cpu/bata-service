@@ -50,6 +50,7 @@ db/
 ├── 04_qr_payments.sql               # Cobros QR: un uso, cliente fijado una vez, QR inmutables
 ├── 05_security_and_code_attempts.sql # Historial de PIN y bloqueo por códigos inválidos
 ├── 06_push_notifications.sql        # Cola de envío de push
+├── 07_device_integrity.sql          # Señales de root/jailbreak/emulador
 └── tests/
     ├── invariants_test.sql          # 36 comprobaciones de reglas críticas
     └── run.sh                       # crea una BD temporal, aplica y prueba
@@ -79,6 +80,6 @@ Estas decisiones dependen de la jurisdicción (Guinea Ecuatorial / CEMAC), del p
 10. Reglas AML/compliance, listas de screening y reportes regulatorios.
 11. Políticas de retención de datos y de documentos.
 12. Si el agente ve el nombre abreviado del cliente además de `****4821`.
-13. Política ante dispositivos rooteados/jailbreak.
+13. ~~Política ante dispositivos rooteados/jailbreak~~ → decidido: pueden consultar, no operar.
 14. Objetivos finales de RPO/RTO.
 15. Contratos concretos con la API actual de BataPay Core.

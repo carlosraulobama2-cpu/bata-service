@@ -83,9 +83,10 @@ Detección de dispositivo nuevo: `installation_id` + clave pública distintos a 
 - Sin secretos de API en la app. La app solo conoce la URL pública y la clave pública para verificar firmas de QR.
 - Refresh token en `expo-secure-store`; nada sensible en AsyncStorage.
 - Caché offline cifrada con una clave guardada en Keystore/Keychain; se borra al cerrar sesión o al revocar el dispositivo.
-- Captura de pantalla bloqueada en pantallas de PIN, OTP y KYC (Android `FLAG_SECURE`; iOS: ocultar al pasar a segundo plano).
+- Captura de pantalla bloqueada en pantallas de PIN, OTP y KYC (Android `FLAG_SECURE`; iOS: ocultar al pasar a segundo plano). ✅ Implementado con `expo-screen-capture`.
+- Bloqueo de la app tras 3 minutos en segundo plano y en cada arranque que reanuda una sesión: PIN o biometría verificados por el servidor (`POST /security/unlock`); los PIN fallidos cuentan para el bloqueo de la cuenta. ✅
 - *Certificate pinning* (con pin de respaldo y rotación planificada) para la API.
-- Detección de root/jailbreak y depuración: se envía como señal de riesgo; la política (bloquear o limitar) **(por confirmar)**.
+- Detección de root/jailbreak y emulador (`expo-device`), enviada al iniciar sesión y al volver a primer plano. **Política decidida**: el teléfono puede consultar saldo e historial, pero no operar (`403 DEVICE_COMPROMISED`). Es una señal que la app declara de sí misma; Play Integrity / App Attest, verificados en el servidor, son la comprobación fuerte pendiente.
 - Builds de producción sin logs de depuración ni menús de desarrollo; ofuscación de JS (Hermes bytecode) y de código nativo.
 - Versión mínima de app controlada desde el servidor (`426 APP_UPDATE_REQUIRED`).
 - Actualizaciones OTA firmadas y solo para cambios de UI; los cambios de seguridad van por tienda.

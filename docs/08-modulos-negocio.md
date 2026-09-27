@@ -110,7 +110,7 @@ Arquitectura: evento en `outbox_events` → worker de notificaciones → plantil
 - Ticket: `TCK-000481`, estado, fecha, descripción, operación relacionada, conversación (sin notas internas).
 - Prioridad automática: "cliente no recibió dinero" y "error en cash-out" → alta.
 - SLA objetivo por prioridad **(por confirmar)**; alertas en el Admin Panel cuando se superan.
-- Canal de teléfono/WhatsApp de soporte **(por confirmar)**, visible en "Contactar soporte".
+- **Fase actual**: soporte solo por llamada y WhatsApp. Los números se configuran en el servidor (`SUPPORT_PHONE`, `SUPPORT_WHATSAPP`, `SUPPORT_HOURS`) y la app los lee sin iniciar sesión (`GET /public/config`), para que un agente con la cuenta bloqueada pueda contactar. «Reportar un problema» en cada operación abre WhatsApp con el mensaje escrito (Agent ID + referencia, nunca datos del cliente). Las incidencias dentro de la app (tickets) llegan con el Admin Panel.
 
 ## 8. Admin Panel
 

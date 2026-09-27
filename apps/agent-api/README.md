@@ -31,6 +31,8 @@ Stack: Node.js 22 · TypeScript · NestJS 11 (Fastify) · Kysely · PostgreSQL. 
 | Límite de peticiones por grupo (login por teléfono e IP, OTP, refresh, operaciones, consultas de códigos, lecturas, escrituras) en Redis compartido por todas las réplicas; cabeceras `X-RateLimit-*` y `Retry-After` | ✅ |
 | Desconectar otro dispositivo del agente | ✅ |
 | Notificaciones push: registro del token del dispositivo, preferencias por tipo (las de seguridad no se pueden desactivar), cola de envío con reintentos y sin datos del cliente; proveedor Expo push (FCM/APNs) | ✅ |
+| Teléfono rooteado/jailbreak/emulador: lectura sí, operaciones no (`DEVICE_COMPROMISED`); desbloqueo de la app con PIN verificado en el servidor | ✅ |
+| Contactos de soporte configurables, públicos (`GET /public/config`) | ✅ |
 | Motor de riesgo, KYC en la app, liquidaciones, soporte, Admin API | ⏳ fases siguientes |
 
 ## Integraciones

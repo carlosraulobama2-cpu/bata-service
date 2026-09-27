@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Lock } from 'lucide-react-native';
 import { Share, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +39,15 @@ export default function TransactionDetail() {
   };
 
   return (
-    <Screen header={<Header title={t('operations.detailTitle')} />} scroll footer={tx ? <Button variant="secondary" label={t('operations.receipt')} onPress={share} /> : undefined}>
+    <Screen header={<Header title={t('operations.detailTitle')} />} scroll footer={
+        tx ? (
+          <>
+            <Button variant="secondary" label={t('operations.receipt')} onPress={share} />
+            <Button variant="ghost" label={t('support.report')} onPress={() => router.push({ pathname: '/help', params: { tx: tx.id } })} testID="tx-report-problem" />
+          </>
+        ) : undefined
+      }
+    >
       {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : null}
       {!tx && q.isLoading ? (
         <View style={{ gap: space.md, paddingTop: space.xl }}>

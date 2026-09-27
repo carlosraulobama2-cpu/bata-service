@@ -1,7 +1,7 @@
 import { useNoScreenCapture } from '../../security/useNoScreenCapture';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { submitPin } from '../../api/auth';
 import { Button } from '../../components/Button';
@@ -74,7 +74,7 @@ export default function PinScreen() {
       </View>
       <View style={styles.bottom}>
         <Keypad disabled={busy} onDigit={add} onDelete={() => setPin((p) => p.slice(0, -1))} />
-        <Button variant="ghost" label={t('auth.forgotPin')} onPress={() => Alert.alert(t('auth.forgotPin'), t('auth.recoveryHelp'))} />
+        <Button variant="ghost" label={t('auth.forgotPin')} onPress={() => router.push('/help')} />
       </View>
     </Screen>
   );

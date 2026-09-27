@@ -37,3 +37,9 @@ export function formatRelative(iso: string, t: (key: string, opts?: Record<strin
   if (diffMin < 12 * 60 && formatDate(iso) === formatDate(now)) return t('notifications.hoursAgo', { count: Math.floor(diffMin / 60) });
   return formatDateTime(iso);
 }
+
+/** "+240333000111" -> "+240 333 000 111" (Equatorial Guinea); other numbers as they are. */
+export function formatPhone(e164: string): string {
+  const m = /^\+240(\d{9})$/.exec(e164);
+  return m ? `+240 ${groupDigits(m[1]!)}` : e164;
+}

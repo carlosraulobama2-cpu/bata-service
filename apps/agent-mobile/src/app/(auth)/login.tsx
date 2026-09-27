@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { rememberedPhone } from '../../api/auth';
 import { Button } from '../../components/Button';
@@ -85,7 +85,7 @@ export default function LoginScreen() {
       </View>
 
       <View style={styles.links}>
-        <Button variant="ghost" label={t('auth.troubleSigningIn')} onPress={() => Alert.alert(t('auth.troubleSigningIn'), t('auth.recoveryHelp'))} />
+        <Button variant="ghost" label={t('auth.troubleSigningIn')} onPress={() => router.push('/help')} />
       </View>
     </Screen>
   );

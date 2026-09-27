@@ -5,6 +5,7 @@ import type { AccessEvent, AgentQr, Balance, CommissionLine, CommissionSummary, 
 export type Period = 'today' | 'yesterday' | 'last_7_days' | 'this_month';
 
 export const endpoints = {
+  publicConfig: () => api<{ support: { phone: string | null; whatsapp: string | null; hours: string | null }; min_app_version: string }>('/agent/v1/public/config', { auth: false }),
   login: (body: { phone: string; pin: string; device: Record<string, unknown> }) => api<LoginResponse>('/agent/v1/auth/login', { body, auth: false }),
   verifyOtp: (body: { challenge_id: string; code: string; device_keys: object }) =>
     api<{ access_token: string; refresh_token: string; device: { id: string; cooldown_until: string | null } }>('/agent/v1/auth/verify-otp', { body, auth: false }),

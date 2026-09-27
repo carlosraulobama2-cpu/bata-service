@@ -121,8 +121,16 @@ export default function Dashboard() {
             {t('notifications.enableBanner')}
           </Banner>
         ) : null}
-        {compromised ? <Banner tone="danger">{t('errors.DEVICE_COMPROMISED')}</Banner> : null}
-        {agent && agent.status === 'suspended' ? <Banner tone="danger">{t('errors.ACCOUNT_SUSPENDED')}</Banner> : null}
+        {compromised ? (
+          <Banner tone="danger" onPress={() => router.push('/help')} action={t('support.contact')}>
+            {t('errors.DEVICE_COMPROMISED')}
+          </Banner>
+        ) : null}
+        {agent && agent.status === 'suspended' ? (
+          <Banner tone="danger" onPress={() => router.push('/help')} action={t('support.contact')}>
+            {t('errors.ACCOUNT_SUSPENDED')}
+          </Banner>
+        ) : null}
         {agent && !['active', 'suspended'].includes(agent.status) ? <Banner tone="info">{t('errors.ACCOUNT_NOT_ACTIVE')}</Banner> : null}
         {pending.length > 0 ? (
           <Banner tone="warning" onPress={() => router.push(`/transaction/${pending[0]!.id}`)} action={t('common.seeAll')}>
