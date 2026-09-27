@@ -4,7 +4,7 @@ Aplicación profesional para **agentes autorizados de BataPay**: cash-in, cash-o
 
 Bata Services es un producto **independiente** de la app BataPay (propio frontend, backend, autenticación y permisos), conectado a la infraestructura de BataPay mediante APIs internas seguras. **Todo movimiento de dinero se valida en el servidor y se registra en el ledger central de doble partida.** El agente nunca puede modificar un saldo.
 
-> Estado: diseño técnico completo y **Fase 1 en desarrollo**. El backend de agentes ([`apps/agent-api`](apps/agent-api)) implementa login seguro, cash-in, cash-out, límites, comisiones, historial y saldos sobre el ledger, y la app ([`apps/agent-mobile`](apps/agent-mobile)) cubre esos flujos de principio a fin.
+> Estado: diseño técnico completo y **Fase 1 en desarrollo**. El backend de agentes ([`apps/agent-api`](apps/agent-api)) implementa login seguro, cash-in, cash-out, cobros QR, límites, comisiones, historial y saldos sobre el ledger, y la app ([`apps/agent-mobile`](apps/agent-mobile)) cubre esos flujos de principio a fin.
 
 ![Pantallas de la app](docs/screenshots/overview.png)
 
@@ -47,8 +47,9 @@ db/
 ├── 01_ledger.sql                    # Ledger de doble partida (servicio Ledger)
 ├── 02_agent.sql                     # Base de datos del Agent Backend
 ├── 03_roles_and_reference_data.sql  # Roles de BD (mínimo privilegio) + RBAC
+├── 04_qr_payments.sql               # Cobros QR: un uso, cliente fijado una vez, QR inmutables
 └── tests/
-    ├── invariants_test.sql          # 31 comprobaciones de reglas críticas
+    ├── invariants_test.sql          # 36 comprobaciones de reglas críticas
     └── run.sh                       # crea una BD temporal, aplica y prueba
 ```
 

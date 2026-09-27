@@ -10,6 +10,10 @@ export default function AppLayout() {
       {/* Operation flows cover the tabs: one task, one exit. */}
       <Stack.Screen name="cash-out/index" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="cash-in/index" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="qr/index" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="qr/scan" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+      <Stack.Screen name="qr/collect" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+      <Stack.Screen name="qr/mine" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
     </Stack>
   );
 }

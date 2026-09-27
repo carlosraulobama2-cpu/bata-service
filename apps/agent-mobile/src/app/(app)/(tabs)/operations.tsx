@@ -14,7 +14,7 @@ import { useTheme } from '../../../theme/ThemeProvider';
 import { space } from '../../../theme/tokens';
 import { formatDate, formatTime, money } from '../../../utils/format';
 
-type TypeFilter = 'all' | 'cash_in' | 'cash_out';
+type TypeFilter = 'all' | 'cash_in' | 'cash_out' | 'qr_payment';
 
 export default function OperationsScreen() {
   const { t } = useTranslation();
@@ -48,7 +48,8 @@ export default function OperationsScreen() {
           options={[
             { value: 'all', label: t('operations.all') },
             { value: 'cash_in', label: t('operations.filterIn') },
-            { value: 'cash_out', label: t('operations.filterOut') }
+            { value: 'cash_out', label: t('operations.filterOut') },
+            { value: 'qr_payment', label: t('operations.filterQr') }
           ]}
         />
       </View>
@@ -62,6 +63,7 @@ export default function OperationsScreen() {
             <Card style={styles.totals}>
               <Total label={t('dashboard.cashIn')} value={money(totals.cash_in)} />
               <Total label={t('dashboard.cashOut')} value={money(totals.cash_out)} />
+              <Total label={t('dashboard.qrPayments')} value={money(totals.qr_payment)} />
               <Total label={t('dashboard.commissions')} value={money(totals.commissions)} accent />
             </Card>
           ) : null

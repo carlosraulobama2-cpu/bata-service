@@ -15,9 +15,10 @@ Diseño de referencia: [docs/02-ux-ui.md](../../docs/02-ux-ui.md).
 | Depósito | Teléfono del cliente → importe con teclado propio y avisos de límites en vivo → revisión → PIN o biometría → espera de confirmación del cliente con cuenta atrás y cancelación → resultado |
 | Operaciones | Filtros por periodo y tipo, totales, scroll infinito, detalle con historial de estados y recibo para compartir (cliente enmascarado) |
 | Comisiones | Pendiente de liquidar (ledger), hoy / 7 días / mes, volumen del mes |
+| QR (botón central) | **Escanear** (el servidor decide: QR de retiro → revisión del retiro; QR personal del cliente → depósito a ese cliente) · **Cobrar** (importe → QR grande de un solo uso con cuenta atrás; pasa a «Pagado» solo cuando el servidor confirma el pago; anular cobro) · **Mi QR de agente** (estático, sin importe) |
 | Perfil | Agent ID, estado, categoría, negocio, límites con barras de uso, dispositivo, cerrar sesión |
 
-«Cobrar» (QR de cobro) aparece marcado como **Pronto**: el backend aún no lo implementa.
+Con `EXPO_PUBLIC_DEV_TOOLS=true` la pantalla de cobro muestra «Simular pago del cliente» (usa `POST /dev/qr/pay`).
 
 ## Decisiones de UX
 

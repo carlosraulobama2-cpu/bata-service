@@ -437,9 +437,11 @@ Validaciones: las de cash-in (agente, dispositivo, límites, riesgo) + solicitud
 Formato del contenido (compacto para QR de baja densidad):
 
 ```
-BSV1.<tipo>.<id aleatorio base64url 128 bits>.<firma Ed25519 truncada>
+BSV1.<tipo>.<id aleatorio base64url 128 bits>.<firma Ed25519 base64url>
 tipos: A = agente estático · C = cliente (para depósito) · K = cobro · W = retiro (emitido por BataPay Core)
 ```
+
+La firma va **completa** (64 bytes; unos 115 caracteres en total, QR versión ~7): una firma Ed25519 truncada no se puede verificar. Los QR `A` y `K` los firma el Agent Backend (`QR_SIGNING_PRIVATE_KEY_PEM`); los `C` y `W` los emite y valida BataPay Core.
 
 El QR **no contiene importes ni datos personales**. La firma permite descartar QR falsos antes de ir al servidor, pero **la validez la decide siempre el servidor**.
 
@@ -461,6 +463,8 @@ El QR **no contiene importes ni datos personales**. La firma permite descartar Q
 ```
 
 `kind`: `collect` (cobro con importe, un uso, caduca) · `agent_static` (devuelve el QR estático, lo crea si no existe). Errores: `422 LIMIT_*`, `403 FORBIDDEN`.
+
+Crear un QR de cobro crea también la operación `qr_payment` en `pending` (aparece en el historial como "Pago QR ⏳"), reserva los límites y devuelve `transaction`. Si caduca o el agente la cancela (`POST /transactions/{id}/cancel`), la operación pasa a `cancelled`, se liberan los límites y el QR queda `expired`/`revoked`.
 
 ### GET /qr/{id}
 
@@ -642,6 +646,9 @@ Solo red privada + mTLS + token de servicio. Versionadas y con clave de idempote
 | Core → Agent | Evento `core.deposit_request.confirmed` / `.rejected` | Resultado de la confirmación |
 | Core | `POST /internal/v1/withdrawal-requests/resolve` `{code}` | Cash-out, consulta |
 | Core | `POST /internal/v1/withdrawal-requests/{id}/claim` `{agent_ref, agent_transaction_id}` | Reclamo atómico (un solo uso) |
+| Core → Agent | `POST /internal/v1/qr/resolve` `{payload}` → `{qr_id, kind, agent_code, merchant_name, amount, currency, expires_at}` | El cliente escaneó un QR del agente en BataPay |
+| Core → Agent | Evento `qr_payment.authorized` `{payment_request_id, qr_id, customer_ref, customer_masked, amount, currency}` → `{result: completed \| processing \| rejected, reason?}` | El cliente aprobó el pago con su PIN y Core retuvo el importe; el Agent Backend lo contabiliza capturando esa retención. Con `rejected` Core libera la retención |
+| Agent → Core | `POST /internal/v1/qr-payments/{id}/settle` `{outcome: completed \| failed}` | Resultado final del pago (también tras reconciliar) |
 | Ledger | `POST /internal/v1/holds` · `POST /internal/v1/holds/{id}/release` | Reservas |
 | Ledger | `POST /internal/v1/transactions` `{reference, idempotency_key, kind, entries[], capture_holds[], external_ref}` | Contabilizar |
 | Ledger | `GET /internal/v1/transactions/by-key/{source}/{key}` | Reconciliación tras timeout |

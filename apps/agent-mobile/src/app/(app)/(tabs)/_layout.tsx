@@ -29,8 +29,8 @@ function TabBar({ state, navigation }: { state: { index: number; routes: { name:
             <View key={item.name} style={styles.item}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Escanear QR"
-                onPress={() => router.push('/cash-out')}
+                accessibilityLabel="QR: escanear, cobrar o mi QR"
+                onPress={() => router.push('/qr')}
                 style={({ pressed }) => [styles.qr, { backgroundColor: colors.primary, borderColor: colors.surface, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
               >
                 <QrCode size={28} color={colors.onPrimary} />

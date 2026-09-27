@@ -22,8 +22,9 @@ Stack: Node.js 22 · TypeScript · NestJS 11 (Fastify) · Kysely · PostgreSQL. 
 | Reconciliador de operaciones en `processing` (reintento idempotente) | ✅ |
 | Historial con filtros, totales y paginación por cursor; detalle; consulta por clave | ✅ |
 | `GET /me`, `/balance` (desde el ledger), `/limits` | ✅ |
+| Cobro QR (QR firmado Ed25519, un uso, caduca; pago del cliente vía Core capturando su retención), QR estático del agente, escaneo unificado (retiro → cash-out, QR de cliente → cash-in) | ✅ |
 | Audit log encadenado, eventos de outbox, notificaciones en bandeja | ✅ |
-| Rate limiting con Redis, motor de riesgo, QR de cobro, KYC en la app, liquidaciones, soporte, Admin API | ⏳ fases siguientes |
+| Rate limiting con Redis (incluido el bloqueo tras 5 códigos QR inválidos), motor de riesgo, KYC en la app, liquidaciones, soporte, Admin API | ⏳ fases siguientes |
 
 ## Integraciones
 
@@ -47,7 +48,7 @@ pnpm db:migrate && pnpm db:seed && pnpm dev
 
 El seed crea el agente **AG-000001** (`SEED_AGENT_PHONE` / `SEED_AGENT_PIN`) con 2.450.000 XAF de float, un nivel, límites y un plan de comisiones **de ejemplo** (valores reales por confirmar).
 
-Endpoints de desarrollo (solo con `ENABLE_DEV_ENDPOINTS=true`; la configuración lo rechaza en producción): crear clientes (`POST /dev/customers`), crear solicitudes de retiro (`POST /dev/withdrawals`), confirmar un depósito como si fuera el cliente (`POST /dev/deposits/confirm`) y leer el último OTP enviado (`GET /dev/otp?phone=`).
+Endpoints de desarrollo (solo con `ENABLE_DEV_ENDPOINTS=true`; la configuración lo rechaza en producción): crear clientes (`POST /dev/customers`), crear solicitudes de retiro (`POST /dev/withdrawals`), confirmar un depósito como si fuera el cliente (`POST /dev/deposits/confirm`), pagar un QR de cobro como si fuera el cliente (`POST /dev/qr/pay`) y leer el último OTP enviado (`GET /dev/otp?phone=`).
 
 ## Pruebas
 
@@ -67,3 +68,4 @@ Cada archivo de pruebas usa su propia base de datos, clonada de una plantilla ya
 - Respuesta del ledger perdida: la operación queda en `processing` y el reconciliador la completa sin mover el dinero dos veces.
 - Cash-in confirmado, rechazado, cancelado y expirado; eventos de Core falsificados o antiguos.
 - Aislamiento entre agentes (404) y saldos leídos del ledger.
+- QR de cobro: pago completo (cliente −, float +), un solo uso, importe distinto, caducidad y cancelación (límites devueltos), cliente sin fondos, QR falsificado o manipulado, QR estático, escaneo unificado.

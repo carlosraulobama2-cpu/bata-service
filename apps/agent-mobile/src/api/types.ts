@@ -58,7 +58,7 @@ export interface TransactionPage {
 }
 
 export interface LimitView {
-  operation_type: 'cash_in' | 'cash_out';
+  operation_type: 'cash_in' | 'cash_out' | 'qr_payment';
   currency: string;
   per_transaction: { min: number; max: number };
   daily: { max: number; used: number; remaining: number; count_max: number | null; count_used: number };
@@ -80,6 +80,24 @@ export interface WithdrawalPreview {
   expires_at: string;
   commission: number;
 }
+
+export type QrStatus = 'active' | 'used' | 'expired' | 'revoked';
+
+export interface AgentQr {
+  qr_id: string;
+  kind: 'collect' | 'agent_static';
+  status: QrStatus;
+  payload: string;
+  amount: number | null;
+  currency: string;
+  expires_at: string | null;
+  single_use: boolean;
+  transaction: Transaction | null;
+}
+
+export type ScanResult =
+  | { action: 'cash_out'; withdrawal: WithdrawalPreview }
+  | { action: 'cash_in'; customer: { customer_token: string; customer_masked: string } };
 
 export type LoginResponse =
   | { status: 'authenticated'; access_token: string; refresh_token: string; access_token_expires_in: number; agent: { agent_code: string; first_name: string | null; status: string } }

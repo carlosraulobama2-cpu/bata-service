@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 
-/** The QR tab is an action (opens the scanner), not a page. */
+/** The QR tab is an action (opens the QR choices), not a page. */
 export default function QrTab() {
-  return <Redirect href="/cash-out" />;
+  return <Redirect href="/qr" />;
 }

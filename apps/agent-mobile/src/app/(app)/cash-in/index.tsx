@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -32,12 +32,17 @@ export default function CashInScreen() {
   const { colors } = useTheme();
   const balance = useBalance();
   const limits = useLimits();
-  const [step, setStep] = useState<Step>('customer');
+  // Opened from the unified scanner with the customer's personal QR: single-use token, masked phone.
+  const scanned = useLocalSearchParams<{ token?: string; masked?: string }>();
+  const fromQr = !!scanned.token;
+  const [step, setStep] = useState<Step>(fromQr ? 'amount' : 'customer');
   const [digits, setDigits] = useState('');
   const [amount, setAmount] = useState(0);
 
   const phone = `${PREFIX}${digits}`;
-  const op = useOperation((key, stepUp) => endpoints.cashIn({ phone, amount, key, stepUp, prompt: t('confirm.biometricPrompt') }));
+  const customer = fromQr ? { type: 'token' as const, value: scanned.token! } : { type: 'phone' as const, value: phone };
+  const customerMasked = fromQr ? (scanned.masked ?? '****') : `****${digits.slice(-4)}`;
+  const op = useOperation((key, stepUp) => endpoints.cashIn({ customer, amount, key, stepUp, prompt: t('confirm.biometricPrompt') }));
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
   const limit = limits.data?.limits.find((l) => l.operation_type === 'cash_in');
@@ -53,7 +58,7 @@ export default function CashInScreen() {
     return null;
   }, [amount, limit, available, t]);
 
-  if (op.phase.kind === 'done') return <Following tx={op.phase.tx} onClose={close} onRestart={() => { op.reset(); setAmount(0); setDigits(''); setStep('customer'); }} />;
+  if (op.phase.kind === 'done') return <Following tx={op.phase.tx} onClose={close} onRestart={() => { op.reset(); setAmount(0); setDigits(''); if (fromQr) router.setParams({ token: '', masked: '' }); setStep('customer'); }} />;
 
   if (op.phase.kind === 'verifying') {
     return (
@@ -112,15 +117,22 @@ export default function CashInScreen() {
     const hint = limit ? `${t('cashIn.perTxLimit', { amount: money(limit.per_transaction.max) })} · ${t('cashIn.remainingToday', { amount: money(limit.daily.remaining) })}` : undefined;
     return (
       <Screen
-        header={<Header leading="back" onLeading={() => setStep('customer')} title={t('cashIn.amountTitle')} />}
+        header={<Header leading={fromQr ? 'close' : 'back'} onLeading={fromQr ? close : () => setStep('customer')} title={t('cashIn.amountTitle')} />}
         footer={<Button label={t('common.continue')} disabled={!amount || !!amountError} onPress={() => setStep('review')} testID="cashin-amount-continue" />}
         contentStyle={{ justifyContent: 'space-between' }}
       >
-        {available !== undefined ? (
-          <Text variant="caption" color="textMuted" align="center">
-            {t('cashIn.available', { amount: money(available) })}
-          </Text>
-        ) : null}
+        <View style={{ gap: space.xs }}>
+          {fromQr ? (
+            <Text variant="bodyStrong" align="center">
+              {t('qr.customerFromQr')} · {customerMasked}
+            </Text>
+          ) : null}
+          {available !== undefined ? (
+            <Text variant="caption" color="textMuted" align="center">
+              {t('cashIn.available', { amount: money(available) })}
+            </Text>
+          ) : null}
+        </View>
         <AmountEntry value={amount} onChange={setAmount} hint={hint} error={amountError} />
       </Screen>
     );
@@ -141,7 +153,7 @@ export default function CashInScreen() {
         </Text>
       </View>
       <Card>
-        <InfoRow label={t('common.customer')} value={`****${digits.slice(-4)}`} strong />
+        <InfoRow label={t('common.customer')} value={customerMasked} strong />
         {available !== undefined ? <InfoRow label={t('cashOut.floatAfter')} value={money(available - amount)} last /> : null}
       </Card>
       <View style={{ marginTop: space.lg }}>
@@ -156,7 +168,7 @@ export default function CashInScreen() {
         summary={
           <View style={styles.sheetSummary}>
             <Text variant="label" color="textMuted">
-              {t('cashIn.title')} · ****{digits.slice(-4)}
+              {t('cashIn.title')} · {customerMasked}
             </Text>
             <Text variant="amount" numeric>
               {money(amount)}

@@ -1,6 +1,6 @@
 import { config } from '../config';
 import { api } from './client';
-import type { Balance, Limits, LoginResponse, Me, StepUp, Transaction, TransactionPage, WithdrawalPreview } from './types';
+import type { AgentQr, Balance, ScanResult, Limits, LoginResponse, Me, StepUp, Transaction, TransactionPage, WithdrawalPreview } from './types';
 
 export type Period = 'today' | 'yesterday' | 'last_7_days' | 'this_month';
 
@@ -29,13 +29,20 @@ export const endpoints = {
       body: { withdrawal_request_id: input.withdrawalRequestId, amount: input.amount, currency: config.currency },
       signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
     }),
-  cashIn: (input: { phone: string; amount: number; key: string; stepUp: StepUp; prompt: string }) =>
+  cashIn: (input: { customer: { type: 'phone' | 'token'; value: string }; amount: number; key: string; stepUp: StepUp; prompt: string }) =>
     api<{ transaction: Transaction }>('/agent/v1/cash-in', {
-      body: { customer: { type: 'phone', value: input.phone }, amount: input.amount, currency: config.currency },
+      body: { customer: input.customer, amount: input.amount, currency: config.currency },
       signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
     }),
+  createCollectQr: (input: { amount: number; key: string }) =>
+    api<AgentQr>('/agent/v1/qr/create', { body: { kind: 'collect', amount: input.amount, currency: config.currency }, signed: { idempotencyKey: input.key } }),
+  staticQr: (key: string) => api<AgentQr>('/agent/v1/qr/create', { body: { kind: 'agent_static' }, signed: { idempotencyKey: key } }),
+  qr: (id: string) => api<AgentQr>(`/agent/v1/qr/${id}`),
+  scanQr: (payload: string) => api<ScanResult>('/agent/v1/qr/scan', { body: { payload } }),
   cancel: (id: string) => api<{ transaction: Transaction }>(`/agent/v1/transactions/${id}/cancel`, { method: 'POST' }),
 
   /** Development only: simulates the customer confirming in the BataPay app. */
-  devConfirmDeposit: (transactionId: string) => api<{ result: string }>('/dev/deposits/confirm', { body: { agent_transaction_id: transactionId }, auth: false })
+  devConfirmDeposit: (transactionId: string) => api<{ result: string }>('/dev/deposits/confirm', { body: { agent_transaction_id: transactionId }, auth: false }),
+  /** Development only: simulates a customer paying a collect QR in the BataPay app. */
+  devPayQr: (payload: string) => api<{ result: string }>('/dev/qr/pay', { body: { payload }, auth: false })
 };

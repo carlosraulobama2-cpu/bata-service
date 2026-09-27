@@ -96,8 +96,8 @@ export default function Dashboard() {
             <ActionTile label={t('dashboard.actionWithdraw')} Icon={ArrowUpFromLine} onPress={() => router.push('/cash-out')} disabled={!canOperate || offline} emphasis />
           </View>
           <View style={styles.actionRow}>
-            <ActionTile label={t('dashboard.actionScan')} Icon={ScanLine} onPress={() => router.push('/cash-out')} disabled={!canOperate || offline} />
-            <ActionTile label={t('dashboard.actionCollect')} Icon={QrCode} onPress={() => undefined} disabled badge={t('dashboard.soon')} />
+            <ActionTile label={t('dashboard.actionScan')} Icon={ScanLine} onPress={() => router.push('/qr/scan')} disabled={!canOperate || offline} />
+            <ActionTile label={t('dashboard.actionCollect')} Icon={QrCode} onPress={() => router.push('/qr/collect')} disabled={!canOperate || offline} />
           </View>
         </View>
 

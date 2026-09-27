@@ -1,6 +1,6 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Keyboard as KeyboardIcon, ScanLine } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { endpoints } from '../../../api/endpoints';
@@ -35,6 +35,8 @@ export default function CashOutScreen() {
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<WithdrawalPreview | null>(null);
   const secondsLeft = useCountdown(preview?.expires_at);
+  // Opened from the unified scanner with a withdrawal QR: go straight to the review.
+  const { qr } = useLocalSearchParams<{ qr?: string }>();
 
   const op = useOperation((key, stepUp) =>
     endpoints.cashOut({ withdrawalRequestId: preview!.withdrawal_request_id, amount: preview!.amount, key, stepUp, prompt: t('confirm.biometricPrompt') })
@@ -54,6 +56,11 @@ export default function CashOutScreen() {
   };
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
+
+  useEffect(() => {
+    if (qr) void resolve({ type: 'qr', value: qr });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qr]);
 
   // ----- Outcome screens -----
   if (op.phase.kind === 'verifying') {
