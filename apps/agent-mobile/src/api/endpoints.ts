@@ -5,7 +5,7 @@ import type { AccessEvent, AgentQr, Balance, CommissionLine, CommissionSummary, 
 export type Period = 'today' | 'yesterday' | 'last_7_days' | 'this_month';
 
 export const endpoints = {
-  login: (body: { phone: string; pin: string; device: Record<string, string> }) => api<LoginResponse>('/agent/v1/auth/login', { body, auth: false }),
+  login: (body: { phone: string; pin: string; device: Record<string, unknown> }) => api<LoginResponse>('/agent/v1/auth/login', { body, auth: false }),
   verifyOtp: (body: { challenge_id: string; code: string; device_keys: object }) =>
     api<{ access_token: string; refresh_token: string; device: { id: string; cooldown_until: string | null } }>('/agent/v1/auth/verify-otp', { body, auth: false }),
   logout: () => api<void>('/agent/v1/auth/logout', { method: 'POST' }),
@@ -51,6 +51,7 @@ export const endpoints = {
   readNotification: (id: string) => api<{ unread_count: number }>(`/agent/v1/notifications/${id}/read`, { method: 'POST' }),
   readAllNotifications: () => api<{ unread_count: number }>('/agent/v1/notifications/read-all', { method: 'POST' }),
 
+  reportIntegrity: (integrity: { rooted: boolean; emulator: boolean }) => api<{ compromised: boolean }>('/agent/v1/security/device-integrity', { body: integrity }),
   registerPushToken: (token: string) => api<{ registered: boolean }>('/agent/v1/push-tokens', { body: { token } }),
   notificationPreferences: () => api<{ data: { type: string; push_enabled: boolean; locked: boolean }[] }>('/agent/v1/notifications/preferences'),
   setNotificationPreferences: (preferences: Record<string, boolean>) =>

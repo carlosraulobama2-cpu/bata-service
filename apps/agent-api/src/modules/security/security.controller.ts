@@ -5,7 +5,7 @@ import { AgentAuthGuard } from '../../common/auth/agent-auth.guard';
 import { DeviceSignatureGuard } from '../../common/auth/device-signature.guard';
 import { AgentContext, CurrentAgent } from '../../common/auth/request-context';
 import { IdempotencyService } from '../../common/idempotency/idempotency.service';
-import { AgentAuthSchema } from '../auth/auth.dto';
+import { AgentAuthSchema, IntegritySchema } from '../auth/auth.dto';
 import { StepUpService } from '../auth/step-up.service';
 import { isUuid } from '../../common/pagination';
 import { Errors } from '../../common/errors/app-error';
@@ -24,6 +24,12 @@ export class SecurityController {
     private readonly stepUp: StepUpService,
     private readonly idempotency: IdempotencyService
   ) {}
+
+  @Post('device-integrity')
+  @HttpCode(200)
+  integrity(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Req() req: FastifyRequest) {
+    return this.security.reportIntegrity(agent, IntegritySchema.parse(body), req.ip);
+  }
 
   @Get('overview')
   overview(@CurrentAgent() agent: AgentContext) {

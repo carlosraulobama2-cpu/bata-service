@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 import { usePushListeners } from '../../features/push';
+import { useIntegrityReport } from '../../features/useIntegrityReport';
 import { useSession } from '../../state/session';
 
 export default function AppLayout() {
@@ -10,6 +11,7 @@ export default function AppLayout() {
 
 function SignedIn() {
   usePushListeners();
+  useIntegrityReport();
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />

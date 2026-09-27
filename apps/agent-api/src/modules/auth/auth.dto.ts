@@ -5,8 +5,12 @@ export const DeviceInfoSchema = z.object({
   platform: z.enum(['android', 'ios', 'web']),
   model: z.string().max(100).optional(),
   os_version: z.string().max(40).optional(),
-  app_version: z.string().max(40).optional()
+  app_version: z.string().max(40).optional(),
+  /** Reported by the app (expo-device): see db/07_device_integrity.sql. */
+  integrity: z.object({ rooted: z.boolean(), emulator: z.boolean() }).optional()
 });
+
+export const IntegritySchema = z.object({ rooted: z.boolean(), emulator: z.boolean() });
 
 export const LoginSchema = z.object({
   phone: z.string().regex(/^\+[1-9]\d{6,14}$/),

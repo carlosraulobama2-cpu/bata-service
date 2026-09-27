@@ -54,7 +54,8 @@ export class AgentAuthGuard implements CanActivate {
         'a.tier_code',
         'd.id as device_id',
         'd.status as device_status',
-        'd.cooldown_until'
+        'd.cooldown_until',
+        'd.compromised'
       ])
       .where('s.id', '=', claims.sid)
       .where('s.agent_id', '=', claims.sub)
@@ -74,7 +75,8 @@ export class AgentAuthGuard implements CanActivate {
       tierCode: row.tier_code,
       sessionId: claims.sid,
       deviceId: row.device_id,
-      deviceCooldownUntil: row.cooldown_until
+      deviceCooldownUntil: row.cooldown_until,
+      deviceCompromised: row.compromised
     };
     return true;
   }

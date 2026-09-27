@@ -47,8 +47,9 @@ export class AgentController {
         location: { city: row.city, country: row.country },
         business: row.trade_name ? { trade_name: row.trade_name } : null
       },
-      features: FEATURES_BY_STATUS[row.status] ?? [],
-      device: { id: agent.deviceId, cooldown_until: agent.deviceCooldownUntil?.toISOString() ?? null },
+      // A rooted/jailbroken/emulated phone keeps read-only features.
+      features: (FEATURES_BY_STATUS[row.status] ?? []).filter((f) => !agent.deviceCompromised || !['cash_in', 'cash_out', 'qr'].includes(f)),
+      device: { id: agent.deviceId, cooldown_until: agent.deviceCooldownUntil?.toISOString() ?? null, compromised: agent.deviceCompromised },
       min_app_version: this.env.MIN_APP_VERSION
     };
   }

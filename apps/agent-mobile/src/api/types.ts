@@ -33,7 +33,7 @@ export interface Me {
     business: { trade_name: string } | null;
   };
   features: string[];
-  device: { id: string; cooldown_until: string | null };
+  device: { id: string; cooldown_until: string | null; compromised?: boolean };
   min_app_version: string;
 }
 

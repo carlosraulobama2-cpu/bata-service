@@ -13,6 +13,7 @@ import { OperationLifecycleService } from './operation-lifecycle.service';
 export function assertCanOperate(agent: AgentContext): void {
   if (agent.status === 'suspended') throw Errors.accountSuspended();
   if (agent.status !== 'active') throw Errors.accountNotActive();
+  if (agent.deviceCompromised) throw Errors.deviceCompromised();
 }
 
 @Injectable()

@@ -80,12 +80,18 @@ export interface AgentOtpChallengesTable {
   created_at: Timestamp;
 }
 
+export interface IntegrityFlags {
+  rooted?: boolean;
+  emulator?: boolean;
+}
+
 export interface DeviceContext {
   installation_id: string;
   platform: 'android' | 'ios' | 'web';
   model?: string;
   os_version?: string;
   app_version?: string;
+  integrity?: IntegrityFlags;
 }
 
 export interface AgentDevicesTable {
@@ -101,6 +107,9 @@ export interface AgentDevicesTable {
   app_version: string | null;
   biometric_enabled: Generated<boolean>;
   push_token: string | null;
+  integrity_flags: Json<IntegrityFlags>;
+  integrity_checked_at: Date | null;
+  compromised: ColumnType<boolean, never, never>;
   status: string;
   trusted_at: Date | null;
   cooldown_until: Date | null;

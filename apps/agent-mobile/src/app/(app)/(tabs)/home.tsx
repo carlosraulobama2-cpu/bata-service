@@ -35,7 +35,8 @@ export default function Dashboard() {
   const offline = [me.error, balance.error, today.error].some((e) => e instanceof ApiError && e.isNetwork);
 
   const agent = me.data?.agent;
-  const canOperate = agent?.status === 'active';
+  const compromised = !!me.data?.device.compromised;
+  const canOperate = agent?.status === 'active' && !compromised;
   const hour = localHour();
   const greetingKey = hour < 12 ? 'dashboard.greetingMorning' : hour < 20 ? 'dashboard.greetingAfternoon' : 'dashboard.greetingEvening';
   const pending = (today.data?.data ?? []).filter((tx) => tx.status === 'pending' || tx.status === 'processing');
@@ -120,6 +121,7 @@ export default function Dashboard() {
             {t('notifications.enableBanner')}
           </Banner>
         ) : null}
+        {compromised ? <Banner tone="danger">{t('errors.DEVICE_COMPROMISED')}</Banner> : null}
         {agent && agent.status === 'suspended' ? <Banner tone="danger">{t('errors.ACCOUNT_SUSPENDED')}</Banner> : null}
         {agent && !['active', 'suspended'].includes(agent.status) ? <Banner tone="info">{t('errors.ACCOUNT_NOT_ACTIVE')}</Banner> : null}
         {pending.length > 0 ? (

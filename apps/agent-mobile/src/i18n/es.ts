@@ -369,6 +369,7 @@ export const es = {
     OTP_INVALID: 'Código incorrecto.',
     OTP_EXPIRED: 'El código ha caducado. Solicita uno nuevo.',
     FORBIDDEN: 'No tienes permiso para realizar esta acción.',
+    DEVICE_COMPROMISED: 'No puedes operar desde este teléfono porque su sistema está modificado (root, jailbreak o emulador). Puedes consultar tu saldo e historial; para operar, usa otro teléfono.',
     DEVICE_IS_CURRENT: 'Este es el dispositivo que estás usando. Para salir, cierra la sesión.',
     DEVICE_NOT_TRUSTED: 'Este dispositivo no está autorizado.',
     SIGNATURE_INVALID: 'No hemos podido verificar la operación. Inténtalo de nuevo.',

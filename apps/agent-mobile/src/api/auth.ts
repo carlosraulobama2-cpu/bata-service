@@ -2,13 +2,16 @@ import { Platform } from 'react-native';
 import { config } from '../config';
 import { biometricsAvailable } from '../security/biometrics';
 import { clearDeviceKeys, createDeviceKeys, installationId, storeDeviceKeys } from '../security/device-keys';
+import { checkIntegrity } from '../security/integrity';
 import { KEYS, secureStorage } from '../security/storage';
 import { useSession } from '../state/session';
 import { api } from './client';
 import { endpoints } from './endpoints';
 
 async function deviceInfo() {
+  const integrity = await checkIntegrity();
   return {
+    ...(integrity ? { integrity } : {}),
     installation_id: await installationId(),
     platform: Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web',
     model: String(Platform.constants && 'Model' in Platform.constants ? (Platform.constants as { Model?: string }).Model : Platform.OS),

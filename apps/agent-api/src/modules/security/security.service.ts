@@ -136,6 +136,38 @@ export class SecurityService {
   }
 
   /**
+   * The app reports the phone's integrity on start and when it comes back
+   * to the foreground. Latest report wins (a phone can be un-rooted); every
+   * change is audited.
+   */
+  async reportIntegrity(agent: AgentContext, flags: { rooted: boolean; emulator: boolean }, ip: string | null): Promise<{ compromised: boolean }> {
+    return this.db.transaction().execute(async (trx) => {
+      const before = await trx.selectFrom('agent.agent_devices').select('compromised').where('id', '=', agent.deviceId).forUpdate().executeTakeFirstOrThrow();
+      const after = await trx
+        .updateTable('agent.agent_devices')
+        .set({ integrity_flags: JSON.stringify(flags), integrity_checked_at: this.clock.now() })
+        .where('id', '=', agent.deviceId)
+        .returning('compromised')
+        .executeTakeFirstOrThrow();
+      if (before.compromised !== after.compromised) {
+        await this.audit.record(trx, {
+          actorType: 'agent',
+          actorId: agent.agentCode,
+          agentId: agent.agentId,
+          action: 'DEVICE_INTEGRITY_CHANGED',
+          resourceType: 'device',
+          resourceId: agent.deviceId,
+          result: 'success',
+          deviceId: agent.deviceId,
+          ip,
+          metadata: { ...flags, compromised: after.compromised }
+        });
+      }
+      return { compromised: after.compromised };
+    });
+  }
+
+  /**
    * Disconnects one of the agent's other devices: it stops being trusted,
    * its sessions end immediately (checked on every request) and it no
    * longer receives push notifications. Logging in from it again needs

@@ -9,6 +9,8 @@ export interface AgentContext {
   sessionId: string;
   deviceId: string;
   deviceCooldownUntil: Date | null;
+  /** Rooted / jailbroken / emulator: may read, may not operate. */
+  deviceCompromised: boolean;
 }
 
 export interface RequestMeta {

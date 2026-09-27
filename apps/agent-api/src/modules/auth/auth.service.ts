@@ -83,7 +83,12 @@ export class AuthService {
 
     if (device) {
       const tokens = await this.db.transaction().execute(async (trx) => {
-        await trx.updateTable('agent.agent_devices').set({ last_seen_at: this.clock.now(), last_ip: meta.ip, app_version: input.device.app_version ?? null }).where('id', '=', device.id).execute();
+        await trx.updateTable('agent.agent_devices').set({
+            last_seen_at: this.clock.now(),
+            last_ip: meta.ip,
+            app_version: input.device.app_version ?? null,
+            ...(input.device.integrity ? { integrity_flags: JSON.stringify(input.device.integrity), integrity_checked_at: this.clock.now() } : {})
+          }).where('id', '=', device.id).execute();
         await trx.insertInto('agent.agent_access_events').values({ agent_id: agent.id, phone_hmac: null, event: 'login_success', device_id: device.id, ip: meta.ip, approx_location: null }).execute();
         await this.audit.record(trx, { actorType: 'agent', actorId: agent.agent_code, agentId: agent.id, action: 'LOGIN', resourceType: 'session', result: 'success', deviceId: device.id, ip: meta.ip, userAgent: meta.userAgent, requestId: meta.requestId });
         return this.sessions.create(trx, { agentId: agent.id, agentCode: agent.agent_code ?? '', deviceId: device.id, authLevel: 'pin', ip: meta.ip });
@@ -199,6 +204,8 @@ export class AuthService {
           model: ctx.model ?? null,
           os_version: ctx.os_version ?? null,
           app_version: ctx.app_version ?? null,
+          integrity_flags: JSON.stringify(ctx.integrity ?? {}),
+          integrity_checked_at: ctx.integrity ? now : null,
           status: 'trusted',
           trusted_at: now,
           cooldown_until: cooldownUntil,
