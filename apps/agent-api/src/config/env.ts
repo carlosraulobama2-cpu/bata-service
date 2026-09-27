@@ -30,6 +30,9 @@ const schema = z.object({
   MAX_TRUSTED_DEVICES: z.coerce.number().int().positive().default(1),
   SIGNATURE_MAX_SKEW_SECONDS: z.coerce.number().int().positive().default(60),
   CASH_IN_CONFIRMATION_TTL_SECONDS: z.coerce.number().int().positive().default(180),
+  /** Ed25519 private key (PKCS#8 PEM) that signs agent-issued QR codes. */
+  QR_SIGNING_PRIVATE_KEY_PEM: z.string().min(1),
+  QR_COLLECT_TTL_SECONDS: z.coerce.number().int().min(30).max(3600).default(300),
   DEFAULT_CURRENCY: z.literal('XAF').default('XAF'),
   OPERATING_TIMEZONE: z.string().default('Africa/Malabo'),
   MIN_APP_VERSION: z.string().default('1.0.0'),

@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Invariant tests for the ledger and agent schemas.
--- Run on an EMPTY database after 01, 02 and 03:
+-- Run on an EMPTY database after every db/NN_*.sql file:
 --   psql -v ON_ERROR_STOP=1 -f db/tests/invariants_test.sql
 -- Every block raises an exception if an invariant is broken.
 -- =====================================================================
@@ -278,5 +278,49 @@ SELECT pg_temp.expect_error($q$
   INSERT INTO agent.agent_credentials (agent_id, pin_hash) VALUES ('10000000-0000-0000-0000-000000000001', '123456')
 $q$, 'agent_credentials_pin_hash_check');
 SELECT pg_temp.assert_eq(TRUE, TRUE, 'plain-text PIN rejected');
+
+-- 16) QR payments (04_qr_payments.sql): single use, customer filled in once.
+INSERT INTO agent.agent_qr (id, agent_id, kind, nonce, amount, currency, single_use, expires_at)
+VALUES ('30000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001',
+        'collect', 'nonce-qr-test-0001', 25000, 'XAF', TRUE, NOW() + INTERVAL '5 minutes');
+SELECT pg_temp.expect_error($q$
+  INSERT INTO agent.agent_qr (agent_id, kind, nonce, currency, single_use)
+  VALUES ('10000000-0000-0000-0000-000000000001', 'collect', 'nonce-qr-test-0002', 'XAF', TRUE)
+$q$, 'agent_qr_check');
+SELECT pg_temp.assert_eq(TRUE, TRUE, 'a collect QR always has amount and expiry');
+SELECT pg_temp.expect_error($q$
+  UPDATE agent.agent_qr SET status = 'used', used_at = NOW() WHERE id = '30000000-0000-0000-0000-000000000001'
+$q$, 'agent_qr_used_has_transaction');
+SELECT pg_temp.assert_eq(TRUE, TRUE, 'a used QR points at its operation');
+
+INSERT INTO agent.agent_transactions (id, agent_id, type, amount, currency, method, idempotency_key, qr_id, expires_at)
+VALUES ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001',
+        'qr_payment', 25000, 'XAF', 'qr', 'qr-idem-key-000000000001', '30000000-0000-0000-0000-000000000001', NOW() + INTERVAL '5 minutes');
+UPDATE agent.agent_qr SET transaction_id = '20000000-0000-0000-0000-000000000002' WHERE id = '30000000-0000-0000-0000-000000000001';
+SELECT pg_temp.expect_error($q$
+  INSERT INTO agent.agent_transactions (agent_id, type, amount, currency, method, idempotency_key, qr_id)
+  VALUES ('10000000-0000-0000-0000-000000000001', 'qr_payment', 25000, 'XAF', 'qr', 'qr-idem-key-000000000002', '30000000-0000-0000-0000-000000000001')
+$q$, 'uq_agent_tx_qr');
+SELECT pg_temp.assert_eq(TRUE, TRUE, 'a collect QR can be paid only once');
+SELECT pg_temp.expect_error($q$
+  UPDATE agent.agent_transactions SET customer_ref = 'user-1111' WHERE id = '20000000-0000-0000-0000-000000000002'
+$q$, 'AGENT_TX_IMMUTABLE_FIELDS');
+UPDATE agent.agent_transactions SET status = 'processing', customer_ref = 'user-4821', customer_masked = '****4821'
+ WHERE id = '20000000-0000-0000-0000-000000000002';
+SELECT pg_temp.expect_error($q$
+  UPDATE agent.agent_transactions SET customer_ref = 'user-9999' WHERE id = '20000000-0000-0000-0000-000000000002'
+$q$, 'AGENT_TX_IMMUTABLE_FIELDS');
+SELECT pg_temp.assert_eq(TRUE, TRUE, 'the paying customer is set once, when the payment starts');
+UPDATE agent.agent_qr SET status = 'used', used_at = NOW() WHERE id = '30000000-0000-0000-0000-000000000001';
+SELECT pg_temp.expect_error($q$
+  UPDATE agent.agent_qr SET status = 'active' WHERE id = '30000000-0000-0000-0000-000000000001'
+$q$, 'AGENT_QR_INVALID_TRANSITION');
+SELECT pg_temp.expect_error($q$
+  UPDATE agent.agent_qr SET amount = 1 WHERE id = '30000000-0000-0000-0000-000000000001'
+$q$, 'AGENT_QR_IMMUTABLE_FIELDS');
+SELECT pg_temp.expect_error($q$
+  DELETE FROM agent.agent_qr WHERE id = '30000000-0000-0000-0000-000000000001'
+$q$, 'APPEND_ONLY');
+SELECT pg_temp.assert_eq(TRUE, TRUE, 'a used QR cannot be reactivated, edited or deleted');
 
 \echo 'ALL INVARIANT TESTS PASSED'

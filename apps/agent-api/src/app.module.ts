@@ -30,6 +30,9 @@ import { OperationLifecycleService } from './modules/operations/operation-lifecy
 import { OperationsController } from './modules/operations/operations.controller';
 import { ReconcilerService } from './modules/operations/reconciler.service';
 import { TransactionsService } from './modules/operations/transactions.service';
+import { QrCodec } from './modules/qr/qr-codec';
+import { QrController } from './modules/qr/qr.controller';
+import { QrService } from './modules/qr/qr.service';
 
 @Injectable()
 class ResourcesLifecycle implements OnApplicationShutdown {
@@ -67,6 +70,7 @@ export class AppModule {
       { provide: CoreClient, useFactory: (ledger: LedgerClient, clock: Clock) => new FakeCoreClient(ledger, clock), inject: [LedgerClient, Clock] },
       { provide: SmsSender, useValue: overrides.sms ?? new InMemorySmsSender() },
       { provide: PinHasher, useValue: new PinHasher(env.PIN_PEPPER) },
+      { provide: QrCodec, useValue: new QrCodec(env.QR_SIGNING_PRIVATE_KEY_PEM) },
       { provide: JwtService, useValue: new JwtService(env.JWT_PRIVATE_KEY_PEM, env.JWT_ISSUER, env.JWT_AUDIENCE, env.ACCESS_TOKEN_TTL_SECONDS) },
       ResourcesLifecycle,
       AuditService,
@@ -83,10 +87,11 @@ export class AppModule {
       CashOutService,
       CashInService,
       TransactionsService,
+      QrService,
       ReconcilerService,
       JobsService
     ];
-    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, OperationsController, CoreEventsController];
+    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, OperationsController, QrController, CoreEventsController];
     if (env.ENABLE_DEV_ENDPOINTS && env.NODE_ENV !== 'production') controllers.push(DevController);
     return { module: AppModule, providers, controllers };
   }

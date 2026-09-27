@@ -69,7 +69,7 @@ export class AgentController {
   async limitsView(@CurrentAgent() agent: AgentContext) {
     const c = this.env.DEFAULT_CURRENCY;
     const result = [];
-    for (const op of ['cash_in', 'cash_out'] as OperationType[]) {
+    for (const op of ['cash_in', 'cash_out', 'qr_payment'] as OperationType[]) {
       const l = await this.limits.effective(this.db, agent, op, c);
       if (!l) continue;
       const u = await this.limits.usage(this.db, agent.agentId, op, c);

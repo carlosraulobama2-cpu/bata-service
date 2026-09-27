@@ -2,7 +2,8 @@ import type { AgentTransaction } from '../../common/db/schema';
 
 const NEXT_ACTION: Record<string, Record<string, string>> = {
   cash_out: { completed: 'HAND_OVER_CASH', processing: 'WAIT_DO_NOT_HAND_OVER_CASH', pending: 'WAIT_DO_NOT_HAND_OVER_CASH' },
-  cash_in: { pending: 'WAIT_CUSTOMER_CONFIRMATION', processing: 'WAIT', completed: 'KEEP_CASH' }
+  cash_in: { pending: 'WAIT_CUSTOMER_CONFIRMATION', processing: 'WAIT', completed: 'KEEP_CASH' },
+  qr_payment: { pending: 'WAIT_CUSTOMER_PAYMENT', processing: 'WAIT', completed: 'PAYMENT_RECEIVED' }
 };
 
 /** Public shape of an operation. Only masked customer data. */

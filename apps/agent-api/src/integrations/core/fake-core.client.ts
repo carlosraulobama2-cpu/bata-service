@@ -19,6 +19,14 @@ interface FakeDeposit {
   status: 'pending' | 'cancelled';
 }
 
+export interface FakeQrPayment {
+  id: string;
+  customerRef: string;
+  amount: number;
+  currency: string;
+  status: 'authorized' | 'completed' | 'failed';
+}
+
 /**
  * In-memory simulator of BataPay Core for development and tests.
  * It creates real customer wallets and holds in the ledger so that the
@@ -31,6 +39,8 @@ export class FakeCoreClient extends CoreClient {
   private readonly tokens = new Map<string, string>();
   private readonly withdrawals = new Map<string, WithdrawalRequest & { code: string }>();
   readonly deposits = new Map<string, FakeDeposit>();
+  private readonly customerQrs = new Map<string, string>();
+  readonly qrPayments = new Map<string, FakeQrPayment>();
 
   constructor(
     private readonly ledger: LedgerClient,
@@ -101,7 +111,51 @@ export class FakeCoreClient extends CoreClient {
     return { id, code, qr: `BSV1.W.${id}` };
   }
 
+  /** The customer's personal QR in the BataPay app (identifies them for a deposit). */
+  issueCustomerQr(ref: string): string {
+    const id = randomToken(16);
+    this.customerQrs.set(id, ref);
+    return `BSV1.C.${id}`;
+  }
+
+  /**
+   * The customer approved paying an agent's collect QR with their PIN:
+   * Core reserves the amount in their wallet (the agent service captures it).
+   */
+  async authorizeQrPayment(customerRef: string, amount: number, currency = 'XAF'): Promise<{ paymentRequestId: string; masked: string }> {
+    const id = `pay_${randomUUID()}`;
+    await this.ledger.createHold({
+      account: customerWallet(customerRef, currency),
+      amount,
+      externalRef: id,
+      expiresAt: new Date(this.clock.now().getTime() + 15 * 60 * 1000),
+      sourceSystem: this.holdSourceSystem
+    });
+    this.qrPayments.set(id, { id, customerRef, amount, currency, status: 'authorized' });
+    return { paymentRequestId: id, masked: maskPhone(this.customers.get(customerRef)?.phone ?? '') };
+  }
+
   // ---- CoreClient contract ----
+
+  async resolveCustomerQr(payload: string): Promise<{ customerToken: string; masked: string } | null> {
+    const id = payload.trim().startsWith('BSV1.C.') ? payload.trim().slice('BSV1.C.'.length) : null;
+    const ref = id ? this.customerQrs.get(id) : undefined;
+    const customer = ref ? this.customers.get(ref) : undefined;
+    if (!customer || customer.status !== 'active') return null;
+    return { customerToken: this.issueCustomerToken(customer.ref), masked: maskPhone(customer.phone) };
+  }
+
+  async settleQrPayment(paymentRequestId: string, outcome: 'completed' | 'failed'): Promise<void> {
+    const p = this.qrPayments.get(paymentRequestId);
+    if (!p || p.status !== 'authorized') return;
+    p.status = outcome;
+    if (outcome === 'failed') {
+      await this.ledger
+        .closeHold({ account: customerWallet(p.customerRef, p.currency), externalRef: p.id, status: 'released', sourceSystem: this.holdSourceSystem })
+        .catch(() => undefined);
+    }
+  }
+
 
   async resolveCustomer(input: { phone?: string; customerToken?: string }): Promise<ResolvedCustomer | null> {
     let customer: FakeCustomer | undefined;

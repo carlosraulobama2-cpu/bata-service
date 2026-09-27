@@ -2,30 +2,36 @@ import { Controller, HttpCode, Inject, Post, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { ENV, Env } from '../../config/env';
-import { header } from '../../common/auth/request-context';
-import { hmacHex, safeEqualHex } from '../../common/crypto/secrets';
-import { Errors } from '../../common/errors/app-error';
 import { Clock } from '../../common/time/clock';
 import { CashInService } from '../operations/cash-in.service';
+import { QrService } from '../qr/qr.service';
+import { verifyCoreRequest } from './core-signature';
 
-const EventSchema = z.object({
-  type: z.enum(['deposit_request.confirmed', 'deposit_request.rejected']),
-  deposit_request_id: z.string().min(4),
-  agent_transaction_id: z.string().uuid()
-});
+const EventSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.enum(['deposit_request.confirmed', 'deposit_request.rejected']),
+    deposit_request_id: z.string().min(4),
+    agent_transaction_id: z.string().uuid()
+  }),
+  z.object({
+    type: z.literal('qr_payment.authorized'),
+    payment_request_id: z.string().min(4).max(100),
+    qr_id: z.string().uuid(),
+    customer_ref: z.string().min(4).max(100),
+    customer_masked: z.string().min(4).max(20),
+    amount: z.number().int().positive(),
+    currency: z.string().length(3)
+  })
+]);
 
-const MAX_AGE_MS = 5 * 60 * 1000;
+const QrResolveSchema = z.object({ payload: z.string().min(6).max(500) });
 
-/**
- * Events from BataPay Core (e.g. "the customer confirmed the deposit").
- * In production this route is only reachable on the private network with
- * mTLS; the HMAC signature over "timestamp.body" is an extra check and
- * prevents replays of old events.
- */
+/** Internal API used by BataPay Core (docs/05-api.md §17). */
 @Controller('internal/v1')
 export class CoreEventsController {
   constructor(
     private readonly cashIn: CashInService,
+    private readonly qr: QrService,
     private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env
   ) {}
@@ -33,18 +39,22 @@ export class CoreEventsController {
   @Post('core-events')
   @HttpCode(200)
   async handle(@Req() req: FastifyRequest) {
-    const ts = header(req, 'x-core-timestamp') ?? '';
-    const signature = header(req, 'x-core-signature') ?? '';
-    const raw = req.rawBody?.toString('utf8') ?? '';
-    const expected = hmacHex(this.env.CORE_EVENTS_HMAC_SECRET, `${ts}.${raw}`);
-    if (!/^[0-9a-f]{64}$/.test(signature) || !safeEqualHex(signature, expected)) throw Errors.unauthenticated();
-    if (!Number.isFinite(Number(ts)) || Math.abs(this.clock.now().getTime() - Number(ts)) > MAX_AGE_MS) throw Errors.unauthenticated();
+    const event = EventSchema.parse(JSON.parse(verifyCoreRequest(req, this.env, this.clock)));
+    switch (event.type) {
+      case 'deposit_request.confirmed':
+        return { result: await this.cashIn.onCustomerConfirmed(event.deposit_request_id, event.agent_transaction_id) };
+      case 'deposit_request.rejected':
+        return { result: await this.cashIn.onCustomerRejected(event.deposit_request_id, event.agent_transaction_id) };
+      case 'qr_payment.authorized':
+        return this.qr.onPaymentAuthorized(event);
+    }
+  }
 
-    const event = EventSchema.parse(JSON.parse(raw));
-    const result =
-      event.type === 'deposit_request.confirmed'
-        ? await this.cashIn.onCustomerConfirmed(event.deposit_request_id, event.agent_transaction_id)
-        : await this.cashIn.onCustomerRejected(event.deposit_request_id, event.agent_transaction_id);
-    return { result };
+  /** The customer scanned an agent QR in BataPay: what should they be shown before paying? */
+  @Post('qr/resolve')
+  @HttpCode(200)
+  async resolveQr(@Req() req: FastifyRequest) {
+    const input = QrResolveSchema.parse(JSON.parse(verifyCoreRequest(req, this.env, this.clock)));
+    return this.qr.resolveForCore(input.payload);
   }
 }

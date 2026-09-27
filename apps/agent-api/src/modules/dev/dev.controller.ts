@@ -7,6 +7,7 @@ import { FakeCoreClient } from '../../integrations/core/fake-core.client';
 import { CoreClient } from '../../integrations/core/core.client';
 import { InMemorySmsSender, SmsSender } from '../../integrations/sms/sms.sender';
 import { CashInService } from '../operations/cash-in.service';
+import { QrService } from '../qr/qr.service';
 import { Inject } from '@nestjs/common';
 import { ENV, Env } from '../../config/env';
 
@@ -22,6 +23,7 @@ export class DevController {
     private readonly core: CoreClient,
     private readonly sms: SmsSender,
     private readonly cashIn: CashInService,
+    private readonly qr: QrService,
     private readonly clock: Clock,
     @Inject(ENV) private readonly env: Env
   ) {}
@@ -35,7 +37,7 @@ export class DevController {
   async addCustomer(@Body() body: unknown) {
     const input = z.object({ phone: z.string().regex(/^\+[1-9]\d{6,14}$/), balance: z.number().int().nonnegative().default(0) }).parse(body);
     const ref = await this.fake().addCustomer(input.phone, 'XAF', input.balance);
-    return { customer_ref: ref, customer_token: this.fake().issueCustomerToken(ref) };
+    return { customer_ref: ref, customer_token: this.fake().issueCustomerToken(ref), customer_qr: this.fake().issueCustomerQr(ref) };
   }
 
   @Post('withdrawals')
@@ -53,6 +55,27 @@ export class DevController {
     const deposit = [...this.fake().deposits.values()].find((d) => d.agentTransactionId === input.agent_transaction_id);
     if (!deposit) throw Errors.notFound();
     return { result: await this.cashIn.onCustomerConfirmed(deposit.id, input.agent_transaction_id) };
+  }
+
+  /**
+   * Simulates a customer paying an agent's collect QR in the BataPay app:
+   * resolve the QR, approve with PIN (hold in the wallet), Core reports it.
+   */
+  @Post('qr/pay')
+  async payQr(@Body() body: unknown) {
+    const input = z.object({ payload: z.string(), phone: z.string().regex(/^\+[1-9]\d{6,14}$/).default('+240555000999') }).parse(body);
+    const qr = await this.qr.resolveForCore(input.payload);
+    if (qr.kind !== 'collect' || !qr.amount) throw Errors.qrInvalid();
+    const customerRef = await this.fake().addCustomer(input.phone, qr.currency, 1_000_000);
+    const payment = await this.fake().authorizeQrPayment(customerRef, qr.amount, qr.currency);
+    return this.qr.onPaymentAuthorized({
+      payment_request_id: payment.paymentRequestId,
+      qr_id: qr.qr_id,
+      customer_ref: customerRef,
+      customer_masked: payment.masked,
+      amount: qr.amount,
+      currency: qr.currency
+    });
   }
 
   @Get('otp')

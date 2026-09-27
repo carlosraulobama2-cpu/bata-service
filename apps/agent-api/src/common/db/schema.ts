@@ -219,6 +219,21 @@ export interface AgentTransactionsTable {
   updated_at: Timestamp;
 }
 
+export interface AgentQrTable {
+  id: Generated<string>;
+  agent_id: string;
+  kind: 'agent_static' | 'collect' | 'deposit';
+  nonce: string;
+  amount: number | null;
+  currency: string;
+  transaction_id: string | null;
+  single_use: boolean;
+  status: Generated<'active' | 'used' | 'expired' | 'revoked'>;
+  expires_at: Date | null;
+  used_at: Date | null;
+  created_at: Timestamp;
+}
+
 export interface AgentTransactionEventsTable {
   id: Generated<string>;
   transaction_id: string;
@@ -351,6 +366,7 @@ export interface AgentDatabase {
   'agent.agent_limits': AgentLimitsTable;
   'agent.agent_limit_usage': AgentLimitUsageTable;
   'agent.agent_balances': AgentBalancesTable;
+  'agent.agent_qr': AgentQrTable;
   'agent.agent_transactions': AgentTransactionsTable;
   'agent.agent_transaction_events': AgentTransactionEventsTable;
   'agent.commission_plans': CommissionPlansTable;
@@ -365,5 +381,6 @@ export interface AgentDatabase {
 
 export type Agent = Selectable<AgentsTable>;
 export type AgentTransaction = Selectable<AgentTransactionsTable>;
+export type AgentQr = Selectable<AgentQrTable>;
 export type AgentDevice = Selectable<AgentDevicesTable>;
 export type NewAgentTransaction = Insertable<AgentTransactionsTable>;

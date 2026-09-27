@@ -149,17 +149,17 @@ export class CashInService {
     if (tx.status !== 'pending') throw Errors.operationNotCancellable();
     const updated = await this.lifecycle.fail(tx, 'agent_cancelled', Errors.operationNotCancellable(), 'cancelled');
     if (!updated) throw Errors.operationNotCancellable();
-    if (updated.core_request_ref) await this.core.cancelDepositRequest(updated.core_request_ref).catch(() => undefined);
+    if (updated.type === 'cash_in' && updated.core_request_ref) await this.core.cancelDepositRequest(updated.core_request_ref).catch(() => undefined);
     return updated;
   }
 
-  /** Job: cancels cash-ins the customer didn't confirm in time and frees the float. */
+  /** Job: cancels cash-ins the customer didn't confirm in time (freeing the float) and unpaid collect QRs. */
   async expirePending(): Promise<number> {
     const expired = await this.db
       .selectFrom('agent.agent_transactions')
       .selectAll()
       .where('status', '=', 'pending')
-      .where('type', '=', 'cash_in')
+      .where('type', 'in', ['cash_in', 'qr_payment'])
       .where('expires_at', '<=', this.clock.now())
       .limit(200)
       .execute();
@@ -168,10 +168,10 @@ export class CashInService {
       const updated = await this.lifecycle.fail(tx, 'expired', Errors.qrExpired(), 'cancelled');
       if (updated) {
         count++;
-        if (updated.core_request_ref) await this.core.cancelDepositRequest(updated.core_request_ref).catch(() => undefined);
+        if (updated.type === 'cash_in' && updated.core_request_ref) await this.core.cancelDepositRequest(updated.core_request_ref).catch(() => undefined);
       }
     }
-    if (count) this.logger.log(`Expired ${count} pending cash-in(s)`);
+    if (count) this.logger.log(`Expired ${count} pending operation(s)`);
     return count;
   }
 }

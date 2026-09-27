@@ -47,4 +47,11 @@ export abstract class CoreClient {
   abstract claimWithdrawal(id: string, agentTransactionId: string): Promise<void>;
   /** Undo a claim when the operation failed definitively (the customer can use the code again). */
   abstract releaseWithdrawalClaim(id: string, agentTransactionId: string): Promise<void>;
+  /** A customer's personal QR (BSV1.C...) -> single-use customer token for cash-in. */
+  abstract resolveCustomerQr(payload: string): Promise<{ customerToken: string; masked: string } | null>;
+  /**
+   * Final outcome of a QR payment Core reported with `qr_payment.authorized`.
+   * On `failed` Core releases the hold it placed on the customer's wallet.
+   */
+  abstract settleQrPayment(paymentRequestId: string, outcome: 'completed' | 'failed'): Promise<void>;
 }

@@ -19,6 +19,9 @@ import {
 } from '../../integrations/ledger/ledger.client';
 import { LimitsService } from './limits.service';
 
+const AUDIT_ACTION: Record<string, string> = { cash_in: 'CASH_IN', cash_out: 'CASH_OUT', qr_payment: 'QR_PAYMENT' };
+const COMPLETED_NOTIFICATION: Record<string, string> = { cash_in: 'cash_in_completed', cash_out: 'cash_out_completed', qr_payment: 'qr_payment_completed' };
+
 export type PostOutcome = { kind: 'completed'; tx: AgentTransaction } | { kind: 'failed'; error: AppError } | { kind: 'unknown'; tx: AgentTransaction };
 
 /**
@@ -94,6 +97,21 @@ export class OperationLifecycleService {
         captureHolds: [{ sourceSystem: this.ledger.sourceSystem, externalRef: tx.id, account: agentFloat(agentCode, c) }]
       };
     }
+    if (tx.type === 'qr_payment') {
+      // docs/04-ledger.md §3.4: the customer pays the agent; Core's hold on the wallet is captured.
+      return {
+        reference: tx.reference,
+        idempotencyKey: tx.id,
+        kind: 'qr_payment',
+        externalRef: tx.id,
+        entries: [
+          { account: customerWallet(tx.customer_ref!, c), direction: 'D', amount: tx.amount },
+          { account: agentFloat(agentCode, c), direction: 'C', amount: tx.amount },
+          ...commissionEntries
+        ],
+        captureHolds: [{ sourceSystem: this.core.holdSourceSystem, externalRef: tx.core_request_ref!, account: customerWallet(tx.customer_ref!, c) }]
+      };
+    }
     throw new Error(`No ledger mapping for ${tx.type}`);
   }
 
@@ -124,7 +142,12 @@ export class OperationLifecycleService {
       this.logger.warn(`Ledger outcome unknown for ${tx.reference}: ${err instanceof Error ? err.message : String(err)}`);
       return { kind: 'unknown', tx };
     }
-    return { kind: 'completed', tx: await this.complete(tx, ledgerTxId, agentCode) };
+    const done = await this.complete(tx, ledgerTxId, agentCode);
+    if (done.type === 'qr_payment' && done.status === 'completed' && done.core_request_ref) {
+      // Best effort: Core also learns the outcome from the reconciliation feed.
+      await this.core.settleQrPayment(done.core_request_ref, 'completed').catch(() => undefined);
+    }
+    return { kind: 'completed', tx: done };
   }
 
   async complete(tx: AgentTransaction, ledgerTxId: string, agentCode: string): Promise<AgentTransaction> {
@@ -160,7 +183,7 @@ export class OperationLifecycleService {
           )
           .execute();
       }
-      const type = done.type === 'cash_in' ? 'cash_in_completed' : 'cash_out_completed';
+      const type = COMPLETED_NOTIFICATION[done.type]!;
       await trx
         .insertInto('agent.agent_notifications')
         .values({
@@ -187,7 +210,7 @@ export class OperationLifecycleService {
         actorType: 'agent',
         actorId: agentCode,
         agentId: done.agent_id,
-        action: done.type === 'cash_in' ? 'CASH_IN' : 'CASH_OUT',
+        action: AUDIT_ACTION[done.type] ?? done.type.toUpperCase(),
         resourceType: 'transaction',
         resourceId: done.reference,
         result: 'success',
@@ -207,11 +230,20 @@ export class OperationLifecycleService {
       const row = await this.transition(trx, tx.id, from, to, reason);
       if (!row) return null;
       await this.limits.release(trx, row);
+      if (row.qr_id) {
+        // The collect QR dies with its operation (a new charge means a new QR).
+        await trx
+          .updateTable('agent.agent_qr')
+          .set({ status: reason === 'expired' ? 'expired' : 'revoked' })
+          .where('id', '=', row.qr_id)
+          .where('status', 'in', reason === 'expired' ? ['active'] : ['active', 'used'])
+          .execute();
+      }
       await this.audit.record(trx, {
         actorType: 'agent',
         actorId: agentCode,
         agentId: row.agent_id,
-        action: row.type === 'cash_in' ? 'CASH_IN' : 'CASH_OUT',
+        action: AUDIT_ACTION[row.type] ?? row.type.toUpperCase(),
         resourceType: 'transaction',
         resourceId: row.reference,
         result: 'failure',
@@ -223,6 +255,9 @@ export class OperationLifecycleService {
     });
     if (updated?.type === 'cash_out' && updated.core_request_ref) {
       await this.core.releaseWithdrawalClaim(updated.core_request_ref, updated.id).catch(() => undefined);
+    }
+    if (updated?.type === 'qr_payment' && updated.core_request_ref) {
+      await this.core.settleQrPayment(updated.core_request_ref, 'failed').catch(() => undefined);
     }
     if (updated?.type === 'cash_in') {
       await this.ledger.closeHold({ account: agentFloat(agentCode, updated.currency), externalRef: updated.id, status: 'released' }).catch(() => undefined);

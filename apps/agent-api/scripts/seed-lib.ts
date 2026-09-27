@@ -24,7 +24,7 @@ export async function seedReferenceData(db: AgentDb, ledger: LedgerClient, curre
   const finance = await staff('finance@batapay.test', 'Finance (dev)');
   const finance2 = await staff('finance2@batapay.test', 'Finance approver (dev)');
 
-  for (const op of ['cash_in', 'cash_out'] as const) {
+  for (const op of ['cash_in', 'cash_out', 'qr_payment'] as const) {
     await db
       .insertInto('agent.limit_policies')
       .values({

@@ -83,6 +83,7 @@ export class Harness {
       LEDGER_DATABASE_URL: urlFor(h.dbName),
       CORE_EVENTS_HMAC_SECRET: 'dev-only-test-core-events-secret-0123456789',
       JWT_PRIVATE_KEY_PEM: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+      QR_SIGNING_PRIVATE_KEY_PEM: generateKeyPairSync('ed25519').privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
       PIN_PEPPER: 'dev-only-test-pepper-0123456789abcdef',
       LOOKUP_HMAC_KEY: 'dev-only-test-lookup-0123456789abcdef',
       ENABLE_DEV_ENDPOINTS: 'false'
@@ -179,6 +180,15 @@ export class Harness {
     const { createHmac } = require('node:crypto');
     const sig = createHmac('sha256', opts.secret ?? this.env.CORE_EVENTS_HMAC_SECRET).update(`${ts}.${raw}`).digest('hex');
     return this.request('POST', '/internal/v1/core-events', { rawBody: raw, headers: { 'x-core-timestamp': ts, 'x-core-signature': sig } });
+  }
+
+  /** Signed internal request from BataPay Core. */
+  coreRequest(path: string, body: unknown) {
+    const raw = JSON.stringify(body);
+    const ts = String(this.clock.now().getTime());
+    const { createHmac } = require('node:crypto');
+    const sig = createHmac('sha256', this.env.CORE_EVENTS_HMAC_SECRET).update(`${ts}.${raw}`).digest('hex');
+    return this.request('POST', path, { rawBody: raw, headers: { 'x-core-timestamp': ts, 'x-core-signature': sig } });
   }
 
   async balance(ownerType: string, ownerRef: string, purpose: string) {

@@ -11,7 +11,7 @@ TEST_URL="${ADMIN_URL%/*}/${TEST_DB}"
 psql "$ADMIN_URL" -qc "CREATE DATABASE ${TEST_DB}"
 trap 'psql "$ADMIN_URL" -qc "DROP DATABASE IF EXISTS ${TEST_DB}"' EXIT
 
-for f in db/01_ledger.sql db/02_agent.sql db/03_roles_and_reference_data.sql; do
+for f in db/[0-9][0-9]_*.sql; do
   psql "$TEST_URL" -v ON_ERROR_STOP=1 -q -f "$f" >/dev/null
 done
 
