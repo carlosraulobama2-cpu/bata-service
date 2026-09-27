@@ -14,7 +14,9 @@ Diseño de referencia: [docs/02-ux-ui.md](../../docs/02-ux-ui.md).
 | Retiro | Escáner QR o código de 9 dígitos → revisión (importe bloqueado, cuenta atrás de caducidad, comisión, saldo tras la operación) → PIN o biometría → «Retiro completado · Entrega X en efectivo» |
 | Depósito | Teléfono del cliente → importe con teclado propio y avisos de límites en vivo → revisión → PIN o biometría → espera de confirmación del cliente con cuenta atrás y cancelación → resultado |
 | Operaciones | Filtros por periodo y tipo, totales, scroll infinito, detalle con historial de estados y recibo para compartir (cliente enmascarado) |
-| Comisiones | Pendiente de liquidar (ledger), hoy / 7 días / mes, volumen del mes |
+| Comisiones | Pendiente de liquidar (ledger), hoy / 7 días / mes / histórico, barras por tipo de operación, últimas comisiones (abren la operación) |
+| Avisos | Campana con contador en el inicio; lista con icono por tipo, hora relativa, sin leer resaltado; tocar marca como leído y abre la operación; «Marcar todo como leído» |
+| Seguridad | Este dispositivo, acceso anterior, intentos fallidos recientes, sesiones abiertas y «Cerrar las demás sesiones» (PIN/biometría), dispositivos, historial de accesos; cambio de PIN en 3 pasos con las mismas reglas que el servidor |
 | QR (botón central) | **Escanear** (el servidor decide: QR de retiro → revisión del retiro; QR personal del cliente → depósito a ese cliente) · **Cobrar** (importe → QR grande de un solo uso con cuenta atrás; pasa a «Pagado» solo cuando el servidor confirma el pago; anular cobro) · **Mi QR de agente** (estático, sin importe) |
 | Perfil | Agent ID, estado, categoría, negocio, límites con barras de uso, dispositivo, cerrar sesión |
 

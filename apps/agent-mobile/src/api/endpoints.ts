@@ -1,6 +1,6 @@
 import { config } from '../config';
 import { api } from './client';
-import type { AgentQr, Balance, ScanResult, Limits, LoginResponse, Me, StepUp, Transaction, TransactionPage, WithdrawalPreview } from './types';
+import type { AccessEvent, AgentQr, Balance, CommissionLine, CommissionSummary, DeviceInfo, NotificationPage, SecurityOverview, SessionInfo, ScanResult, Limits, LoginResponse, Me, StepUp, Transaction, TransactionPage, WithdrawalPreview } from './types';
 
 export type Period = 'today' | 'yesterday' | 'last_7_days' | 'this_month';
 
@@ -39,6 +39,27 @@ export const endpoints = {
   staticQr: (key: string) => api<AgentQr>('/agent/v1/qr/create', { body: { kind: 'agent_static' }, signed: { idempotencyKey: key } }),
   qr: (id: string) => api<AgentQr>(`/agent/v1/qr/${id}`),
   scanQr: (payload: string) => api<ScanResult>('/agent/v1/qr/scan', { body: { payload } }),
+  commissionSummary: () => api<CommissionSummary>('/agent/v1/commissions/summary'),
+  commissions: (params: { cursor?: string | null; limit?: number } = {}) => {
+    const q = new URLSearchParams({ limit: String(params.limit ?? 20) });
+    if (params.cursor) q.set('cursor', params.cursor);
+    return api<{ data: CommissionLine[]; next_cursor: string | null }>(`/agent/v1/commissions?${q.toString()}`);
+  },
+
+  notifications: (cursor?: string | null) => api<NotificationPage>(`/agent/v1/notifications?limit=20${cursor ? `&cursor=${cursor}` : ''}`),
+  unreadCount: () => api<{ unread_count: number }>('/agent/v1/notifications/unread-count'),
+  readNotification: (id: string) => api<{ unread_count: number }>(`/agent/v1/notifications/${id}/read`, { method: 'POST' }),
+  readAllNotifications: () => api<{ unread_count: number }>('/agent/v1/notifications/read-all', { method: 'POST' }),
+
+  securityOverview: () => api<SecurityOverview>('/agent/v1/security/overview'),
+  devices: () => api<{ data: DeviceInfo[] }>('/agent/v1/security/devices'),
+  sessions: () => api<{ data: SessionInfo[] }>('/agent/v1/security/sessions'),
+  accessHistory: (cursor?: string | null) => api<{ data: AccessEvent[]; next_cursor: string | null }>(`/agent/v1/security/access-history?limit=20${cursor ? `&cursor=${cursor}` : ''}`),
+  revokeOtherSessions: (input: { key: string; stepUp: StepUp; prompt: string }) =>
+    api<{ revoked: number }>('/agent/v1/security/sessions/revoke-others', { body: {}, signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt } }),
+  changePin: (input: { currentPin: string; newPin: string; key: string }) =>
+    api<{ changed: true; other_sessions_revoked: number }>('/agent/v1/security/pin/change', { body: { current_pin: input.currentPin, new_pin: input.newPin }, signed: { idempotencyKey: input.key } }),
+
   cancel: (id: string) => api<{ transaction: Transaction }>(`/agent/v1/transactions/${id}/cancel`, { method: 'POST' }),
 
   /** Development only: simulates the customer confirming in the BataPay app. */

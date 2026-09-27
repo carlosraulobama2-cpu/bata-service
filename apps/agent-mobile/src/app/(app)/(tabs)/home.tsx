@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowDownToLine, ArrowUpFromLine, Info, QrCode, ScanLine } from 'lucide-react-native';
+import { ArrowDownToLine, ArrowUpFromLine, Bell, Info, QrCode, ScanLine } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +12,7 @@ import { Screen } from '../../../components/Screen';
 import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { TransactionRow } from '../../../components/TransactionRow';
-import { useBalance, useMe, useToday } from '../../../features/queries';
+import { useBalance, useMe, useToday, useUnreadCount } from '../../../features/queries';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
 import { formatDateTime, formatTime, localHour, money } from '../../../utils/format';
@@ -25,6 +25,7 @@ export default function Dashboard() {
   const me = useMe();
   const balance = useBalance();
   const today = useToday();
+  const unread = useUnreadCount().data?.unread_count ?? 0;
   const [infoOpen, setInfoOpen] = useState(false);
 
   const refreshing = me.isRefetching || balance.isRefetching || today.isRefetching;
@@ -45,8 +46,8 @@ export default function Dashboard() {
       <View style={[styles.hero, { backgroundColor: colors.hero }]}>
         <View style={styles.heroTop}>
           <View style={styles.flex}>
-            <Text variant="overline" style={{ color: colors.heroMuted }}>
-              {t('common.appName')}
+            <Text variant="overline" style={{ color: colors.heroMuted }} numberOfLines={1}>
+              {agent ? `${t('common.appName')} · ${agent.agent_code}` : t('common.appName')}
             </Text>
             {agent ? (
               <Text variant="headline" style={{ color: colors.heroText }} numberOfLines={1}>
@@ -56,13 +57,23 @@ export default function Dashboard() {
               <Skeleton width={180} height={22} style={{ opacity: 0.3 }} />
             )}
           </View>
-          {agent ? (
-            <View style={[styles.codeChip, { borderColor: 'rgba(255,255,255,0.25)' }]}>
-              <Text variant="caption" style={{ color: colors.heroText, fontWeight: '600' }}>
-                {agent.agent_code}
-              </Text>
-            </View>
-          ) : null}
+          <Pressable
+            onPress={() => router.push('/notifications')}
+            accessibilityRole="button"
+            accessibilityLabel={t('notifications.bellLabel', { count: unread })}
+            hitSlop={8}
+            style={styles.bell}
+            testID="home-bell"
+          >
+            <Bell size={24} color={colors.heroText} />
+            {unread > 0 ? (
+              <View style={[styles.badge, { backgroundColor: colors.danger, borderColor: colors.hero }]}>
+                <Text variant="caption" style={styles.badgeText}>
+                  {unread > 9 ? '9+' : unread}
+                </Text>
+              </View>
+            ) : null}
+          </Pressable>
         </View>
 
         <Pressable style={styles.balanceLabel} onPress={() => setInfoOpen(true)} accessibilityRole="button" accessibilityLabel={t('dashboard.balancesInfoTitle')}>
@@ -202,7 +213,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   hero: { paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.xxxl + space.lg, gap: space.xs, borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.xl },
-  codeChip: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
+  bell: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: space.sm },
+  badge: { position: 'absolute', top: 4, right: 2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  badgeText: { color: '#FFFFFF', fontSize: 10, lineHeight: 12, fontWeight: '700' },
   balanceLabel: { flexDirection: 'row', alignItems: 'center', gap: space.xs, alignSelf: 'flex-start', minHeight: 32 },
   body: { paddingHorizontal: space.lg, marginTop: -space.xxxl, gap: space.lg, paddingBottom: space.xxl },
   actions: { gap: space.sm },

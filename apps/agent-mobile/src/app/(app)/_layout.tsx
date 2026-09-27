@@ -14,6 +14,7 @@ export default function AppLayout() {
       <Stack.Screen name="qr/scan" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
       <Stack.Screen name="qr/collect" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
       <Stack.Screen name="qr/mine" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+      <Stack.Screen name="security/pin" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
     </Stack>
   );
 }

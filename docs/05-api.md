@@ -576,7 +576,7 @@ No existe ningún endpoint de edición o borrado de operaciones.
 
 ## 13. Notificaciones
 
-`GET /notifications?cursor` · `POST /notifications/{id}/read` · `POST /notifications/read-all` · `PUT /notifications/preferences` (no permite desactivar seguridad/cuenta) · `POST /push-tokens` (registrar token FCM/APNs del dispositivo).
+`GET /notifications?cursor&unread` (incluye `unread_count`) · `GET /notifications/unread-count` · `POST /notifications/{id}/read` · `POST /notifications/read-all` · `PUT /notifications/preferences` (no permite desactivar seguridad/cuenta) · `POST /push-tokens` (registrar token FCM/APNs del dispositivo).
 
 ## 14. Soporte
 

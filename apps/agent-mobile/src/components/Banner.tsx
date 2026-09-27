@@ -1,16 +1,17 @@
-import { AlertTriangle, Info, WifiOff } from 'lucide-react-native';
+import { AlertTriangle, CheckCircle2, Info, WifiOff } from 'lucide-react-native';
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { radius, space } from '../theme/tokens';
 import { Text } from './Text';
 
-type Tone = 'info' | 'warning' | 'danger' | 'offline';
+type Tone = 'info' | 'success' | 'warning' | 'danger' | 'offline';
 
 export function Banner({ tone = 'info', children, onPress, action }: { tone?: Tone; children: ReactNode; onPress?: () => void; action?: string }) {
   const { colors } = useTheme();
   const cfg = {
     info: { fg: colors.info, bg: colors.infoSoft, Icon: Info },
+    success: { fg: colors.success, bg: colors.successSoft, Icon: CheckCircle2 },
     warning: { fg: colors.warning, bg: colors.warningSoft, Icon: AlertTriangle },
     danger: { fg: colors.danger, bg: colors.dangerSoft, Icon: AlertTriangle },
     offline: { fg: colors.textMuted, bg: colors.neutralSoft, Icon: WifiOff }

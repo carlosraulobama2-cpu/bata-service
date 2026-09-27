@@ -24,7 +24,11 @@ Stack: Node.js 22 · TypeScript · NestJS 11 (Fastify) · Kysely · PostgreSQL. 
 | `GET /me`, `/balance` (desde el ledger), `/limits` | ✅ |
 | Cobro QR (QR firmado Ed25519, un uso, caduca; pago del cliente vía Core capturando su retención), QR estático del agente, escaneo unificado (retiro → cash-out, QR de cliente → cash-in) | ✅ |
 | Audit log encadenado, eventos de outbox, notificaciones en bandeja | ✅ |
-| Rate limiting con Redis (incluido el bloqueo tras 5 códigos QR inválidos), motor de riesgo, KYC en la app, liquidaciones, soporte, Admin API | ⏳ fases siguientes |
+| Comisiones: resumen (hoy, 7 días, mes, histórico, pendiente según el ledger, desglose por tipo) y detalle por operación | ✅ |
+| Bandeja de avisos: lista paginada, sin leer, marcar como leído (uno / todos) | ✅ |
+| Seguridad: resumen, dispositivos, sesiones, historial de accesos (IP enmascarada), cerrar las demás sesiones (PIN/biometría), cambio de PIN (reglas, distinto de los 3 últimos, cierra otras sesiones, aviso) | ✅ |
+| Bloqueo tras 5 códigos de retiro/QR inexistentes en 10 min (15 min, `RATE_LIMITED` con `retry_after_seconds`) | ✅ |
+| Rate limiting general con Redis, motor de riesgo, KYC en la app, liquidaciones, soporte, Admin API, push (FCM/APNs) | ⏳ fases siguientes |
 
 ## Integraciones
 
@@ -68,4 +72,5 @@ Cada archivo de pruebas usa su propia base de datos, clonada de una plantilla ya
 - Respuesta del ledger perdida: la operación queda en `processing` y el reconciliador la completa sin mover el dinero dos veces.
 - Cash-in confirmado, rechazado, cancelado y expirado; eventos de Core falsificados o antiguos.
 - Aislamiento entre agentes (404) y saldos leídos del ledger.
+- Comisiones (periodos, desglose, paginación), avisos (lectura, aislamiento entre agentes), seguridad (cerrar otras sesiones, cambio de PIN y sus reglas) y bloqueo por códigos inválidos.
 - QR de cobro: pago completo (cliente −, float +), un solo uso, importe distinto, caducidad y cancelación (límites devueltos), cliente sin fondos, QR falsificado o manipulado, QR estático, escaneo unificado.

@@ -6,20 +6,23 @@ import { es } from '../i18n/es';
 import { ApiError } from '../api/client';
 import { errorMessage } from '../features/errors';
 
-// Every error code the API can return (apps/agent-api/src/common/errors/app-error.ts)
+// Every error code the API can return, read from the backend itself so a new code can't ship untranslated.
 const API_CODES = [
-  'VALIDATION_ERROR', 'UNAUTHENTICATED', 'SESSION_EXPIRED', 'SESSION_REVOKED', 'INVALID_CREDENTIALS', 'PIN_INVALID',
-  'IDENTITY_NOT_VERIFIED', 'OTP_INVALID', 'OTP_EXPIRED', 'FORBIDDEN', 'DEVICE_NOT_TRUSTED', 'SIGNATURE_INVALID',
-  'ACCOUNT_LOCKED', 'ACCOUNT_SUSPENDED', 'ACCOUNT_BLOCKED', 'ACCOUNT_NOT_ACTIVE', 'NOT_FOUND', 'ALREADY_PROCESSED',
-  'OPERATION_IN_PROGRESS', 'IDEMPOTENCY_KEY_REUSED', 'INSUFFICIENT_FLOAT', 'LIMIT_PER_TX_EXCEEDED', 'AMOUNT_BELOW_MINIMUM',
-  'LIMIT_DAILY_EXCEEDED', 'LIMIT_DAILY_COUNT_EXCEEDED', 'LIMIT_MONTHLY_EXCEEDED', 'OPERATION_NOT_ENABLED',
-  'CUSTOMER_UNAVAILABLE', 'AMOUNT_MISMATCH', 'QR_EXPIRED', 'QR_ALREADY_USED', 'WITHDRAWAL_CODE_INVALID',
-  'OPERATION_NOT_CANCELLABLE', 'APP_UPDATE_REQUIRED', 'INTERNAL_ERROR'
-];
+  ...require('node:fs')
+    .readFileSync(require('node:path').join(__dirname, '../../../agent-api/src/common/errors/app-error.ts'), 'utf8')
+    .matchAll(/E\('([A-Z_]+)'/g)
+].map((m: RegExpMatchArray) => m[1] as string);
 
 describe('error messages', () => {
   it('has a Spanish message for every API error code', () => {
+    expect(API_CODES.length).toBeGreaterThan(35);
     for (const code of API_CODES) expect(es.errors).toHaveProperty(code);
+  });
+
+  it('says when a throttled agent can try again', () => {
+    const t = i18n.t.bind(i18n);
+    expect(errorMessage(new ApiError('RATE_LIMITED', 429, { retry_after_seconds: 830 }), t)).toBe('Demasiados intentos. Espera un momento. Podrás intentarlo en 14 minutos.');
+    expect(errorMessage(new ApiError('RATE_LIMITED', 429, { retry_after_seconds: 20 }), t)).toBe('Demasiados intentos. Espera un momento. Podrás intentarlo en 1 minuto.');
   });
 
   it('adds attempts left and lock time', () => {

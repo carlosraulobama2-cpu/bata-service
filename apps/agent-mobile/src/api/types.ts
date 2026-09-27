@@ -104,3 +104,84 @@ export type LoginResponse =
   | { status: 'otp_required'; challenge_id: string; destination_masked: string; expires_in: number; reason: string };
 
 export type StepUp = { method: 'pin'; pin: string } | { method: 'biometric' };
+
+export interface CommissionSummary {
+  currency: string;
+  today: number;
+  last_7_days: number;
+  this_month: number;
+  all_time: number;
+  pending_settlement: number;
+  by_type_this_month: { operation_type: TransactionType; count: number; amount: number }[];
+}
+
+export interface CommissionLine {
+  id: string;
+  transaction_id: string;
+  reference: string;
+  operation_type: TransactionType;
+  base_amount: number;
+  commission: number;
+  currency: string;
+  status: 'accrued' | 'in_settlement' | 'settled' | 'reversed';
+  accrued_at: string;
+}
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title_key: string;
+  body_key: string;
+  params: Record<string, unknown>;
+  related_transaction_id: string | null;
+  created_at: string;
+  read_at: string | null;
+}
+
+export interface NotificationPage {
+  data: AppNotification[];
+  unread_count: number;
+  next_cursor: string | null;
+}
+
+export interface SecurityOverview {
+  this_device: { id: string; model: string | null; platform: string; trusted_at: string | null; cooldown_until: string | null };
+  biometric_enabled: boolean;
+  pin: { set_at: string; must_change: boolean };
+  previous_login: { at: string; device_model: string | null; ip_masked: string | null; approx_location: string | null } | null;
+  active_sessions: number;
+  trusted_devices: number;
+  failed_attempts_last_7_days: number;
+}
+
+export interface DeviceInfo {
+  id: string;
+  model: string | null;
+  platform: string;
+  os_version: string | null;
+  app_version: string | null;
+  status: 'trusted' | 'revoked';
+  current: boolean;
+  trusted_at: string | null;
+  last_seen_at: string | null;
+  revoked_at: string | null;
+}
+
+export interface SessionInfo {
+  id: string;
+  current: boolean;
+  device_model: string | null;
+  platform: string;
+  ip_masked: string | null;
+  created_at: string;
+  last_used_at: string | null;
+}
+
+export interface AccessEvent {
+  id: string;
+  event: string;
+  at: string;
+  device_model: string | null;
+  ip_masked: string | null;
+  approx_location: string | null;
+}

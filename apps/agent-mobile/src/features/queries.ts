@@ -23,3 +23,33 @@ export const useTransaction = (id: string) =>
     // Keep following an operation that is still moving.
     refetchInterval: (q) => (q.state.data && ['pending', 'processing'].includes(q.state.data.status) ? 2500 : false)
   });
+
+export const useCommissionSummary = () => useQuery({ queryKey: ['commissions', 'summary'], queryFn: endpoints.commissionSummary, staleTime: 30_000 });
+export const useCommissionLines = () =>
+  useInfiniteQuery({
+    queryKey: ['commissions', 'lines'],
+    queryFn: ({ pageParam }) => endpoints.commissions({ cursor: pageParam, limit: 20 }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.next_cursor
+  });
+
+/** Bell badge: refreshed every minute while the app is open. */
+export const useUnreadCount = () => useQuery({ queryKey: ['notifications', 'unread'], queryFn: endpoints.unreadCount, refetchInterval: 60_000, staleTime: 15_000 });
+export const useNotifications = () =>
+  useInfiniteQuery({
+    queryKey: ['notifications', 'list'],
+    queryFn: ({ pageParam }) => endpoints.notifications(pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.next_cursor
+  });
+
+export const useSecurityOverview = () => useQuery({ queryKey: ['security', 'overview'], queryFn: endpoints.securityOverview });
+export const useSessions = () => useQuery({ queryKey: ['security', 'sessions'], queryFn: endpoints.sessions });
+export const useDevices = () => useQuery({ queryKey: ['security', 'devices'], queryFn: endpoints.devices });
+export const useAccessHistory = () =>
+  useInfiniteQuery({
+    queryKey: ['security', 'history'],
+    queryFn: ({ pageParam }) => endpoints.accessHistory(pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (last) => last.next_cursor
+  });

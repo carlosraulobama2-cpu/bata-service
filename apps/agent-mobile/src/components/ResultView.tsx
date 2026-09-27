@@ -1,6 +1,7 @@
 import { CheckCircle2, Clock3, XCircle } from 'lucide-react-native';
-import { ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { ReactNode, useEffect } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { radius, space } from '../theme/tokens';
 import { Text } from './Text';
@@ -10,6 +11,11 @@ type Tone = 'success' | 'pending' | 'failure';
 /** Big, unambiguous outcome block used at the end of every operation. */
 export function ResultView({ tone, title, amount, instruction, children }: { tone: Tone; title: string; amount?: string; instruction?: string; children?: ReactNode }) {
   const { colors } = useTheme();
+  useEffect(() => {
+    // Felt, not only seen: the agent is often looking at the customer, not the screen.
+    if (Platform.OS === 'web' || tone === 'pending') return;
+    void Haptics.notificationAsync(tone === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error).catch(() => undefined);
+  }, [tone]);
   const cfg = {
     success: { Icon: CheckCircle2, fg: colors.success, bg: colors.successSoft },
     pending: { Icon: Clock3, fg: colors.warning, bg: colors.warningSoft },
