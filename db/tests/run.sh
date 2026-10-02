@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 ADMIN_URL="${DATABASE_ADMIN_URL:-postgresql://postgres@localhost:5432/postgres}"
-TEST_DB="bata_services_test_$$"
+TEST_DB="velynt_services_test_$$"
 TEST_URL="${ADMIN_URL%/*}/${TEST_DB}"
 
 psql "$ADMIN_URL" -qc "CREATE DATABASE ${TEST_DB}"

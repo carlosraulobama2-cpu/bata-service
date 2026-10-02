@@ -6,7 +6,7 @@ Existen tres superficies separadas, con tokens de audiencias distintas:
 
 | Superficie | Prefijo | Quién | Token |
 |---|---|---|---|
-| Agent API | `/agent/v1` | App Bata Services | JWT `aud = bata-services-agent`, rol `AGENT` |
+| Agent API | `/agent/v1` | App Velynt Services | JWT `aud = velynt-services-agent`, rol `AGENT` |
 | Admin API | `/admin/v1` | Admin Panel | JWT del IdP corporativo, roles de staff |
 | Internal API | `/internal/v1` | Servicios (Core, Ledger, workers) | mTLS + token de servicio con *scopes* |
 
@@ -227,7 +227,7 @@ Ver flujo 14 en [07-flujos.md](07-flujos.md#14-recuperación-de-cuenta). Siempre
   "status": "active",
   "tier": { "code": "tier_1", "name": "Agente" },
   "location": { "city": "Bata", "country": "GQ" },
-  "business": { "trade_name": "Bata Services Agent", "city": "Bata", "opening_hours": { "mon": [["08:00", "20:00"]] } },
+  "business": { "trade_name": "Velynt Services Agent", "city": "Bata", "opening_hours": { "mon": [["08:00", "20:00"]] } },
   "kyc": { "status": "approved", "next_review_at": "2027-09-01" }
 }
 ```

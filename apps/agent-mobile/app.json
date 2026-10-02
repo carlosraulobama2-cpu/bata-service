@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "BATA SERVICES",
-    "slug": "bata-services",
+    "name": "VELYNT SERVICES",
+    "slug": "velynt-services",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -74,7 +74,7 @@
         }
       ]
     ],
-    "scheme": "bataservices",
+    "scheme": "velyntservices",
     "experiments": {
       "typedRoutes": false
     }

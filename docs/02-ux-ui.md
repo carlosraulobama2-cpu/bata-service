@@ -28,7 +28,7 @@
 | `info` | `#1F6FEB` | `#79A8FF` | Información |
 | `border` | `#E3E6EA` | `#2A3038` | Separadores |
 
-Contraste mínimo 4,5:1 en texto (WCAG AA). La identidad de marca definitiva de BATA SERVICES **(por confirmar)**; los tokens permiten cambiarla sin tocar componentes.
+Contraste mínimo 4,5:1 en texto (WCAG AA). La identidad de marca definitiva de VELYNT SERVICES **(por confirmar)**; los tokens permiten cambiarla sin tocar componentes.
 
 ### Tipografía y tamaños
 
@@ -90,7 +90,7 @@ El servidor decide qué stack se muestra según el `status` del agente en `GET /
 
 ```
 ┌──────────────────────────────┐
-│         BATA SERVICES         │
+│         VELYNT SERVICES         │
 │  Accede a tu cuenta de agente │
 │                               │
 │  Número de teléfono           │
@@ -118,7 +118,7 @@ El servidor decide qué stack se muestra según el `status` del agente en `GET /
 
 ```
 ┌──────────────────────────────┐
-│ BATA SERVICES          🔔 (2) │
+│ VELYNT SERVICES          🔔 (2) │
 │ Buenos días, Carlos           │
 │                               │
 │ Saldo operativo           ⓘ   │
@@ -208,7 +208,7 @@ Sin ningún botón de edición. "Reportar problema" crea una incidencia vinculad
 
 ### 4.10 Recibo
 
-Tarjeta imprimible/compartible (imagen o PDF) con: BATA SERVICES, tipo, importe, referencia, fecha/hora, agente (código y nombre comercial), cliente enmascarado, estado, código de verificación corto. Impresión Bluetooth para impresoras térmicas **(por confirmar)**.
+Tarjeta imprimible/compartible (imagen o PDF) con: VELYNT SERVICES, tipo, importe, referencia, fecha/hora, agente (código y nombre comercial), cliente enmascarado, estado, código de verificación corto. Impresión Bluetooth para impresoras térmicas **(por confirmar)**.
 
 ### 4.11 Comisiones
 

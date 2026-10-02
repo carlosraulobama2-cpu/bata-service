@@ -1,6 +1,6 @@
 # 07 · Flujos de usuario
 
-Convenciones: **A** = agente (app Bata Services) · **S** = Agent Backend · **C** = BataPay Core · **L** = Ledger · **Cl** = cliente (app BataPay) · **BO** = back-office (Admin Panel).
+Convenciones: **A** = agente (app Velynt Services) · **S** = Agent Backend · **C** = BataPay Core · **L** = Ledger · **Cl** = cliente (app BataPay) · **BO** = back-office (Admin Panel).
 
 ## 1. Registro de agente
 

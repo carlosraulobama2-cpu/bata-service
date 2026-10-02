@@ -70,7 +70,7 @@ export class Harness {
   push = new InMemoryPushSender();
   clock = new TestClock();
   staff!: { compliance: string; admin: string; finance: string; finance2: string };
-  private dbName = `bata_test_${randomBytes(6).toString('hex')}`;
+  private dbName = `velynt_test_${randomBytes(6).toString('hex')}`;
 
   static async start(overrides: { wrapLedger?: (real: LedgerClient) => LedgerClient; env?: Record<string, string> } = {}): Promise<Harness> {
     const h = new Harness();

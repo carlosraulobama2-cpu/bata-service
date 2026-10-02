@@ -1,16 +1,16 @@
 import qrcode from 'qrcode-generator';
-import { looksLikeBataQr, qrPath } from '../utils/qr';
+import { looksLikeVelyntQr, qrPath } from '../utils/qr';
 
 describe('QR helpers', () => {
   const payload = 'BSV1.K.Zx8fQ2kLm0pR7sT1uV3wYA.' + 'a'.repeat(86);
 
-  it('recognises the BATA SERVICES format only by shape', () => {
-    expect(looksLikeBataQr(payload)).toBe(true);
-    expect(looksLikeBataQr('BSV1.W.wdr_123456')).toBe(true);
-    expect(looksLikeBataQr('  BSV1.C.abcdEFGH_-  ')).toBe(true);
-    expect(looksLikeBataQr('https://example.com')).toBe(false);
-    expect(looksLikeBataQr('BSV1.X.abcdefgh')).toBe(false);
-    expect(looksLikeBataQr('BSV2.K.abcdefgh')).toBe(false);
+  it('recognises the VELYNT SERVICES format only by shape', () => {
+    expect(looksLikeVelyntQr(payload)).toBe(true);
+    expect(looksLikeVelyntQr('BSV1.W.wdr_123456')).toBe(true);
+    expect(looksLikeVelyntQr('  BSV1.C.abcdEFGH_-  ')).toBe(true);
+    expect(looksLikeVelyntQr('https://example.com')).toBe(false);
+    expect(looksLikeVelyntQr('BSV1.X.abcdefgh')).toBe(false);
+    expect(looksLikeVelyntQr('BSV2.K.abcdefgh')).toBe(false);
   });
 
   it('draws exactly the dark modules of the code', () => {

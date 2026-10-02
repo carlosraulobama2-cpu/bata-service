@@ -1,8 +1,8 @@
-# BATA SERVICES
+# VELYNT SERVICES
 
 Aplicación profesional para **agentes autorizados de BataPay**: cash-in, cash-out, cobros QR, comisiones, liquidaciones, KYC, seguridad y soporte.
 
-Bata Services es un producto **independiente** de la app BataPay (propio frontend, backend, autenticación y permisos), conectado a la infraestructura de BataPay mediante APIs internas seguras. **Todo movimiento de dinero se valida en el servidor y se registra en el ledger central de doble partida.** El agente nunca puede modificar un saldo.
+Velynt Services es un producto **independiente** de la app BataPay (propio frontend, backend, autenticación y permisos), conectado a la infraestructura de BataPay mediante APIs internas seguras. **Todo movimiento de dinero se valida en el servidor y se registra en el ledger central de doble partida.** El agente nunca puede modificar un saldo.
 
 > Estado: diseño técnico completo y **Fase 1 en desarrollo**. El backend de agentes ([`apps/agent-api`](apps/agent-api)) implementa login seguro, cash-in, cash-out, cobros QR, límites, comisiones, historial y saldos sobre el ledger, y la app ([`apps/agent-mobile`](apps/agent-mobile)) cubre esos flujos de principio a fin.
 

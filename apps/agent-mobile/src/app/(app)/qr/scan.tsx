@@ -12,7 +12,7 @@ import { Text } from '../../../components/Text';
 import { errorMessage } from '../../../features/errors';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
-import { looksLikeBataQr } from '../../../utils/qr';
+import { looksLikeVelyntQr } from '../../../utils/qr';
 
 /**
  * Unified scan: the server says what the code is. A withdrawal QR opens the
@@ -28,7 +28,7 @@ export default function QrScanScreen() {
 
   const handle = async (data: string) => {
     setError(null);
-    if (!looksLikeBataQr(data)) {
+    if (!looksLikeVelyntQr(data)) {
       setError(t('errors.QR_INVALID'));
       return;
     }

@@ -94,7 +94,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
         if (options.signed.stepUp.method === 'pin') {
           agentAuth = { method: 'pin', pin: options.signed.stepUp.pin };
         } else {
-          const bio = await signWithBiometricKey([method, path, timestamp, key].join('\n'), options.signed.biometricPrompt ?? 'BATA SERVICES');
+          const bio = await signWithBiometricKey([method, path, timestamp, key].join('\n'), options.signed.biometricPrompt ?? 'VELYNT SERVICES');
           if (!bio) throw new ApiError('BIOMETRIC_CANCELLED', 0);
           agentAuth = { method: 'biometric', signature: bio };
         }

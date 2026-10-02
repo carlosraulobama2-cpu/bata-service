@@ -1,8 +1,8 @@
 {
-  "name": "@bata/agent-api",
+  "name": "@velynt/agent-api",
   "version": "0.1.0",
   "private": true,
-  "description": "BATA SERVICES — Agent Backend (Agent API)",
+  "description": "VELYNT SERVICES — Agent Backend (Agent API)",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -15,7 +15,7 @@
     "test": "jest --runInBand"
   },
   "dependencies": {
-    "@bata/money": "workspace:*",
+    "@velynt/money": "workspace:*",
     "@nestjs/common": "^11.2.6",
     "@nestjs/core": "^11.2.6",
     "@nestjs/platform-fastify": "^11.2.6",
@@ -29,7 +29,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@bata/tsconfig": "workspace:*",
+    "@velynt/tsconfig": "workspace:*",
     "@nestjs/testing": "^11.2.6",
     "@types/jest": "^29.5.14",
     "@types/node": "^26.6.3",
@@ -48,7 +48,7 @@
     "testTimeout": 30000,
     "globalSetup": "<rootDir>/test/support/global-setup.ts",
     "moduleNameMapper": {
-      "^@bata/money$": "<rootDir>/../../packages/money/src"
+      "^@velynt/money$": "<rootDir>/../../packages/money/src"
     }
   }
 }

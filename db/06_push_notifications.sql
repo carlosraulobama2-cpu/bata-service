@@ -1,5 +1,5 @@
 -- =====================================================================
--- BATA SERVICES — push notification delivery queue
+-- VELYNT SERVICES — push notification delivery queue
 --
 -- Every in-app notification gets one push delivery row in the SAME
 -- transaction (trigger), so a notification can never be "forgotten" by

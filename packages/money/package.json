@@ -1,5 +1,5 @@
 {
-  "name": "@bata/money",
+  "name": "@velynt/money",
   "version": "0.1.0",
   "private": true,
   "description": "Importes enteros en unidades m\u00ednimas, formato y c\u00e1lculo de comisiones",
@@ -11,7 +11,7 @@
     "test": "jest"
   },
   "devDependencies": {
-    "@bata/tsconfig": "workspace:*",
+    "@velynt/tsconfig": "workspace:*",
     "@types/jest": "^29.5.14",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",

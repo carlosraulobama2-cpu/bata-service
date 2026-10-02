@@ -1,9 +1,9 @@
 {
-  "name": "@bata/agent-mobile",
+  "name": "@velynt/agent-mobile",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
-    "@bata/money": "workspace:^",
+    "@velynt/money": "workspace:^",
     "@expo/metro-runtime": "~57.0.16",
     "@noble/curves": "^2.4.0",
     "@noble/hashes": "^2.4.0",
@@ -38,7 +38,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@bata/tsconfig": "workspace:^",
+    "@velynt/tsconfig": "workspace:^",
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^26.6.3",
@@ -71,7 +71,7 @@
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|expo-.*|@expo/.*|react-navigation|@react-navigation/.*|@noble/.*|lucide-react-native))"
     ],
     "moduleNameMapper": {
-      "^@bata/money$": "<rootDir>/../../packages/money/src"
+      "^@velynt/money$": "<rootDir>/../../packages/money/src"
     }
   }
 }

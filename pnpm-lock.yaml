@@ -10,7 +10,7 @@ importers:
 
   apps/agent-api:
     dependencies:
-      '@bata/money':
+      '@velynt/money':
         specifier: workspace:*
         version: link:../../packages/money
       '@nestjs/common':
@@ -47,7 +47,7 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
     devDependencies:
-      '@bata/tsconfig':
+      '@velynt/tsconfig':
         specifier: workspace:*
         version: link:../../packages/tsconfig
       '@nestjs/testing':
@@ -77,7 +77,7 @@ importers:
 
   apps/agent-mobile:
     dependencies:
-      '@bata/money':
+      '@velynt/money':
         specifier: workspace:^
         version: link:../../packages/money
       '@expo/metro-runtime':
@@ -177,7 +177,7 @@ importers:
         specifier: ^5.0.15
         version: 5.0.15(@types/react@19.2.18)(react@19.2.3)(use-sync-external-store@1.7.0(react@19.2.3))
     devDependencies:
-      '@bata/tsconfig':
+      '@velynt/tsconfig':
         specifier: workspace:^
         version: link:../../packages/tsconfig
       '@testing-library/react-native':
@@ -207,7 +207,7 @@ importers:
 
   packages/money:
     devDependencies:
-      '@bata/tsconfig':
+      '@velynt/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
       '@types/jest':

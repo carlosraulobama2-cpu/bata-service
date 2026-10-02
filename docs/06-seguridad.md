@@ -44,7 +44,7 @@ Por qué *pepper* en HSM: un PIN de 6 dígitos tiene solo 1.000.000 combinacione
 
 | Elemento | Valor inicial (configurable) |
 |---|---|
-| Access token | JWT ES256, 10 min, `aud=bata-services-agent` |
+| Access token | JWT ES256, 10 min, `aud=velynt-services-agent` |
 | Refresh token | Opaco 256 bits, rotación en cada uso, hash SHA-256 en BD |
 | Inactividad | 7 días (el refresh deja de valer) |
 | Vida absoluta de la sesión | 30 días |
@@ -106,7 +106,7 @@ Detección de dispositivo nuevo: `installation_id` + clave pública distintos a 
 
 Roles: `AGENT`, `SUPERVISOR`, `ADMIN`, `COMPLIANCE`, `SUPPORT`, `FINANCE`. Los permisos están en `agent.permissions` / `agent.role_permissions` ([03_roles…](../db/03_roles_and_reference_data.sql)).
 
-- La app Bata Services solo acepta tokens con rol `AGENT` y solo expone rutas `self:*`.
+- La app Velynt Services solo acepta tokens con rol `AGENT` y solo expone rutas `self:*`.
 - Los roles de staff viven en el Admin Panel, autenticados por el IdP corporativo. Un mismo humano **no** puede ser a la vez agente y staff con acceso sobre sí mismo (comprobación en servicio: `staff.idp_subject` ≠ identidad del agente afectado; y *maker-checker*).
 - `SUPERVISOR` tiene alcance limitado (`scope.regions`) a los agentes de su zona.
 

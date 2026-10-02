@@ -1,5 +1,5 @@
 -- =====================================================================
--- BATA SERVICES / BataPay — FINANCIAL LEDGER (double-entry)
+-- VELYNT SERVICES / BataPay — FINANCIAL LEDGER (double-entry)
 -- PostgreSQL 15+
 --
 -- Owned by the Ledger service (BataPay core). In production this schema

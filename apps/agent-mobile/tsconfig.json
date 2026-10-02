@@ -4,7 +4,7 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
-      "@bata/money": [
+      "@velynt/money": [
         "../../packages/money/src"
       ]
     }

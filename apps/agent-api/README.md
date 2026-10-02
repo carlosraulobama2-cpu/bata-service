@@ -1,4 +1,4 @@
-# Agent API (BATA SERVICES)
+# Agent API (VELYNT SERVICES)
 
 Backend de la app de agentes. El diseño completo está en [`docs/`](../../docs); este paquete implementa la **Fase 1** del [roadmap](../../docs/11-roadmap.md).
 
@@ -50,7 +50,7 @@ Requisitos: Node 22, pnpm, PostgreSQL 15+.
 ```bash
 pnpm install
 cp apps/agent-api/.env.example apps/agent-api/.env
-pnpm --filter @bata/agent-api keys:dev      # copia la salida en .env
+pnpm --filter @velynt/agent-api keys:dev      # copia la salida en .env
 # en .env: DATABASE_URL / LEDGER_DATABASE_URL de tu PostgreSQL y ENABLE_DEV_ENDPOINTS=true
 cd apps/agent-api
 set -a && . ./.env && set +a
@@ -67,7 +67,7 @@ Endpoints de desarrollo (solo con `ENABLE_DEV_ENDPOINTS=true`; la configuración
 # PostgreSQL con un usuario que pueda crear bases de datos
 export TEST_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres
 export TEST_REDIS_URL=redis://localhost:6379/15   # opcional: repite las pruebas de límites contra Redis real (se vacía esa BD)
-pnpm --filter @bata/agent-api test
+pnpm --filter @velynt/agent-api test
 ```
 
 Cada archivo de pruebas usa su propia base de datos, clonada de una plantilla ya migrada. Cubren, entre otros casos:

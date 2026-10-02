@@ -27,7 +27,7 @@ export default function TransactionDetail() {
     // Receipt text keeps the customer masked.
     void Share.share({
       message: [
-        'BATA SERVICES',
+        'VELYNT SERVICES',
         `${t(`types.${tx.type}`)}: ${money(tx.amount)}`,
         `Transaction ID: ${tx.reference}`,
         `${t('common.customer')}: ${tx.customer_masked ?? '—'}`,

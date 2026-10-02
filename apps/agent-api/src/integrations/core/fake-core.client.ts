@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { maskPhone } from '@bata/money';
+import { maskPhone } from '@velynt/money';
 import { Clock } from '../../common/time/clock';
 import { randomNumericCode, randomToken } from '../../common/crypto/secrets';
 import { customerWallet, LedgerClient } from '../ledger/ledger.client';

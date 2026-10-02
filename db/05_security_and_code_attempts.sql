@@ -1,5 +1,5 @@
 -- =====================================================================
--- BATA SERVICES — PIN history and invalid-code throttling
+-- VELYNT SERVICES — PIN history and invalid-code throttling
 -- =====================================================================
 
 -- Previous PIN hashes: a new PIN must differ from the last 3

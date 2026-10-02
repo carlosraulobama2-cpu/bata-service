@@ -1,7 +1,7 @@
 import { Client } from 'pg';
 import { migrate } from '../../scripts/migrate-lib';
 
-export const TEMPLATE_DB = 'bata_agent_api_template';
+export const TEMPLATE_DB = 'velynt_agent_api_template';
 
 export function adminUrl(): string {
   return process.env.TEST_DATABASE_ADMIN_URL ?? 'postgresql://postgres:postgres@localhost:5432/postgres';

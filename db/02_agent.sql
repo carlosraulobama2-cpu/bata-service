@@ -1,5 +1,5 @@
 -- =====================================================================
--- BATA SERVICES — AGENT SERVICE DATABASE
+-- VELYNT SERVICES — AGENT SERVICE DATABASE
 -- PostgreSQL 15+
 --
 -- Owned by the Agent service. It holds agent identity, onboarding, KYC

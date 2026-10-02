@@ -1,5 +1,5 @@
 {
-  "extends": "@bata/tsconfig/base.json",
+  "extends": "@velynt/tsconfig/base.json",
   "compilerOptions": { "rootDir": "src", "outDir": "dist" },
   "include": ["src"]
 }

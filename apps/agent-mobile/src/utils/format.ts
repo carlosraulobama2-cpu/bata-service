@@ -1,4 +1,4 @@
-import { formatMoney } from '@bata/money';
+import { formatMoney } from '@velynt/money';
 import { config } from '../config';
 
 export const money = (amount: number, opts: { sign?: boolean } = {}) => formatMoney(amount, config.currency, opts);

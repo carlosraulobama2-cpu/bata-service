@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'kysely';
-import { maskPhone } from '@bata/money';
+import { maskPhone } from '@velynt/money';
 import { ENV, Env } from '../../config/env';
 import { AuditService } from '../../common/audit/audit.service';
 import { parsePublicJwk } from '../../common/auth/device-signature';
@@ -117,7 +117,7 @@ export class AuthService {
       await trx.insertInto('agent.agent_access_events').values({ agent_id: agent.id, phone_hmac: null, event: 'otp_sent', device_id: null, ip: meta.ip, approx_location: null }).execute();
       return row;
     });
-    await this.sms.send(agent.phone_e164, `BATA SERVICES: tu código de verificación es ${code}. No lo compartas con nadie.`);
+    await this.sms.send(agent.phone_e164, `VELYNT SERVICES: tu código de verificación es ${code}. No lo compartas con nadie.`);
     return {
       status: 'otp_required',
       challenge_id: challenge.id,

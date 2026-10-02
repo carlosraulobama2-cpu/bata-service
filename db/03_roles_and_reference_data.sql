@@ -48,7 +48,7 @@ GRANT SELECT (id, reference, agent_id, type, status, amount, currency, fee_amoun
 -- RBAC reference data
 -- ---------------------------------------------------------------------
 INSERT INTO agent.roles (code, description) VALUES
-  ('AGENT',      'Agente autorizado: opera desde Bata Services'),
+  ('AGENT',      'Agente autorizado: opera desde Velynt Services'),
   ('SUPERVISOR', 'Supervisor de zona: consulta y acompaña a sus agentes'),
   ('ADMIN',      'Administración de la red de agentes'),
   ('COMPLIANCE', 'Revisión KYC, casos de riesgo y cumplimiento'),

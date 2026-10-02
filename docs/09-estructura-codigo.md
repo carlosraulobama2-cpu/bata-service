@@ -7,7 +7,7 @@ Monorepo (pnpm workspaces + Turborepo) para compartir tipos, esquemas de validac
 ```
 bata-service/
 ├── apps/
-│   ├── agent-mobile/          # App Bata Services (Expo + React Native + TS)
+│   ├── agent-mobile/          # App Velynt Services (Expo + React Native + TS)
 │   ├── agent-api/             # Agent Backend (NestJS + TS)
 │   └── admin-web/             # Admin Panel (Next.js + TS)
 ├── packages/
@@ -198,9 +198,9 @@ Nunca se suben valores reales al repositorio. En producción vienen del gestor d
 | `DATABASE_READ_URL` | réplica de lectura | ✅ |
 | `DATABASE_POOL_MAX` | `20` | |
 | `REDIS_URL` | `rediss://…` | ✅ |
-| `QUEUE_PREFIX` | `bata-services` | |
+| `QUEUE_PREFIX` | `velynt-services` | |
 | `JWT_ISSUER` | `https://auth.example/agent` | |
-| `JWT_AUDIENCE` | `bata-services-agent` | |
+| `JWT_AUDIENCE` | `velynt-services-agent` | |
 | `JWT_SIGNING_KEY_ID` | alias de la clave en KMS | |
 | `ACCESS_TOKEN_TTL_SECONDS` | `600` | |
 | `REFRESH_TOKEN_TTL_DAYS` | `30` | |

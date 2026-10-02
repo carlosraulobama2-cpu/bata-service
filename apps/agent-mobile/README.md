@@ -1,4 +1,4 @@
-# App de agentes (BATA SERVICES)
+# App de agentes (VELYNT SERVICES)
 
 App móvil para agentes autorizados de BataPay. Expo SDK 57 · React Native · TypeScript · expo-router.
 Diseño de referencia: [docs/02-ux-ui.md](../../docs/02-ux-ui.md).

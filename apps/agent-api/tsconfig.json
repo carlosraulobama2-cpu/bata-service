@@ -1,5 +1,5 @@
 {
-  "extends": "@bata/tsconfig/base.json",
+  "extends": "@velynt/tsconfig/base.json",
   "compilerOptions": {
     "rootDir": "../..",
     "outDir": "dist",
@@ -11,7 +11,7 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@bata/money": [
+      "@velynt/money": [
         "../../packages/money/src"
       ]
     }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { computeCommission, selectCommissionRule } from '@bata/money';
+import { computeCommission, selectCommissionRule } from '@velynt/money';
 import type { AgentDb, AgentTrx } from '../../common/db/database';
 import { Clock } from '../../common/time/clock';
 

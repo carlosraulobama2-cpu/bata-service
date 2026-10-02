@@ -1,5 +1,5 @@
 -- =====================================================================
--- BATA SERVICES — QR payments (cobro QR)
+-- VELYNT SERVICES — QR payments (cobro QR)
 --
 -- A "collect" QR is created by the agent with a fixed amount. At that
 -- moment the operation already exists as a pending `qr_payment` (limits

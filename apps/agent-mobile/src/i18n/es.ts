@@ -4,7 +4,7 @@
  */
 export const es = {
   common: {
-    appName: 'BATA SERVICES',
+    appName: 'VELYNT SERVICES',
     continue: 'Continuar',
     cancel: 'Cancelar',
     back: 'Volver',
@@ -191,14 +191,14 @@ export const es = {
     haveReadyOperation: 'Soporte encontrará la operación con esta referencia.',
     report: 'Reportar un problema',
     contact: 'Contactar soporte',
-    messageGeneral: 'Hola, soy el agente {{agent}} de BATA SERVICES. Necesito ayuda con: ',
-    messageOperation: 'Hola, soy el agente {{agent}} de BATA SERVICES. Tengo un problema con la operación {{reference}} ({{type}}, {{amount}}, {{date}}, estado: {{status}}). Lo que pasó: '
+    messageGeneral: 'Hola, soy el agente {{agent}} de VELYNT SERVICES. Necesito ayuda con: ',
+    messageOperation: 'Hola, soy el agente {{agent}} de VELYNT SERVICES. Tengo un problema con la operación {{reference}} ({{type}}, {{amount}}, {{date}}, estado: {{status}}). Lo que pasó: '
   },
   lock: {
     title: 'Sesión bloqueada',
     body: 'Por seguridad, la app se bloquea cuando vuelves después de unos minutos o al abrirla.',
     notMe: 'No soy yo · Cerrar sesión',
-    biometricPrompt: 'Desbloquea BATA SERVICES'
+    biometricPrompt: 'Desbloquea VELYNT SERVICES'
   },
   confirm: {
     title: 'Confirma con tu PIN',
@@ -254,7 +254,7 @@ export const es = {
     settingsTitle: 'Avisos en el teléfono',
     pushOn: 'Los avisos están activados en este teléfono.',
     pushOff: 'Los avisos están desactivados en este teléfono.',
-    pushDenied: 'Desactivaste los avisos para BATA SERVICES. Puedes activarlos en los ajustes del teléfono.',
+    pushDenied: 'Desactivaste los avisos para VELYNT SERVICES. Puedes activarlos en los ajustes del teléfono.',
     openSettings: 'Abrir ajustes',
     pushUnsupported: 'Los avisos en el teléfono no están disponibles en esta versión.',
     whichOnes: 'Qué avisos recibir',

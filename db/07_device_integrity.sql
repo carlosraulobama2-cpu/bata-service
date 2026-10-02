@@ -1,5 +1,5 @@
 -- =====================================================================
--- BATA SERVICES — device integrity signals
+-- VELYNT SERVICES — device integrity signals
 --
 -- The app reports whether the phone is rooted / jailbroken or an
 -- emulator. A compromised device may still sign in and read, but can't

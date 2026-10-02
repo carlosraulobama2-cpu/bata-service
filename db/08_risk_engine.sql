@@ -1,5 +1,5 @@
 -- =====================================================================
--- BATA SERVICES — basic risk engine (Phase 1)
+-- VELYNT SERVICES — basic risk engine (Phase 1)
 --
 -- Default rules, version 1. Parameters and weights are STARTING VALUES
 -- to tune with real data (docs/06-seguridad.md §8). Following the design,

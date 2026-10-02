@@ -100,7 +100,7 @@ export async function createActiveAgent(
   await db.insertInto('agent.agent_profiles').values({ agent_id: agent.id, first_name: input.firstName, last_name: input.lastName, city: input.city ?? 'Bata', country: 'GQ' }).execute();
   await db
     .insertInto('agent.agent_businesses')
-    .values({ agent_id: agent.id, trade_name: input.tradeName ?? 'Bata Services Agent', business_type: 'shop', address_line: 'Centro', city: input.city ?? 'Bata', country: 'GQ' })
+    .values({ agent_id: agent.id, trade_name: input.tradeName ?? 'Velynt Services Agent', business_type: 'shop', address_line: 'Centro', city: input.city ?? 'Bata', country: 'GQ' })
     .execute();
   await db.insertInto('agent.agent_credentials').values({ agent_id: agent.id, pin_hash: await hasher.hash(input.pin), pin_set_at: new Date() }).execute();
 

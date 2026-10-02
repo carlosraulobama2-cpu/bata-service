@@ -1,4 +1,4 @@
-import { formatMoney, isCurrency } from '@bata/money';
+import { formatMoney, isCurrency } from '@velynt/money';
 
 type Params = Record<string, unknown>;
 type Template = { title: string; body: (p: Params) => string; channel: 'operations' | 'security' | 'general' };
@@ -21,7 +21,7 @@ const ES: Record<string, Template> = {
 
 export function renderPush(titleKey: string, params: Params): { title: string; body: string; channel: Template['channel'] } {
   const t = ES[titleKey.replace(/\.title$/, '')];
-  if (!t) return { title: 'BATA SERVICES', body: 'Tienes un aviso nuevo.', channel: 'general' };
+  if (!t) return { title: 'VELYNT SERVICES', body: 'Tienes un aviso nuevo.', channel: 'general' };
   return { title: t.title, body: t.body(params), channel: t.channel };
 }
 

@@ -1,11 +1,11 @@
 # 01 · Arquitectura
 
-> Documento de diseño de **BATA SERVICES**, la aplicación para agentes autorizados de BataPay.
+> Documento de diseño de **VELYNT SERVICES**, la aplicación para agentes autorizados de BataPay.
 > Todo lo marcado **(por confirmar)** depende de la jurisdicción, del proveedor financiero regulado o de una decisión de negocio que todavía no está tomada.
 
 ## 1. Resumen
 
-Bata Services es un **producto separado** de BataPay, con su propio frontend, su propio backend (Agent Backend), su propia autenticación y sus propios permisos.
+Velynt Services es un **producto separado** de BataPay, con su propio frontend, su propio backend (Agent Backend), su propia autenticación y sus propios permisos.
 **No mueve dinero por sí mismo**: cada operación financiera se valida en el Agent Backend y se registra en el **Ledger central de BataPay**, que es el único componente que puede cambiar un saldo.
 
 Tres reglas de diseño gobiernan todo lo demás:
@@ -28,8 +28,8 @@ Tres reglas de diseño gobiernan todo lo demás:
 
 ### Recomendación: **A, con un ledger central compartido**
 
-- **Agent Backend separado** (su propio despliegue, su propia base de datos `agent`), expuesto solo a la app Bata Services y al panel de administración de agentes.
-- **Ledger central único** para BataPay y Bata Services, como servicio propio (o módulo aislado dentro del core de BataPay con API interna), con su propia base de datos `ledger`. Es el **único** que escribe asientos.
+- **Agent Backend separado** (su propio despliegue, su propia base de datos `agent`), expuesto solo a la app Velynt Services y al panel de administración de agentes.
+- **Ledger central único** para BataPay y Velynt Services, como servicio propio (o módulo aislado dentro del core de BataPay con API interna), con su propia base de datos `ledger`. Es el **único** que escribe asientos.
 - **BataPay Core** sigue siendo el dueño de los clientes finales: identidad, estado, límites del cliente y confirmaciones del cliente (PIN en su app).
 - Comunicación síncrona **interna** (mTLS + token de servicio) para validar y contabilizar, y asíncrona (eventos) para notificaciones, proyecciones y reportes.
 
@@ -41,7 +41,7 @@ Para no caer en una arquitectura de microservicios prematura: **el Agent Backend
 
 ```
                          ┌───────────────────────┐            ┌─────────────────────────┐
-  Clientes finales ────▶ │   BataPay App          │            │  Bata Services App      │ ◀──── Agentes
+  Clientes finales ────▶ │   BataPay App          │            │  Velynt Services App      │ ◀──── Agentes
                          │  (Android / iOS)       │            │  (Android / iOS / web*) │
                          └──────────┬────────────┘            └────────────┬────────────┘
                                     │ HTTPS (tokens de USUARIO)            │ HTTPS + firma de dispositivo
