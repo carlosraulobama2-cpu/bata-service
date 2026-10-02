@@ -11,11 +11,11 @@
 
 ## 2. Plan de cuentas
 
-Desde el punto de vista de BataPay como emisor de dinero electrónico **(modelo regulatorio exacto por confirmar con el proveedor/licencia)**:
+Desde el punto de vista de Velynt como emisor de dinero electrónico **(modelo regulatorio exacto por confirmar con el proveedor/licencia)**:
 
 | Cuenta | Tipo | Lado normal | Significado |
 |---|---|---|---|
-| `customer_wallet` (una por cliente y moneda) | Pasivo | Crédito | Dinero electrónico que BataPay debe al cliente |
+| `customer_wallet` (una por cliente y moneda) | Pasivo | Crédito | Dinero electrónico que Velynt debe al cliente |
 | `agent_float` (una por agente) | Pasivo | Crédito | Dinero electrónico del agente para operar |
 | `agent_commission_payable` (una por agente) | Pasivo | Crédito | Comisiones ganadas y no pagadas |
 | `settlement_bank` | Activo | Débito | Dinero real en la cuenta bancaria/fiduciaria que respalda el dinero electrónico (banco por confirmar) |
@@ -32,7 +32,7 @@ Nota sobre signos: el enunciado dice "Cliente +100.000 / Agente −100.000". En 
 
 Todos los ejemplos están ejecutados en [`db/tests/invariants_test.sql`](../db/tests/invariants_test.sql).
 
-### 3.1 Recarga de float (el agente deposita 1.000.000 XAF en el banco de BataPay)
+### 3.1 Recarga de float (el agente deposita 1.000.000 XAF en el banco de Velynt)
 
 | Cuenta | D | C |
 |---|---:|---:|
@@ -60,7 +60,7 @@ Si el cliente no confirma a tiempo: el hold se libera (`close_hold(..., 'expired
 
 ### 3.3 Cash-out 50.000 XAF
 
-El cliente creó la solicitud en su app (con su PIN); BataPay Core puso un **hold en la cartera del cliente**. Al confirmar el agente:
+El cliente creó la solicitud en su app (con su PIN); Velynt Core puso un **hold en la cartera del cliente**. Al confirmar el agente:
 
 | Cuenta | D | C |
 |---|---:|---:|

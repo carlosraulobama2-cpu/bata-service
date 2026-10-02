@@ -4,7 +4,7 @@
 -- A "collect" QR is created by the agent with a fixed amount. At that
 -- moment the operation already exists as a pending `qr_payment` (limits
 -- are reserved and it shows in the history as "Pago QR ⏳"). The paying
--- customer is only known when BataPay Core reports the payment, so the
+-- customer is only known when Velynt Core reports the payment, so the
 -- customer reference may be filled in exactly once, on pending ->
 -- processing. Everything else stays as immutable as before.
 -- =====================================================================

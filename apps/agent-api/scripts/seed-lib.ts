@@ -19,10 +19,10 @@ export async function seedReferenceData(db: AgentDb, ledger: LedgerClient, curre
         .returning('id')
         .executeTakeFirstOrThrow()
     ).id;
-  const compliance = await staff('compliance@batapay.test', 'Compliance (dev)');
-  const admin = await staff('admin@batapay.test', 'Admin (dev)');
-  const finance = await staff('finance@batapay.test', 'Finance (dev)');
-  const finance2 = await staff('finance2@batapay.test', 'Finance approver (dev)');
+  const compliance = await staff('compliance@velynt.test', 'Compliance (dev)');
+  const admin = await staff('admin@velynt.test', 'Admin (dev)');
+  const finance = await staff('finance@velynt.test', 'Finance (dev)');
+  const finance2 = await staff('finance2@velynt.test', 'Finance approver (dev)');
 
   for (const op of ['cash_in', 'cash_out', 'qr_payment'] as const) {
     await db

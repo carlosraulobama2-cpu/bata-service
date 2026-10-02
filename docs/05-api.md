@@ -10,7 +10,7 @@ Existen tres superficies separadas, con tokens de audiencias distintas:
 | Admin API | `/admin/v1` | Admin Panel | JWT del IdP corporativo, roles de staff |
 | Internal API | `/internal/v1` | Servicios (Core, Ledger, workers) | mTLS + token de servicio con *scopes* |
 
-Un token de usuario de BataPay **no es válido** en ninguna de ellas, ni un token de agente en la API de usuarios.
+Un token de usuario de Velynt **no es válido** en ninguna de ellas, ni un token de agente en la API de usuarios.
 
 ## 1. Convenciones
 
@@ -353,7 +353,7 @@ Autenticación: token + firma de dispositivo + `agent_auth`. Permiso `self:cash_
 Validaciones del servidor (en este orden, todas en servidor):
 1. Sesión, dispositivo de confianza, firma, `agent_auth`, agente `active`, KYC del agente vigente.
 2. Importe entero > 0, moneda soportada, dentro de límites (por operación, diario, mensual, recuento, enfriamiento).
-3. Cliente resuelto en BataPay Core: activo, puede recibir (límite de cartera, nivel KYC del cliente). El agente solo recibe `customer_masked`.
+3. Cliente resuelto en Velynt Core: activo, puede recibir (límite de cartera, nivel KYC del cliente). El agente solo recibe `customer_masked`.
 4. Duplicados: mismo agente + mismo cliente + mismo importe en los últimos N min → requiere confirmación explícita (`409 POSSIBLE_DUPLICATE` con `confirm_duplicate: true` para seguir).
 5. Riesgo: `allow` / `step_up` (pide biometría u OTP) / `review` / `block`.
 6. Comisión calculada con el plan activo.
@@ -438,10 +438,10 @@ Formato del contenido (compacto para QR de baja densidad):
 
 ```
 BSV1.<tipo>.<id aleatorio base64url 128 bits>.<firma Ed25519 base64url>
-tipos: A = agente estático · C = cliente (para depósito) · K = cobro · W = retiro (emitido por BataPay Core)
+tipos: A = agente estático · C = cliente (para depósito) · K = cobro · W = retiro (emitido por Velynt Core)
 ```
 
-La firma va **completa** (64 bytes; unos 115 caracteres en total, QR versión ~7): una firma Ed25519 truncada no se puede verificar. Los QR `A` y `K` los firma el Agent Backend (`QR_SIGNING_PRIVATE_KEY_PEM`); los `C` y `W` los emite y valida BataPay Core.
+La firma va **completa** (64 bytes; unos 115 caracteres en total, QR versión ~7): una firma Ed25519 truncada no se puede verificar. Los QR `A` y `K` los firma el Agent Backend (`QR_SIGNING_PRIVATE_KEY_PEM`); los `C` y `W` los emite y valida Velynt Core.
 
 El QR **no contiene importes ni datos personales**. La firma permite descartar QR falsos antes de ir al servidor, pero **la validez la decide siempre el servidor**.
 
@@ -637,7 +637,7 @@ Todas requieren SSO + MFA, permiso específico (ver [06-seguridad.md §6](06-seg
 | `POST /agents/{id}/devices/{deviceId}/revoke`, `POST /agents/{id}/sessions/revoke-all` | `devices.revoke` |
 | `GET /audit-logs` | `audit.read` |
 
-## 17. Internal API (contratos con BataPay Core y Ledger)
+## 17. Internal API (contratos con Velynt Core y Ledger)
 
 Solo red privada + mTLS + token de servicio. Versionadas y con clave de idempotencia obligatoria.
 
@@ -648,7 +648,7 @@ Solo red privada + mTLS + token de servicio. Versionadas y con clave de idempote
 | Core → Agent | Evento `core.deposit_request.confirmed` / `.rejected` | Resultado de la confirmación |
 | Core | `POST /internal/v1/withdrawal-requests/resolve` `{code}` | Cash-out, consulta |
 | Core | `POST /internal/v1/withdrawal-requests/{id}/claim` `{agent_ref, agent_transaction_id}` | Reclamo atómico (un solo uso) |
-| Core → Agent | `POST /internal/v1/qr/resolve` `{payload}` → `{qr_id, kind, agent_code, merchant_name, amount, currency, expires_at}` | El cliente escaneó un QR del agente en BataPay |
+| Core → Agent | `POST /internal/v1/qr/resolve` `{payload}` → `{qr_id, kind, agent_code, merchant_name, amount, currency, expires_at}` | El cliente escaneó un QR del agente en Velynt |
 | Core → Agent | Evento `qr_payment.authorized` `{payment_request_id, qr_id, customer_ref, customer_masked, amount, currency}` → `{result: completed \| processing \| rejected, reason?}` | El cliente aprobó el pago con su PIN y Core retuvo el importe; el Agent Backend lo contabiliza capturando esa retención. Con `rejected` Core libera la retención |
 | Agent → Core | `POST /internal/v1/qr-payments/{id}/settle` `{outcome: completed \| failed}` | Resultado final del pago (también tras reconciliar) |
 | Ledger | `POST /internal/v1/holds` · `POST /internal/v1/holds/{id}/release` | Reservas |
@@ -657,7 +657,7 @@ Solo red privada + mTLS + token de servicio. Versionadas y con clave de idempote
 | Ledger | `GET /internal/v1/accounts/{id}/balance` | Saldo autoritativo |
 | Ledger → Agent | Evento `ledger.account.balance_changed` `{account_id, balance, held, version}` | Proyección `agent_balances` |
 
-Los contratos concretos con el core existente de BataPay **(por confirmar)** cuando se revise su API actual.
+Los contratos concretos con el core existente de Velynt **(por confirmar)** cuando se revise su API actual.
 
 ## 18. OpenAPI
 

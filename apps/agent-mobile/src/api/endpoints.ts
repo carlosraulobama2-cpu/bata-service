@@ -77,8 +77,8 @@ export const endpoints = {
 
   cancel: (id: string) => api<{ transaction: Transaction }>(`/agent/v1/transactions/${id}/cancel`, { method: 'POST' }),
 
-  /** Development only: simulates the customer confirming in the BataPay app. */
+  /** Development only: simulates the customer confirming in the Velynt app. */
   devConfirmDeposit: (transactionId: string) => api<{ result: string }>('/dev/deposits/confirm', { body: { agent_transaction_id: transactionId }, auth: false }),
-  /** Development only: simulates a customer paying a collect QR in the BataPay app. */
+  /** Development only: simulates a customer paying a collect QR in the Velynt app. */
   devPayQr: (payload: string) => api<{ result: string }>('/dev/qr/pay', { body: { payload }, auth: false })
 };

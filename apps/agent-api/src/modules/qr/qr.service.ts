@@ -27,7 +27,7 @@ export type QrPaymentResult =
  *    it creates the pending `qr_payment` operation and reserves limits;
  *  - agent static QR ("Mi QR"): identifies the agent, never has an amount;
  *  - unified scan: withdrawal QR -> cash-out, customer QR -> cash-in;
- *  - BataPay Core resolves an agent QR for the paying customer and then
+ *  - Velynt Core resolves an agent QR for the paying customer and then
  *    reports the authorized payment, which is posted to the ledger here.
  */
 @Injectable()
@@ -221,8 +221,8 @@ export class QrService {
   }
 
   /**
-   * Internal API for BataPay Core: the customer scanned an agent QR in the
-   * BataPay app. Returns what the customer must be shown before paying.
+   * Internal API for Velynt Core: the customer scanned an agent QR in the
+   * Velynt app. Returns what the customer must be shown before paying.
    */
   async resolveForCore(payload: string) {
     const qr = await this.byPayload(payload);

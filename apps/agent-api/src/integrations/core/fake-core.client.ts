@@ -28,13 +28,13 @@ export interface FakeQrPayment {
 }
 
 /**
- * In-memory simulator of BataPay Core for development and tests.
+ * In-memory simulator of Velynt Core for development and tests.
  * It creates real customer wallets and holds in the ledger so that the
  * money side behaves exactly as in production. Never enabled in production
  * (see config/env.ts).
  */
 export class FakeCoreClient extends CoreClient {
-  readonly holdSourceSystem = 'batapay-core';
+  readonly holdSourceSystem = 'velynt-core';
   private readonly customers = new Map<string, FakeCustomer>();
   private readonly tokens = new Map<string, string>();
   private readonly withdrawals = new Map<string, WithdrawalRequest & { code: string }>();
@@ -49,7 +49,7 @@ export class FakeCoreClient extends CoreClient {
     super();
   }
 
-  // ---- simulator helpers (what the BataPay app / core would do) ----
+  // ---- simulator helpers (what the Velynt app / core would do) ----
 
   async addCustomer(phone: string, currency = 'XAF', initialBalance = 0): Promise<string> {
     const existing = [...this.customers.values()].find((c) => c.phone === phone);
@@ -111,7 +111,7 @@ export class FakeCoreClient extends CoreClient {
     return { id, code, qr: `BSV1.W.${id}` };
   }
 
-  /** The customer's personal QR in the BataPay app (identifies them for a deposit). */
+  /** The customer's personal QR in the Velynt app (identifies them for a deposit). */
   issueCustomerQr(ref: string): string {
     const id = randomToken(16);
     this.customerQrs.set(id, ref);

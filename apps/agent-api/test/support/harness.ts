@@ -180,7 +180,7 @@ export class Harness {
     return sign('sha256', Buffer.from(['POST', path, String(ts), key].join('\n')), session.device.biometricKey).toString('base64url');
   }
 
-  /** Signs a Core event exactly like BataPay Core would. */
+  /** Signs a Core event exactly like Velynt Core would. */
   coreEvent(event: Record<string, unknown>, opts: { secret?: string; timestamp?: number } = {}) {
     const raw = JSON.stringify(event);
     const ts = String(opts.timestamp ?? this.clock.now().getTime());
@@ -189,7 +189,7 @@ export class Harness {
     return this.request('POST', '/internal/v1/core-events', { rawBody: raw, headers: { 'x-core-timestamp': ts, 'x-core-signature': sig } });
   }
 
-  /** Signed internal request from BataPay Core. */
+  /** Signed internal request from Velynt Core. */
   coreRequest(path: string, body: unknown) {
     const raw = JSON.stringify(body);
     const ts = String(this.clock.now().getTime());

@@ -152,10 +152,10 @@ El servidor decide qué stack se muestra según el `status` del agente en `GET /
 
 ### 4.5 Depositar (cash-in)
 
-1. **Cliente**: "Escanea el QR del cliente" (su código personal en la app BataPay) o "Introduce su teléfono". Muestra `****4821` y, si se confirma su uso, nombre abreviado.
+1. **Cliente**: "Escanea el QR del cliente" (su código personal en la app Velynt) o "Introduce su teléfono". Muestra `****4821` y, si se confirma su uso, nombre abreviado.
 2. **Importe**: teclado numérico grande; debajo "Límite por operación: 500.000 XAF · Disponible hoy: 1.150.000 XAF". Botones rápidos opcionales (10.000 / 25.000 / 50.000 / 100.000).
 3. **Confirmar**: resumen (cliente, importe, comisión que ganas, saldo operativo tras la operación) → PIN o biometría.
-4. **Esperando al cliente**: "Pide al cliente que confirme en su app BataPay" + cuenta atrás (3 min). Botón "Cancelar". Método alternativo si el cliente no tiene la app: **(por confirmar)**.
+4. **Esperando al cliente**: "Pide al cliente que confirme en su app Velynt" + cuenta atrás (3 min). Botón "Cancelar". Método alternativo si el cliente no tiene la app: **(por confirmar)**.
 5. **Resultado**: "DEPÓSITO COMPLETADO · 100.000 XAF · BTX-00092832" + "Ya puedes guardar el efectivo".
 
 ### 4.6 Retirar (cash-out)
@@ -225,7 +225,7 @@ Lista: periodo, importe liquidado, estado (pending, scheduled, processing, compl
 | **Saldo operativo (float)** | Dinero electrónico que puedes usar para depósitos a clientes. Baja con cada depósito y sube con cada retiro | Ledger |
 | **Comisiones pendientes** | Lo que has ganado y todavía no se te ha pagado | Ledger |
 | **Liquidaciones** | Pagos de comisiones ya realizados o programados | Liquidaciones |
-| **Efectivo en caja (declarado)** | Solo lo que **tú** declares. BataPay no conoce el efectivo físico que tienes | Declaración del agente, con fecha |
+| **Efectivo en caja (declarado)** | Solo lo que **tú** declares. Velynt no conoce el efectivo físico que tienes | Declaración del agente, con fecha |
 
 El efectivo declarado se muestra como "Declarado por ti el 26/09 a las 08:00", nunca como un dato del sistema.
 

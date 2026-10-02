@@ -7,7 +7,7 @@ Duraciones orientativas para un equipo de ~6–8 personas (2 backend, 2 móvil, 
 Objetivo: cerrar lo que bloquea el diseño y dejar la base técnica lista.
 
 - Confirmar con el proveedor financiero y asesoría legal los puntos **por confirmar** (lista en el [README](../README.md#decisiones-pendientes-por-confirmar)): modelo de licencia/emisión, KYC de agentes, residencia de datos, proveedor de SMS y KYC, método de liquidación, tarifas y comisiones, método de confirmación del cliente sin smartphone.
-- Revisar la API actual de BataPay Core y acordar los contratos internos (resolver cliente, solicitudes de depósito/retiro, eventos).
+- Revisar la API actual de Velynt Core y acordar los contratos internos (resolver cliente, solicitudes de depósito/retiro, eventos).
 - Decidir dónde vive el ledger (servicio nuevo o módulo del core) y quién es su dueño.
 - Monorepo, CI (lint, tipos, tests, SAST, SCA, secretos), entornos dev/staging, IaC, observabilidad básica.
 - Esquemas `db/` convertidos en migraciones.
@@ -20,7 +20,7 @@ Entregable: contratos firmados entre equipos, pipeline en verde, prototipo naveg
 - **Ledger**: cuentas, holds, contabilización idempotente, reversos, vistas de conciliación, job de expiración de holds.
 - **Auth**: login teléfono + PIN, OTP, device binding, refresh con rotación, bloqueo por intentos, cierre de sesión, cierre remoto desde BO.
 - **Alta de agentes asistida**: el staff registra al agente y sube el KYC desde el Admin Panel (el KYC en la app llega en la fase 2); aprobación y activación con *maker-checker*.
-- **Operaciones**: cash-in (con confirmación del cliente en BataPay) y cash-out (código/QR de retiro del cliente), estados, reconciliador de `processing`.
+- **Operaciones**: cash-in (con confirmación del cliente en Velynt) y cash-out (código/QR de retiro del cliente), estados, reconciliador de `processing`.
 - **Límites** por nivel (un nivel) y contadores.
 - **Comisiones**: un plan configurable, contabilización en el ledger, pantalla de resumen.
 - **Historial y detalle** con recibo.
@@ -70,7 +70,7 @@ Criterio de salida: 4 semanas de piloto sin diferencias de conciliación, tasa d
 
 | Dependencia | Bloquea | Fase |
 |---|---|---|
-| Contratos con BataPay Core (clientes, confirmaciones, retiros) | Cash-in / cash-out | 0 |
+| Contratos con Velynt Core (clientes, confirmaciones, retiros) | Cash-in / cash-out | 0 |
 | Modelo contable y cuenta bancaria de respaldo | Ledger, float, liquidaciones | 0 |
 | Proveedor de SMS | OTP | 0–1 |
 | Requisitos KYC de agentes y proveedor | KYC en la app | 1–2 |

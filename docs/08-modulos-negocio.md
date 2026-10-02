@@ -55,7 +55,7 @@ comisión = clamp( fijo + floor(importe × rate_bps / 10.000), mínimo, máximo 
 - Se calcula **en el servidor** en el momento de la operación, con el plan vigente, y se guarda la regla aplicada (`rule_id`) en `agent_commissions`. Cambiar el plan no altera comisiones ya generadas.
 - Se contabiliza en la misma transacción del ledger que la operación (D `commission_expense` / C `agent_commission_payable`).
 - Reverso de la operación ⇒ reverso de la comisión (estado `reversed`).
-- Quién financia la comisión (BataPay, tarifa al cliente, mixto) y si hay retenciones fiscales: **(por confirmar)**.
+- Quién financia la comisión (Velynt, tarifa al cliente, mixto) y si hay retenciones fiscales: **(por confirmar)**.
 - La app muestra la comisión estimada antes de confirmar (misma función de cálculo en el servidor, endpoint de cotización interno a `POST /cash-in` y `/cash-out/resolve`).
 
 Pantalla "Mis comisiones": hoy / semana / mes / total desde `agent_commission_daily` (rollup actualizado por evento) y el pendiente desde el ledger.
@@ -70,7 +70,7 @@ Pantalla "Mis comisiones": hoy / semana / mes / total desde `agent_commission_da
 | `completed` | Pago confirmado; comisiones `settled` |
 | `failed` | Rechazada/fallida; comisiones vuelven a `accrued` |
 
-Periodicidad, método (al float, a cuenta bancaria, a cartera BataPay), importe mínimo, deducciones: **(por confirmar)**. El modelo contable está en [04-ledger.md §3.5](04-ledger.md#35-liquidación-de-comisiones).
+Periodicidad, método (al float, a cuenta bancaria, a cartera Velynt), importe mínimo, deducciones: **(por confirmar)**. El modelo contable está en [04-ledger.md §3.5](04-ledger.md#35-liquidación-de-comisiones).
 
 Controles: una liquidación por agente y periodo (`UNIQUE`), `net = comisiones − deducciones` (CHECK), aprobación por dos personas, conciliación con el extracto bancario.
 

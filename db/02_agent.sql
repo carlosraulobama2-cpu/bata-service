@@ -9,7 +9,7 @@
 --
 -- It does NOT hold money. Balances shown to agents come from the Ledger
 -- (agent_balances is a read-model projection). References to the ledger
--- and to BataPay core (customers) are opaque ids without foreign keys,
+-- and to Velynt core (customers) are opaque ids without foreign keys,
 -- because they live in other services/databases.
 --
 -- Money: BIGINT in currency minor units (XAF = 0 decimals).
@@ -172,17 +172,17 @@ LANGUAGE sql AS $$
   SELECT 'AG-' || lpad(nextval('agent.agent_code_seq')::text, 6, '0');
 $$;
 
--- Links an agent to BataPay core identities (their own wallet, the
+-- Links an agent to Velynt core identities (their own wallet, the
 -- wallet used for settlements...). Only opaque references.
 CREATE TABLE agent.agent_user_links (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id           UUID NOT NULL REFERENCES agent.agents (id),
-  batapay_user_ref   TEXT NOT NULL,
+  velynt_user_ref   TEXT NOT NULL,
   link_type          TEXT NOT NULL CHECK (link_type IN ('owner', 'settlement_wallet')),
   verified_at        TIMESTAMPTZ,
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (agent_id, link_type),
-  UNIQUE (batapay_user_ref, link_type)
+  UNIQUE (velynt_user_ref, link_type)
 );
 
 -- =====================================================================
@@ -225,7 +225,7 @@ CREATE TABLE agent.agent_businesses (
 CREATE TABLE agent.agent_settlement_accounts (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id            UUID NOT NULL REFERENCES agent.agents (id),
-  method              TEXT NOT NULL CHECK (method IN ('bank_account', 'batapay_wallet', 'other')),  -- methods por confirmar
+  method              TEXT NOT NULL CHECK (method IN ('bank_account', 'velynt_wallet', 'other')),  -- methods por confirmar
   holder_name         TEXT NOT NULL,
   account_ref_enc     BYTEA NOT NULL,          -- IBAN / account number / wallet id, encrypted
   account_ref_masked  TEXT NOT NULL,           -- '****1234' for display
@@ -509,8 +509,8 @@ CREATE INDEX idx_cash_decl_agent ON agent.agent_cash_declarations (agent_id, dec
 -- =====================================================================
 -- QR — agent-issued codes. The payload only carries an opaque id and a
 -- signature; amount and purpose are always read from here.
--- (Withdrawal codes are issued by the customer's BataPay app and are
--- validated through BataPay core.)
+-- (Withdrawal codes are issued by the customer's Velynt app and are
+-- validated through Velynt core.)
 -- =====================================================================
 
 CREATE TABLE agent.agent_qr (
@@ -561,11 +561,11 @@ CREATE TABLE agent.agent_transactions (
   fee_amount             BIGINT NOT NULL DEFAULT 0 CHECK (fee_amount >= 0),         -- charged to customer (policy por confirmar)
   commission_amount      BIGINT NOT NULL DEFAULT 0 CHECK (commission_amount >= 0),  -- earned by the agent
   commission_rule_id     UUID,                  -- rule used for the quote the agent confirmed
-  customer_ref           TEXT,                  -- opaque BataPay user id
+  customer_ref           TEXT,                  -- opaque Velynt user id
   customer_masked        TEXT,                  -- '****4821' snapshot for display
   method                 TEXT NOT NULL CHECK (method IN ('qr', 'code', 'phone', 'system')),
   qr_id                  UUID REFERENCES agent.agent_qr (id),
-  core_request_ref       TEXT,                  -- withdrawal / payment request id in BataPay core
+  core_request_ref       TEXT,                  -- withdrawal / payment request id in Velynt core
   idempotency_key        TEXT NOT NULL,
   ledger_hold_id         UUID,
   ledger_transaction_id  UUID,                  -- set when posted in the ledger

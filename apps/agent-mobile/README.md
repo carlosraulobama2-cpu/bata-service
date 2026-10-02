@@ -1,6 +1,6 @@
 # App de agentes (VELYNT SERVICES)
 
-App móvil para agentes autorizados de BataPay. Expo SDK 57 · React Native · TypeScript · expo-router.
+App móvil para agentes autorizados de Velynt. Expo SDK 57 · React Native · TypeScript · expo-router.
 Diseño de referencia: [docs/02-ux-ui.md](../../docs/02-ux-ui.md).
 
 ![Pantallas principales](../../docs/screenshots/overview.png)
@@ -68,4 +68,4 @@ pnpm test        # jest-expo
 - Formato de importes y fechas en hora de Malabo, catálogo completo de mensajes de error.
 - Bundles de Android (Hermes) y web compilados sin errores; recorrido completo (login, OTP, retiro, depósito, historial, detalle, comisiones, perfil, límites) automatizado con Playwright contra el API real en claro, oscuro y 360×640.
 
-Identificadores `com.batapay.services`, nombre en tiendas e iconos definitivos: **por confirmar**.
+Identificadores `com.velynt.services`, nombre en tiendas e iconos definitivos: **por confirmar**.

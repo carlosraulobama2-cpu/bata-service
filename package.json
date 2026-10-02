@@ -1,7 +1,7 @@
 {
   "name": "velynt-services",
   "private": true,
-  "description": "VELYNT SERVICES — plataforma para agentes autorizados de BataPay",
+  "description": "VELYNT SERVICES — plataforma para agentes autorizados de Velynt",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=22"

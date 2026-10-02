@@ -27,7 +27,7 @@ const EventSchema = z.discriminatedUnion('type', [
 
 const QrResolveSchema = z.object({ payload: z.string().min(6).max(500) });
 
-/** Internal API used by BataPay Core (docs/05-api.md §17). */
+/** Internal API used by Velynt Core (docs/05-api.md §17). */
 @RateLimit('none')
 @Controller('internal/v1')
 export class CoreEventsController {
@@ -52,7 +52,7 @@ export class CoreEventsController {
     }
   }
 
-  /** The customer scanned an agent QR in BataPay: what should they be shown before paying? */
+  /** The customer scanned an agent QR in Velynt: what should they be shown before paying? */
   @Post('qr/resolve')
   @HttpCode(200)
   async resolveQr(@Req() req: FastifyRequest) {

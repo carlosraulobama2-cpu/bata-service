@@ -1,6 +1,6 @@
 # 07 · Flujos de usuario
 
-Convenciones: **A** = agente (app Velynt Services) · **S** = Agent Backend · **C** = BataPay Core · **L** = Ledger · **Cl** = cliente (app BataPay) · **BO** = back-office (Admin Panel).
+Convenciones: **A** = agente (app Velynt Services) · **S** = Agent Backend · **C** = Velynt Core · **L** = Ledger · **Cl** = cliente (app Velynt) · **BO** = back-office (Admin Panel).
 
 ## 1. Registro de agente
 
@@ -92,7 +92,7 @@ Casos alternativos:
 ## 6. Cash-out (retiro)
 
 ```
-Cl: en BataPay "Retirar en agente" ─▶ importe ─▶ PIN ─▶ C: hold en cartera del cliente ─▶ QR + código (10 min)
+Cl: en Velynt "Retirar en agente" ─▶ importe ─▶ PIN ─▶ C: hold en cartera del cliente ─▶ QR + código (10 min)
 A: RETIRAR ─▶ escanear QR / código ─▶ S ─▶ C: resolve ─▶ A ve importe y ****4821 ─▶ confirmar (PIN/biometría)
 S: valida agente, límites, riesgo ─▶ C: claim (un solo uso) ─▶ L: asiento (cliente −, float +, comisión) capturando hold
 S: completed ─▶ A: "RETIRO COMPLETADO · Entrega 50.000 XAF" ─▶ entrega efectivo
@@ -116,7 +116,7 @@ Casos alternativos: código caducado/usado/inválido (mensajes del catálogo); s
 - `C` (cliente) → cash-in con ese cliente preseleccionado.
 - Otro/ inválido → "No reconocemos este código".
 
-**Cobrar**: A introduce importe → `POST /qr/create` (`collect`, un uso, 5 min) → muestra QR grande + cuenta atrás → Cl escanea con BataPay y paga con su PIN → C/L contabilizan → S marca el QR `used` y la operación `completed` → la pantalla de A cambia a "Pagado ✔ 25.000 XAF".
+**Cobrar**: A introduce importe → `POST /qr/create` (`collect`, un uso, 5 min) → muestra QR grande + cuenta atrás → Cl escanea con Velynt y paga con su PIN → C/L contabilizan → S marca el QR `used` y la operación `completed` → la pantalla de A cambia a "Pagado ✔ 25.000 XAF".
 
 **Mi QR**: QR estático del agente (identifica al agente; útil para que un cliente inicie una operación hacia el agente). Nunca lleva importe.
 

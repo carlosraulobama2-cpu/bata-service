@@ -8,7 +8,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.batapay.services",
+      "bundleIdentifier": "com.velynt.services",
       "infoPlist": {
         "NSCameraUsageDescription": "La cámara se usa solo para escanear códigos QR de clientes.",
         "NSFaceIDUsageDescription": "Usamos Face ID para confirmar tus operaciones."
@@ -22,7 +22,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.batapay.services",
+      "package": "com.velynt.services",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",

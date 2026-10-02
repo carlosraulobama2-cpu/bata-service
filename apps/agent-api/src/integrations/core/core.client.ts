@@ -1,5 +1,5 @@
 /**
- * Contract with BataPay Core (docs/05-api.md §17). Core owns end
+ * Contract with Velynt Core (docs/05-api.md §17). Core owns end
  * customers: their identity, status, limits, their confirmation of a
  * deposit and their withdrawal requests. The agent service only ever
  * receives an opaque customer reference and a masked phone.

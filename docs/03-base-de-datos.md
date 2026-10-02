@@ -13,7 +13,7 @@ Probado en PostgreSQL 16 (`./db/tests/run.sh`). Requiere PostgreSQL 15+ (`UNIQUE
 
 ## 1. Dos bases de datos, dos dueños
 
-- **`ledger`**: pertenece al servicio Ledger (core de BataPay). El Agent Backend **no tiene permisos** sobre ella (ver `REVOKE` en `03_roles…`): solo la usa a través de la API interna del Ledger.
+- **`ledger`**: pertenece al servicio Ledger (core de Velynt). El Agent Backend **no tiene permisos** sobre ella (ver `REVOKE` en `03_roles…`): solo la usa a través de la API interna del Ledger.
 - **`agent`**: pertenece al Agent Backend.
 
 En desarrollo pueden vivir en el mismo servidor como dos *schemas*. En producción, en bases de datos separadas. Por eso **no hay claves foráneas entre ellas**: se referencian con IDs opacos (`ledger_transaction_id`, `ledger_account_id`, `customer_ref`).
@@ -28,7 +28,7 @@ En desarrollo pueden vivir en el mismo servidor como dos *schemas*. En producci�
       │ (approved_by, activated_by, reviewed_by, assigned_to …)
       ▼
    agents ─┬─ agent_status_history
-           ├─ agent_user_links ··········▶ (usuario BataPay en core)
+           ├─ agent_user_links ··········▶ (usuario Velynt en core)
            ├─ agent_profiles
            ├─ agent_businesses
            ├─ agent_settlement_accounts
@@ -55,13 +55,13 @@ En desarrollo pueden vivir en el mismo servidor como dos *schemas*. En producci�
 
 ## 3. Tablas y decisiones clave
 
-### Agentes y relación con usuarios BataPay
+### Agentes y relación con usuarios Velynt
 
 | Tabla | Propósito | Notas |
 |---|---|---|
 | `agents` | Identidad y **estado** del agente | 8 estados; `agent_code` (AG-000001) se asigna al aprobar; transiciones validadas por trigger (`valid_agent_transition`); *four-eyes*: quien aprueba ≠ quien activa |
 | `agent_status_history` | Historial de cambios de estado | Se rellena automáticamente |
-| `agent_user_links` | Vincula al agente con su usuario BataPay (propietario) y la cartera de liquidación | Solo referencias opacas; un usuario BataPay no puede estar vinculado a dos agentes con el mismo rol |
+| `agent_user_links` | Vincula al agente con su usuario Velynt (propietario) y la cartera de liquidación | Solo referencias opacas; un usuario Velynt no puede estar vinculado a dos agentes con el mismo rol |
 | `agent_profiles` | Datos personales | Solo datos necesarios; editables únicamente mediante proceso de revisión |
 | `agent_businesses` | Establecimiento | Horario en JSON; ubicación del local (no del agente en tiempo real) |
 | `agent_settlement_accounts` | Cuenta o método de liquidación | Número cifrado + versión enmascarada |
@@ -123,7 +123,7 @@ pending ──▶ processing ──▶ completed ──▶ reversed
 
 ### QR
 
-`agent_qr`: QR estático del agente (uno activo por agente) y QR dinámicos de cobro y depósito (CHECK: siempre de un solo uso, con importe y caducidad). El contenido del QR es solo un identificador aleatorio firmado; todo lo demás se lee de esta tabla. Los QR de **retiro** los genera la app del cliente y los valida BataPay Core.
+`agent_qr`: QR estático del agente (uno activo por agente) y QR dinámicos de cobro y depósito (CHECK: siempre de un solo uso, con importe y caducidad). El contenido del QR es solo un identificador aleatorio firmado; todo lo demás se lee de esta tabla. Los QR de **retiro** los genera la app del cliente y los valida Velynt Core.
 
 ### Riesgo
 

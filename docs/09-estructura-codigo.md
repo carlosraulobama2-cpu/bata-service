@@ -154,7 +154,7 @@ agent-api/
 │   │   ├── support/
 │   │   └── admin/                      # controladores /admin/v1 (reusa servicios de dominio)
 │   ├── integrations/                   # adapters con interfaz propia (fáciles de sustituir/mockear)
-│   │   ├── core/                       # BataPay Core internal API
+│   │   ├── core/                       # Velynt Core internal API
 │   │   ├── ledger/                     # Ledger internal API
 │   │   ├── sms/                        # proveedor por confirmar
 │   │   ├── push/

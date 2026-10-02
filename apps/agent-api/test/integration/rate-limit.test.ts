@@ -75,7 +75,7 @@ describe.each(backends)('Rate limiting (%s)', (backend, redisUrl) => {
     expect((await h.get(s, '/agent/v1/me')).status).toBe(200);
   });
 
-  it('BataPay Core internal calls are not rate limited', async () => {
+  it('Velynt Core internal calls are not rate limited', async () => {
     for (let i = 0; i < 40; i++) {
       const r = await h.coreRequest('/internal/v1/qr/resolve', { payload: 'BSV1.K.doesnotexist.' + 'a'.repeat(40) });
       expect(r.status).toBe(404);

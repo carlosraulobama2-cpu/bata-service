@@ -1,8 +1,8 @@
 # VELYNT SERVICES
 
-Aplicación profesional para **agentes autorizados de BataPay**: cash-in, cash-out, cobros QR, comisiones, liquidaciones, KYC, seguridad y soporte.
+Aplicación profesional para **agentes autorizados de Velynt**: cash-in, cash-out, cobros QR, comisiones, liquidaciones, KYC, seguridad y soporte.
 
-Velynt Services es un producto **independiente** de la app BataPay (propio frontend, backend, autenticación y permisos), conectado a la infraestructura de BataPay mediante APIs internas seguras. **Todo movimiento de dinero se valida en el servidor y se registra en el ledger central de doble partida.** El agente nunca puede modificar un saldo.
+Velynt Services es un producto **independiente** de la app Velynt (propio frontend, backend, autenticación y permisos), conectado a la infraestructura de Velynt mediante APIs internas seguras. **Todo movimiento de dinero se valida en el servidor y se registra en el ledger central de doble partida.** El agente nunca puede modificar un saldo.
 
 > Estado: diseño técnico completo y **Fase 1 en desarrollo**. El backend de agentes ([`apps/agent-api`](apps/agent-api)) implementa login seguro, cash-in, cash-out, cobros QR, límites, comisiones, historial y saldos sobre el ledger, y la app ([`apps/agent-mobile`](apps/agent-mobile)) cubre esos flujos de principio a fin.
 
@@ -69,7 +69,7 @@ Lo que comprueban, entre otras cosas: que una operación repetida con la misma c
 
 Estas decisiones dependen de la jurisdicción (Guinea Ecuatorial / CEMAC), del proveedor financiero regulado o del negocio. El diseño las deja como **configuración o puntos de integración**, no como supuestos:
 
-1. Modelo regulatorio de emisión de dinero electrónico y papel de BataPay y de los agentes.
+1. Modelo regulatorio de emisión de dinero electrónico y papel de Velynt y de los agentes.
 2. Requisitos KYC concretos para agentes (documentos, periodicidad de revisión, prueba de vida) y proveedor KYC.
 3. Residencia de datos y región de despliegue.
 4. Proveedor de SMS (OTP) y posibilidad de consulta de SIM swap con operadores.
@@ -83,4 +83,4 @@ Estas decisiones dependen de la jurisdicción (Guinea Ecuatorial / CEMAC), del p
 12. Si el agente ve el nombre abreviado del cliente además de `****4821`.
 13. ~~Política ante dispositivos rooteados/jailbreak~~ → decidido: pueden consultar, no operar.
 14. Objetivos finales de RPO/RTO.
-15. Contratos concretos con la API actual de BataPay Core.
+15. Contratos concretos con la API actual de Velynt Core.

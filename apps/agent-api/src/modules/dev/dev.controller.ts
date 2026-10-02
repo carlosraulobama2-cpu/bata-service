@@ -13,7 +13,7 @@ import { Inject } from '@nestjs/common';
 import { ENV, Env } from '../../config/env';
 
 /**
- * Development-only helpers that simulate what BataPay Core and the
+ * Development-only helpers that simulate what Velynt Core and the
  * customer's app would do, so the agent app can be built end to end.
  * Registered only when ENABLE_DEV_ENDPOINTS=true, which config refuses in
  * production.
@@ -50,7 +50,7 @@ export class DevController {
     return this.fake().createWithdrawal(customer.customerRef, input.amount);
   }
 
-  /** Simulates the customer tapping "Confirmar" in the BataPay app. */
+  /** Simulates the customer tapping "Confirmar" in the Velynt app. */
   @Post('deposits/confirm')
   async confirmDeposit(@Body() body: unknown) {
     const input = z.object({ agent_transaction_id: z.string().uuid() }).parse(body);
@@ -60,7 +60,7 @@ export class DevController {
   }
 
   /**
-   * Simulates a customer paying an agent's collect QR in the BataPay app:
+   * Simulates a customer paying an agent's collect QR in the Velynt app:
    * resolve the QR, approve with PIN (hold in the wallet), Core reports it.
    */
   @Post('qr/pay')
@@ -86,7 +86,7 @@ export class DevController {
     return { code: this.sms.lastCodeFor(phone) };
   }
 
-  /** Signs a Core event like BataPay Core would (for manual testing of /internal/v1/core-events). */
+  /** Signs a Core event like Velynt Core would (for manual testing of /internal/v1/core-events). */
   @Post('sign-core-event')
   sign(@Body() body: unknown) {
     const raw = JSON.stringify(body);

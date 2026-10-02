@@ -65,7 +65,7 @@ INSERT INTO ledger.ledger_accounts (account_number, owner_type, owner_ref, purpo
   ('AGC-AG000001-XAF', 'agent',    'AG-000001',   'agent_commission_payable', 'liability', 'XAF', TRUE),
   ('CUS-U4821-XAF',    'customer', 'user-4821',   'customer_wallet',          'liability', 'XAF', TRUE);
 
--- 1) Float top-up: agent deposits 1.000.000 XAF in BataPay's bank account.
+-- 1) Float top-up: agent deposits 1.000.000 XAF in Velynt's bank account.
 SELECT ledger.post_transaction('BTX-00000001', 'agent-service', 'idem-topup-1', 'float_topup',
   jsonb_build_array(
     jsonb_build_object('account_id', pg_temp.acc('SYS-BANK-XAF'),     'direction', 'D', 'amount', 1000000),
@@ -185,8 +185,8 @@ SELECT pg_temp.assert_eq((SELECT COUNT(*) FROM ledger.v_balance_drift), 0::bigin
 -- ---------------------------------------------------------------------
 INSERT INTO agent.agent_tiers (code, name) VALUES ('tier_1', 'Nivel 1');
 INSERT INTO agent.staff_users (id, email, full_name) VALUES
-  ('00000000-0000-0000-0000-00000000000a', 'compliance@batapay.test', 'Compliance'),
-  ('00000000-0000-0000-0000-00000000000b', 'admin@batapay.test', 'Admin');
+  ('00000000-0000-0000-0000-00000000000a', 'compliance@velynt.test', 'Compliance'),
+  ('00000000-0000-0000-0000-00000000000b', 'admin@velynt.test', 'Admin');
 
 INSERT INTO agent.agents (id, country, phone_e164, tier_code)
 VALUES ('10000000-0000-0000-0000-000000000001', 'GQ', '+240222000001', 'tier_1');

@@ -39,7 +39,7 @@ Stack: Node.js 22 · TypeScript · NestJS 11 (Fastify) · Kysely · PostgreSQL. 
 ## Integraciones
 
 - **Ledger**: `LedgerClient`. `LocalLedgerClient` llama a las funciones SQL de [`db/01_ledger.sql`](../../db/01_ledger.sql). Cuando el ledger sea un servicio propio se añade un cliente HTTP con la misma interfaz.
-- **BataPay Core**: `CoreClient`. `FakeCoreClient` simula Core **moviendo dinero real en el ledger** (carteras y holds de clientes) para desarrollo y pruebas. El contrato real con Core está **por confirmar**; la configuración impide usar el simulador en producción.
+- **Velynt Core**: `CoreClient`. `FakeCoreClient` simula Core **moviendo dinero real en el ledger** (carteras y holds de clientes) para desarrollo y pruebas. El contrato real con Core está **por confirmar**; la configuración impide usar el simulador en producción.
 - **Push**: `PushSender`. `ExpoPushSender` (servicio de push de Expo, que entrega por FCM/APNs con las credenciales configuradas en EAS; `PUSH_MODE=expo`, `EXPO_ACCESS_TOKEN` opcional). `InMemoryPushSender` en desarrollo. Cambiar a FCM/APNs directos solo requiere otra implementación.
 - **SMS**: `SmsSender`. `InMemorySmsSender` no envía nada (proveedor **por confirmar**).
 

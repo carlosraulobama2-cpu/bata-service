@@ -1,8 +1,8 @@
 -- =====================================================================
--- VELYNT SERVICES / BataPay — FINANCIAL LEDGER (double-entry)
+-- VELYNT SERVICES / Velynt — FINANCIAL LEDGER (double-entry)
 -- PostgreSQL 15+
 --
--- Owned by the Ledger service (BataPay core). In production this schema
+-- Owned by the Ledger service (Velynt core). In production this schema
 -- lives in its own database/cluster. The Agent service NEVER writes here
 -- directly: it calls the Ledger internal API, which uses these functions.
 --
@@ -28,14 +28,14 @@ INSERT INTO ledger.currencies (code, minor_unit) VALUES ('XAF', 0);
 -- ---------------------------------------------------------------------
 -- Accounts
 --   type: accounting class. For an e-money issuer, customer wallets and
---   agent float are LIABILITIES (money BataPay owes to their holders).
+--   agent float are LIABILITIES (money Velynt owes to their holders).
 --   normal side: asset/expense = debit, liability/equity/revenue = credit.
 -- ---------------------------------------------------------------------
 CREATE TABLE ledger.ledger_accounts (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   account_number  TEXT NOT NULL UNIQUE,              -- e.g. AGF-AG000001-XAF
   owner_type      TEXT NOT NULL CHECK (owner_type IN ('customer', 'agent', 'system')),
-  owner_ref       TEXT NOT NULL,                     -- BataPay user id / agent id / system code
+  owner_ref       TEXT NOT NULL,                     -- Velynt user id / agent id / system code
   purpose         TEXT NOT NULL CHECK (purpose IN (
                     'customer_wallet',
                     'agent_float',
@@ -75,7 +75,7 @@ CREATE TABLE ledger.ledger_account_balances (
 CREATE TABLE ledger.ledger_transactions (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reference        TEXT NOT NULL UNIQUE,              -- BTX-00092831 (shared with the agent transaction)
-  source_system    TEXT NOT NULL,                     -- 'agent-service', 'batapay-core', 'settlement-job'
+  source_system    TEXT NOT NULL,                     -- 'agent-service', 'velynt-core', 'settlement-job'
   idempotency_key  TEXT NOT NULL,
   request_hash     TEXT NOT NULL,                     -- sha256 of the posting request; detects key reuse with a different payload
   kind             TEXT NOT NULL CHECK (kind IN (

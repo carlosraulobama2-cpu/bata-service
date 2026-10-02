@@ -15,7 +15,7 @@ import { OperationLifecycleService } from './operation-lifecycle.service';
 
 /**
  * Cash-in: the agent's float is reserved (ledger hold) while the customer
- * confirms in the BataPay app; Core notifies the confirmation and only then
+ * confirms in the Velynt app; Core notifies the confirmation and only then
  * is the money posted.
  */
 @Injectable()

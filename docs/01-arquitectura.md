@@ -1,12 +1,12 @@
 # 01 · Arquitectura
 
-> Documento de diseño de **VELYNT SERVICES**, la aplicación para agentes autorizados de BataPay.
+> Documento de diseño de **VELYNT SERVICES**, la aplicación para agentes autorizados de Velynt.
 > Todo lo marcado **(por confirmar)** depende de la jurisdicción, del proveedor financiero regulado o de una decisión de negocio que todavía no está tomada.
 
 ## 1. Resumen
 
-Velynt Services es un **producto separado** de BataPay, con su propio frontend, su propio backend (Agent Backend), su propia autenticación y sus propios permisos.
-**No mueve dinero por sí mismo**: cada operación financiera se valida en el Agent Backend y se registra en el **Ledger central de BataPay**, que es el único componente que puede cambiar un saldo.
+Velynt Services es un **producto separado** de Velynt, con su propio frontend, su propio backend (Agent Backend), su propia autenticación y sus propios permisos.
+**No mueve dinero por sí mismo**: cada operación financiera se valida en el Agent Backend y se registra en el **Ledger central de Velynt**, que es el único componente que puede cambiar un saldo.
 
 Tres reglas de diseño gobiernan todo lo demás:
 
@@ -29,8 +29,8 @@ Tres reglas de diseño gobiernan todo lo demás:
 ### Recomendación: **A, con un ledger central compartido**
 
 - **Agent Backend separado** (su propio despliegue, su propia base de datos `agent`), expuesto solo a la app Velynt Services y al panel de administración de agentes.
-- **Ledger central único** para BataPay y Velynt Services, como servicio propio (o módulo aislado dentro del core de BataPay con API interna), con su propia base de datos `ledger`. Es el **único** que escribe asientos.
-- **BataPay Core** sigue siendo el dueño de los clientes finales: identidad, estado, límites del cliente y confirmaciones del cliente (PIN en su app).
+- **Ledger central único** para Velynt y Velynt Services, como servicio propio (o módulo aislado dentro del core de Velynt con API interna), con su propia base de datos `ledger`. Es el **único** que escribe asientos.
+- **Velynt Core** sigue siendo el dueño de los clientes finales: identidad, estado, límites del cliente y confirmaciones del cliente (PIN en su app).
 - Comunicación síncrona **interna** (mTLS + token de servicio) para validar y contabilizar, y asíncrona (eventos) para notificaciones, proyecciones y reportes.
 
 Por qué no B: en fintech el riesgo dominante es un error de permisos o un despliegue defectuoso. A convierte ese riesgo en un fallo **contenido**. El coste extra (contratos internos) es pequeño y además obliga a documentar las fronteras, algo que auditores y reguladores suelen pedir.
@@ -41,7 +41,7 @@ Para no caer en una arquitectura de microservicios prematura: **el Agent Backend
 
 ```
                          ┌───────────────────────┐            ┌─────────────────────────┐
-  Clientes finales ────▶ │   BataPay App          │            │  Velynt Services App      │ ◀──── Agentes
+  Clientes finales ────▶ │   Velynt App          │            │  Velynt Services App      │ ◀──── Agentes
                          │  (Android / iOS)       │            │  (Android / iOS / web*) │
                          └──────────┬────────────┘            └────────────┬────────────┘
                                     │ HTTPS (tokens de USUARIO)            │ HTTPS + firma de dispositivo
@@ -51,7 +51,7 @@ Para no caer en una arquitectura de microservicios prematura: **el Agent Backend
                          └──────────┬────────────┘            └────────────┬────────────┘ TLS, bot protection
                                     ▼                                      ▼
                          ┌───────────────────────┐  API interna ┌─────────────────────────┐   ┌────────────────┐
-                         │   BataPay Core API     │◀────mTLS────▶│   Agent Backend          │◀──│ Admin Panel     │
+                         │   Velynt Core API     │◀────mTLS────▶│   Agent Backend          │◀──│ Admin Panel     │
                          │ clientes, límites de   │              │ (monolito modular)       │   │ (web, SSO+MFA)  │
                          │ cliente, confirmación  │              │ auth·kyc·operations·qr·  │   └────────────────┘
                          │ del cliente, retiros   │              │ commissions·settlements· │
@@ -84,7 +84,7 @@ Para no caer en una arquitectura de microservicios prematura: **el Agent Backend
 |---|---|---|
 | Identidad y estado del agente, dispositivos, sesiones | Agent Backend | BD `agent` |
 | KYC del agente (metadatos) | Agent Backend | BD `agent` + almacenamiento de objetos cifrado |
-| Clientes finales, su KYC, sus límites | BataPay Core | BD del core (no se copia a `agent`) |
+| Clientes finales, su KYC, sus límites | Velynt Core | BD del core (no se copia a `agent`) |
 | Saldos y movimientos de dinero | Ledger | BD `ledger` |
 | Reglas de comisiones, límites de agente, reglas de riesgo | Agent Backend (configuración) | BD `agent` |
 | Audit logs de acciones de agente y staff | Agent Backend | BD `agent` + copia WORM |
@@ -94,7 +94,7 @@ Para no caer en una arquitectura de microservicios prematura: **el Agent Backend
 1. La app envía la intención (p. ej. "cash-out del código X") con `Idempotency-Key` y **firma del dispositivo**.
 2. El gateway valida TLS, token de agente y rate limit.
 3. El Agent Backend valida: sesión, dispositivo de confianza, estado del agente, permisos, límites, riesgo y duplicados.
-4. Pide a BataPay Core lo que es del cliente (estado del cliente, confirmación del cliente, solicitud de retiro).
+4. Pide a Velynt Core lo que es del cliente (estado del cliente, confirmación del cliente, solicitud de retiro).
 5. Llama al Ledger con **una sola transacción contable multi-línea** (operación + comisión), con su propia clave de idempotencia. O se contabiliza todo o nada: no hace falta coordinación distribuida para el dinero.
 6. Marca la operación como `completed`, escribe audit log y un evento en el *outbox* dentro de la misma transacción de base de datos.
 7. Los workers publican notificaciones, actualizan proyecciones de saldo y acumulan comisiones diarias.

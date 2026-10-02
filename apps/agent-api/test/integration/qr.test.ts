@@ -21,7 +21,7 @@ describe('QR: collect, static QR, unified scan and payment from Core', () => {
   const collect = (amount: number, key?: string) => h.signedPost(s, '/agent/v1/qr/create', { kind: 'collect', amount, currency: 'XAF' }, { key });
   const coreResolve = (payload: string) => h.coreRequest('/internal/v1/qr/resolve', { payload });
 
-  /** What BataPay Core does when the customer approves the payment with their PIN. */
+  /** What Velynt Core does when the customer approves the payment with their PIN. */
   const pay = async (qr: { qr_id: string; amount: number }, opts: { ref?: string; amount?: number; paymentRequestId?: string } = {}) => {
     const ref = opts.ref ?? customerRef;
     const payment = opts.paymentRequestId

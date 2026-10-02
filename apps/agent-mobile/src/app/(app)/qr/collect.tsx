@@ -26,7 +26,7 @@ import { formatCountdown, formatDate, formatTime, money } from '../../../utils/f
 
 /**
  * "Cobrar": the agent types an amount, the server creates a single-use QR
- * (and the pending QR payment), the customer pays it from BataPay. The
+ * (and the pending QR payment), the customer pays it from Velynt. The
  * screen only turns to "Pagado" when the server says the payment is completed.
  */
 export default function CollectScreen() {

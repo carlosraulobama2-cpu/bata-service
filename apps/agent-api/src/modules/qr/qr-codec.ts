@@ -6,7 +6,7 @@ import { createPrivateKey, createPublicKey, KeyObject, randomBytes, sign, verify
  *   BSV1.<type>.<id>[.<signature>]
  *
  *   A = agent static · K = collect (cobro)  → issued and signed here (Ed25519)
- *   C = customer     · W = withdrawal       → issued by BataPay Core, validated by Core
+ *   C = customer     · W = withdrawal       → issued by Velynt Core, validated by Core
  *
  * The id is 128 random bits (base64url). The QR never carries amounts or
  * personal data: everything is read from the server. The signature lets

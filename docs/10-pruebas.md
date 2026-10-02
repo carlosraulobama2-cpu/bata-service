@@ -35,7 +35,7 @@
 - Operación completada no se puede editar (API y BD).
 
 **Seguridad**
-- Token de usuario BataPay rechazado en Agent API, y viceversa.
+- Token de usuario Velynt rechazado en Agent API, y viceversa.
 - Agente A no puede ver operaciones, tickets ni dispositivos del agente B (404).
 - Firma de dispositivo inválida, caducada o repetida → rechazo.
 - 5 PIN fallidos → bloqueo; el contador sobrevive a reinstalar la app.

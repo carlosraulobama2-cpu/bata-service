@@ -8,7 +8,7 @@ import type { Clock } from '../../common/time/clock';
 const MAX_AGE_MS = 5 * 60 * 1000;
 
 /**
- * Calls from BataPay Core. In production these routes are only reachable on
+ * Calls from Velynt Core. In production these routes are only reachable on
  * the private network with mTLS; the HMAC over "timestamp.body" is an extra
  * check and prevents replays of old requests. Returns the raw body.
  */
