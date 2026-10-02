@@ -170,7 +170,7 @@ run('the agents app against api-agente', () => {
     expect(onboarding.documents.some((d) => d.kind === 'police_record' && d.required)).toBe(true);
     const closed = await endpoints
       .saveBusinessProfile({
-        legal_form: 'individual', tax_id: 'NIF-12345', license_number: 'LIC-1', activity: 'shop', years_in_business: 1, opening_hours: '8-20',
+        legal_form: 'individual', license_number: 'LIC-1', activity: 'shop', years_in_business: 1, opening_hours: '8-20',
         alt_phone_number: '', expected_daily_volume_minor: 100_000, float_source: 'Ahorros de la tienda', is_pep: false, pep_details: '',
         no_criminal_record: true, accept_rules_version: onboarding.rules_version
       })
