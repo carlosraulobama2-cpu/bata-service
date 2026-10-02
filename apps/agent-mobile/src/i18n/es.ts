@@ -235,8 +235,6 @@ export const es = {
       legalForm: 'Forma jurídica',
       individual: 'Persona física (autónomo)',
       company: 'Sociedad',
-      taxId: 'NIF',
-      taxIdPlaceholder: 'Número de identificación fiscal',
       license: 'Licencia de actividad o nº de registro mercantil',
       activity: 'Tipo de negocio',
       years: 'Años con el negocio',

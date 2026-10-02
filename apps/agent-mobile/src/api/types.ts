@@ -171,7 +171,6 @@ export type Activity = 'shop' | 'pharmacy' | 'phone_shop' | 'kiosk' | 'market_st
 
 export interface BusinessProfile {
   legal_form: LegalForm | '';
-  tax_id: string;
   license_number: string;
   activity: Activity | '';
   years_in_business: number;
@@ -209,7 +208,6 @@ export interface Onboarding {
 
 export interface BusinessProfileInput {
   legal_form: LegalForm;
-  tax_id: string;
   license_number: string;
   activity: Activity;
   years_in_business: number;

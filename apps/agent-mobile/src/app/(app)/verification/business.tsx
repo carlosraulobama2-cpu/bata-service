@@ -42,7 +42,6 @@ export default function BusinessScreen() {
   const qc = useQueryClient();
   const { data } = useOnboarding();
   const [legalForm, setLegalForm] = useState<LegalForm>('individual');
-  const [taxId, setTaxId] = useState('');
   const [license, setLicense] = useState('');
   const [activity, setActivity] = useState<Activity>('shop');
   const [years, setYears] = useState('');
@@ -64,7 +63,6 @@ export default function BusinessScreen() {
     if (!p || loaded) return;
     setLoaded(true);
     if (p.legal_form) setLegalForm(p.legal_form);
-    setTaxId(p.tax_id);
     setLicense(p.license_number);
     if (p.activity) setActivity(p.activity);
     setYears(p.years_in_business ? String(p.years_in_business) : '');
@@ -80,7 +78,6 @@ export default function BusinessScreen() {
   const rules = t('verification.form.rules', { returnObjects: true }) as string[];
   const volumeNumber = Number(volume.replace(/\D/g, '')) || 0;
   const valid =
-    taxId.trim().length >= 5 &&
     license.trim().length >= 3 &&
     hours.trim().length >= 3 &&
     volumeNumber > 0 &&
@@ -96,7 +93,6 @@ export default function BusinessScreen() {
     try {
       const updated = await endpoints.saveBusinessProfile({
         legal_form: legalForm,
-        tax_id: taxId.trim(),
         license_number: license.trim(),
         activity,
         years_in_business: Number(years) || 0,
@@ -143,10 +139,6 @@ export default function BusinessScreen() {
               { value: 'company', label: t('verification.form.company') }
             ]}
           />
-        )}
-        {field(
-          t('verification.form.taxId'),
-          <TextInput value={taxId} onChangeText={setTaxId} autoCapitalize="characters" placeholder={t('verification.form.taxIdPlaceholder')} placeholderTextColor={colors.textMuted} style={input} maxLength={32} testID="business-tax-id" />
         )}
         {field(t('verification.form.license'), <TextInput value={license} onChangeText={setLicense} autoCapitalize="characters" style={input} maxLength={64} testID="business-license" />)}
         {field(
