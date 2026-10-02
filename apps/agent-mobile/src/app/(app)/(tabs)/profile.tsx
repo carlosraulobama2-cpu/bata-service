@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Bell, ChevronRight, Gauge, LifeBuoy, LogOut, ShieldCheck } from 'lucide-react-native';
+import { Bell, ChevronRight, Gauge, LifeBuoy, LogOut, ShieldCheck, BadgeCheck } from 'lucide-react-native';
 import { ReactNode } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -80,6 +80,7 @@ export default function ProfileScreen() {
       </Text>
       <Card padded={false} style={{ overflow: 'hidden' }}>
         <Row icon={<Gauge size={20} color={colors.text} />} label={t('profile.limits')} onPress={() => router.push('/limits')} />
+        {me.data?.agent ? <Row icon={<BadgeCheck size={20} color={colors.text} />} label={t('verification.title')} onPress={() => router.push('/verification')} /> : null}
         <Row icon={<ShieldCheck size={20} color={colors.text} />} label={t('profile.securityRow')} onPress={() => router.push('/security')} />
         <Row icon={<Bell size={20} color={colors.text} />} label={t('profile.notifications')} onPress={() => router.push('/notifications')} />
         <Row icon={<LifeBuoy size={20} color={colors.text} />} label={t('profile.help')} onPress={() => router.push('/help')} />

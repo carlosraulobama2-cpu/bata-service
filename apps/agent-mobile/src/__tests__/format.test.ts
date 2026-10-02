@@ -1,6 +1,13 @@
-import { formatCountdown, formatDate, formatPhone, formatTime, groupDigits, money } from '../utils/format';
+import { formatCountdown, formatDate, formatPhone, formatTime, groupDigits, groupThousands, money } from '../utils/format';
 
 describe('format', () => {
+  it('groups typed amounts in thousands from the right', () => {
+    expect(groupThousands('1500000')).toBe('1.500.000');
+    expect(groupThousands('15000')).toBe('15.000');
+    expect(groupThousands('0950')).toBe('950');
+    expect(groupThousands('')).toBe('');
+  });
+
   it('formats XAF amounts with dot grouping, even for 4 digits', () => {
     expect(money(2450000)).toBe('2.450.000 XAF');
     expect(money(8500)).toBe('8.500 XAF');

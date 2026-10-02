@@ -10,6 +10,9 @@ import type {
   Limits,
   Me,
   NotificationPage,
+  BusinessProfileInput,
+  Onboarding,
+  VerificationDocument,
   StepUp,
   TopupPreview,
   Totals,
@@ -138,6 +141,18 @@ export const endpoints = {
   },
   /** Ask to become an agent (needs a verified identity in the Velynt app). */
   apply: (body: { business_name: string; city: string; address: string }) => api<{ agent: AgentOut }>('/agent/v1/apply', { body }).then((r) => toAgent(r.agent)),
+
+  /** Reinforced agent verification: what is missing, the business data and the photos. */
+  onboarding: () => api<Onboarding>('/agent/v1/onboarding'),
+  saveBusinessProfile: (body: BusinessProfileInput) => api<Onboarding>('/agent/v1/onboarding/profile', { method: 'PUT', body }),
+  uploadDocument: (kind: string, photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
+    const form = new FormData();
+    form.append('kind', kind);
+    // React Native's FormData takes a file as { uri, name, type }.
+    form.append('file', { uri: photo.uri, name: photo.fileName || `${kind}.jpg`, type: photo.mimeType || 'image/jpeg' } as unknown as Blob);
+    return api<{ document: VerificationDocument }>('/agent/v1/onboarding/documents', { form, timeoutMs: 60000 }).then((r) => r.document);
+  },
+
   /** Create or change the payment PIN; the account password proves it is the owner. */
   setPin: (body: { password: string; pin: string }) => api<{ ok: boolean }>('/agent/v1/pin', { body }),
   /** Opens the locked app: the server checks the PIN with the same wrong-PIN counter as payments. */

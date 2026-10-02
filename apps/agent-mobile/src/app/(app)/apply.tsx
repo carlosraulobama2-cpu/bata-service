@@ -51,8 +51,16 @@ export default function ApplyScreen() {
 
   if (sent) {
     return (
-      <Screen header={<Header leading="close" onLeading={close} />} footer={<Button label={t('common.done')} onPress={close} testID="apply-done" />}>
-        <ResultView tone="success" title={t('apply.sentTitle')} instruction={t('apply.pending', { code: sent.code })} />
+      <Screen
+        header={<Header leading="close" onLeading={close} />}
+        footer={
+          <>
+            <Button label={t('apply.continue')} onPress={() => router.replace('/verification')} testID="apply-continue" />
+            <Button variant="ghost" label={t('common.done')} onPress={close} testID="apply-done" />
+          </>
+        }
+      >
+        <ResultView tone="success" title={t('apply.sentTitle')} instruction={`${t('apply.pending', { code: sent.code })} ${t('apply.next')}`} />
       </Screen>
     );
   }

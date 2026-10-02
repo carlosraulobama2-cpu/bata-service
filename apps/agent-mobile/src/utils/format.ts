@@ -29,6 +29,11 @@ export function groupDigits(value: string, size = 3): string {
   return value.replace(/\D/g, '').replace(new RegExp(`(\\d{${size}})(?=\\d)`, 'g'), '$1 ');
 }
 
+/** Thousands with dots, from the right, for amounts being typed: "1500000" -> "1.500.000". */
+export function groupThousands(value: string): string {
+  return value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
 /** "Ahora mismo" / "Hace 5 min" / "Hace 3 h" for today's items, date + time otherwise. */
 export function formatRelative(iso: string, t: (key: string, opts?: Record<string, unknown>) => string, now = new Date()): string {
   const diffMin = Math.floor((now.getTime() - new Date(iso).getTime()) / 60000);

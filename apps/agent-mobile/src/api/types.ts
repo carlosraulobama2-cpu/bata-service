@@ -136,3 +136,73 @@ export interface CommissionSummary {
 
 /** How the agent confirms: the payment PIN, typed or unlocked from the keystore with biometrics. */
 export type StepUp = { method: 'pin'; pin: string } | { method: 'biometric' };
+
+// ---- Reinforced agent verification (velynt/backend/agent_onboarding.py) ----
+
+export type RequirementStatus = 'done' | 'missing' | 'in_review' | 'rejected';
+
+export interface Requirement {
+  code: string;
+  label: string;
+  status: RequirementStatus;
+  detail: string;
+  /** Whose turn it is: the applicant has to act, or Velynt is checking. */
+  who: 'applicant' | 'velynt';
+}
+
+export type LegalForm = 'individual' | 'company';
+export type Activity = 'shop' | 'pharmacy' | 'phone_shop' | 'kiosk' | 'market_stall' | 'supermarket' | 'service_station' | 'other';
+
+export interface BusinessProfile {
+  legal_form: LegalForm | '';
+  tax_id: string;
+  license_number: string;
+  activity: Activity | '';
+  years_in_business: number;
+  opening_hours: string;
+  alt_phone_number: string;
+  expected_daily_volume_minor: number;
+  float_source: string;
+  is_pep: boolean;
+  pep_details: string;
+  no_criminal_record: boolean;
+  rules_version: string;
+  rules_accepted_at: string | null;
+  site_visit_at: string | null;
+  site_visit_ok: boolean | null;
+  next_review_at: string | null;
+}
+
+export interface VerificationDocument {
+  id: string;
+  kind: string;
+  label: string;
+  status: 'pending' | 'approved' | 'rejected';
+  review_note: string;
+  created_at: string;
+}
+
+export interface Onboarding {
+  rules_version: string;
+  requirements: Requirement[];
+  complete_for_applicant: boolean;
+  ready_to_approve: boolean;
+  profile: BusinessProfile | null;
+  documents: { kind: string; label: string; required: boolean; document: VerificationDocument | null }[];
+}
+
+export interface BusinessProfileInput {
+  legal_form: LegalForm;
+  tax_id: string;
+  license_number: string;
+  activity: Activity;
+  years_in_business: number;
+  opening_hours: string;
+  alt_phone_number: string;
+  expected_daily_volume_minor: number;
+  float_source: string;
+  is_pep: boolean;
+  pep_details: string;
+  no_criminal_record: boolean;
+  accept_rules_version: string;
+}
