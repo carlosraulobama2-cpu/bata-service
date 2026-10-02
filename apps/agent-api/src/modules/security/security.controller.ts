@@ -1,0 +1,98 @@
+import { Body, Controller, Delete, Get, Headers, HttpCode, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { AgentAuthGuard } from '../../common/auth/agent-auth.guard';
+import { DeviceSignatureGuard } from '../../common/auth/device-signature.guard';
+import { AgentContext, CurrentAgent } from '../../common/auth/request-context';
+import { IdempotencyService } from '../../common/idempotency/idempotency.service';
+import { AgentAuthSchema, IntegritySchema } from '../auth/auth.dto';
+import { StepUpService } from '../auth/step-up.service';
+import { isUuid } from '../../common/pagination';
+import { Errors } from '../../common/errors/app-error';
+import { SecurityService } from './security.service';
+
+const Pin = z.string().regex(/^\d{6}$/);
+const ChangePinSchema = z.object({ current_pin: Pin, new_pin: Pin });
+const RevokeOthersSchema = z.object({ agent_auth: AgentAuthSchema });
+const HistorySchema = z.object({ limit: z.coerce.number().int().min(1).max(50).default(20), cursor: z.string().max(200).optional() });
+
+@Controller('agent/v1/security')
+@UseGuards(AgentAuthGuard)
+export class SecurityController {
+  constructor(
+    private readonly security: SecurityService,
+    private readonly stepUp: StepUpService,
+    private readonly idempotency: IdempotencyService
+  ) {}
+
+  /**
+   * The app locked itself after a while in the background. The PIN is
+   * checked here (never on the phone), so failures count toward the
+   * account lock like any other PIN entry.
+   */
+  @Post('unlock')
+  @HttpCode(200)
+  @UseGuards(DeviceSignatureGuard)
+  async unlock(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Req() req: FastifyRequest) {
+    const input = RevokeOthersSchema.parse(body);
+    await this.stepUp.verify(agent, input.agent_auth, req);
+    return { unlocked: true };
+  }
+
+  @Post('device-integrity')
+  @HttpCode(200)
+  integrity(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Req() req: FastifyRequest) {
+    return this.security.reportIntegrity(agent, IntegritySchema.parse(body), req.ip);
+  }
+
+  @Get('overview')
+  overview(@CurrentAgent() agent: AgentContext) {
+    return this.security.overview(agent);
+  }
+
+  @Get('devices')
+  devices(@CurrentAgent() agent: AgentContext) {
+    return this.security.devices(agent);
+  }
+
+  @Get('sessions')
+  sessions(@CurrentAgent() agent: AgentContext) {
+    return this.security.sessions(agent);
+  }
+
+  @Get('access-history')
+  history(@CurrentAgent() agent: AgentContext, @Query() raw: unknown) {
+    return this.security.accessHistory(agent, HistorySchema.parse(raw));
+  }
+
+  /** Disconnect another device. Requires PIN or biometrics and the device signature. */
+  @Delete('devices/:id')
+  @HttpCode(200)
+  @UseGuards(DeviceSignatureGuard)
+  async revokeDevice(@CurrentAgent() agent: AgentContext, @Param('id') id: string, @Body() body: unknown, @Req() req: FastifyRequest) {
+    if (!isUuid(id)) throw Errors.notFound();
+    const input = RevokeOthersSchema.parse(body);
+    await this.stepUp.verify(agent, input.agent_auth, req);
+    return this.security.revokeDevice(agent, id, req.ip);
+  }
+
+  /** Close every other session. Requires PIN or biometrics and the device signature. */
+  @Post('sessions/revoke-others')
+  @HttpCode(200)
+  @UseGuards(DeviceSignatureGuard)
+  async revokeOthers(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Req() req: FastifyRequest) {
+    const input = RevokeOthersSchema.parse(body);
+    await this.stepUp.verify(agent, input.agent_auth, req);
+    return this.security.revokeOtherSessions(agent, req.ip);
+  }
+
+  @Post('pin/change')
+  @UseGuards(DeviceSignatureGuard)
+  async changePin(@CurrentAgent() agent: AgentContext, @Body() body: unknown, @Headers('idempotency-key') key: string | undefined, @Req() req: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply) {
+    const input = ChangePinSchema.parse(body);
+    // Nothing derived from the PINs goes into the idempotency record (a hash of a 6-digit PIN is brute-forceable).
+    const result = await this.idempotency.run(agent.agentId, key, 'POST /security/pin/change', {}, async () => ({ status: 200, body: await this.security.changePin(agent, input, req.ip) }));
+    reply.status(result.status);
+    return result.body;
+  }
+}
