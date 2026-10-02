@@ -196,9 +196,9 @@ export default function CashOutScreen() {
             </Text>
             <Text variant="label">{t('cashIn.customerPhoneLabel')}</Text>
             <View style={[styles.phone, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text variant="bodyStrong" style={[styles.prefix, { borderRightColor: colors.border }]}>
-                🇬🇶 {PREFIX}
-              </Text>
+              <View style={[styles.prefix, { borderRightColor: colors.border }]}>
+                <Text variant="bodyStrong">🇬🇶 {PREFIX}</Text>
+              </View>
               <TextInput
                 value={groupDigits(digits)}
                 onChangeText={(v) => setDigits(v.replace(/\D/g, '').slice(0, 9))}
@@ -236,7 +236,7 @@ export default function CashOutScreen() {
 const styles = StyleSheet.create({
   content: { gap: space.lg, paddingTop: space.sm },
   phone: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: radius.md, height: 60, overflow: 'hidden' },
-  prefix: { paddingHorizontal: space.lg, borderRightWidth: 1, lineHeight: 60 },
+  prefix: { paddingHorizontal: space.lg, borderRightWidth: 1, height: '100%', justifyContent: 'center' },
   phoneInput: { flex: 1, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1, height: '100%' },
   input: { height: 72, borderWidth: 1.5, borderRadius: radius.md, textAlign: 'center', fontSize: 30, letterSpacing: 4, fontWeight: '600' },
   amountBlock: { paddingVertical: space.xxl, gap: space.xs },

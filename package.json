@@ -1,7 +1,7 @@
 {
   "name": "velynt-services",
   "private": true,
-  "description": "VELYNT SERVICES — plataforma para agentes autorizados de Velynt",
+  "description": "VELYNT SERVICES — app para agentes autorizados de Velynt (el backend es velynt/api-agente)",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=22"
@@ -9,7 +9,6 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
-    "db:test": "./db/tests/run.sh"
+    "typecheck": "pnpm -r typecheck"
   }
 }

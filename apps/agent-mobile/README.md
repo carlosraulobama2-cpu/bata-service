@@ -2,7 +2,7 @@
 
 App móvil para agentes autorizados de Velynt. Expo SDK 57 · React Native · TypeScript · expo-router.
 
-**Se conecta al API de agentes de Velynt** ([`velynt/api-agente`](https://github.com/carlosraulobama2-cpu/velynt/tree/main/api-agente), puerto 8001), que comparte la base de datos y el libro contable con la app de clientes Velynt: el dinero que mueve el agente es el mismo que ve el cliente en su app. El backend NestJS de este repositorio ([`apps/agent-api`](../agent-api)) ya no lo usa la app.
+**Se conecta al API de agentes de Velynt** ([`velynt/api-agente`](https://github.com/carlosraulobama2-cpu/velynt/tree/main/api-agente), puerto 8001), que comparte la base de datos y el libro contable con la app de clientes Velynt: el dinero que mueve el agente es el mismo que ve el cliente en su app. Es el único backend: este repositorio no tiene backend propio.
 
 ## Qué incluye
 
