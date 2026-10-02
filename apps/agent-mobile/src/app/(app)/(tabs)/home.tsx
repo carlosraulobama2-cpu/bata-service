@@ -13,6 +13,7 @@ import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { TransactionRow } from '../../../components/TransactionRow';
 import { usePushPermission } from '../../../features/push';
+import { useOnboarding, verificationState } from '../../../features/verification';
 import { useMe, useToday, useUnreadCount } from '../../../features/queries';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
@@ -25,13 +26,13 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const me = useMe();
-  const today = useToday();
+  const today = useToday(me.data?.agent?.status === 'active');
   const unread = useUnreadCount().data?.unread_count ?? 0;
   const push = usePushPermission();
   const [infoOpen, setInfoOpen] = useState(false);
 
   const refreshing = me.isRefetching || today.isRefetching;
-  const refresh = () => Promise.all([me.refetch(), today.refetch()]);
+  const refresh = () => Promise.all([me.refetch(), me.data?.agent?.status === 'active' ? today.refetch() : null]);
   const offline = [me.error, today.error].some((e) => e instanceof ApiError && e.isNetwork);
 
   const agent = me.data?.agent;
@@ -127,59 +128,63 @@ export default function Dashboard() {
         ) : null}
         {canOperate && me.data && me.data.float < LOW_FLOAT ? <Banner tone="warning">{t('dashboard.lowFloat')}</Banner> : null}
 
-        {/* Today at a glance: numbers, not charts */}
-        <Card>
-          <Text variant="overline" color="textMuted" style={styles.cardTitle}>
-            {t('dashboard.today')}
-          </Text>
-          {today.data ? (
-            <View style={styles.grid}>
-              <Stat label={t('dashboard.cashIn')} value={money(today.data.totals.cash_in.volume)} />
-              <Stat label={t('dashboard.cashOut')} value={money(today.data.totals.cash_out.volume)} />
-              <Stat label={t('dashboard.netCash')} value={money(today.data.totals.cash_in.volume - today.data.totals.cash_out.volume)} />
-              <Stat label={t('dashboard.commissions')} value={money(today.data.totals.commission)} accent />
-            </View>
-          ) : today.error && !offline ? (
-            <ErrorState error={today.error} onRetry={() => today.refetch()} />
-          ) : (
-            <View style={styles.grid}>
-              {[0, 1, 2, 3].map((i) => (
-                <View key={i} style={styles.stat}>
-                  <Skeleton width={70} height={12} />
-                  <Skeleton width={110} height={20} />
-                </View>
-              ))}
-            </View>
-          )}
-        </Card>
-
-        <Card padded={false}>
-          <View style={styles.sectionHeader}>
-            <Text variant="overline" color="textMuted">
-              {t('dashboard.recent')}
-            </Text>
-            <Pressable onPress={() => router.push('/operations')} hitSlop={12} accessibilityRole="link">
-              <Text variant="label" color="primary">
-                {t('common.seeAll')}
+        {/* Today at a glance: numbers, not charts. Only once the agent can operate. */}
+        {agent?.status === 'active' ? (
+          <>
+            <Card>
+              <Text variant="overline" color="textMuted" style={styles.cardTitle}>
+                {t('dashboard.today')}
               </Text>
-            </Pressable>
-          </View>
-          <View style={styles.list}>
-            {today.data?.data.length === 0 ? <EmptyState message={t('dashboard.noOperations')} /> : null}
-            {today.data?.data.map((tx) => <TransactionRow key={tx.id} tx={tx} onPress={() => router.push(`/transaction/${tx.id}`)} />)}
-            {!today.data && today.isLoading
-              ? [0, 1, 2].map((i) => (
-                  <View key={i} style={styles.skeletonRow}>
-                    <Skeleton width={40} height={40} style={{ borderRadius: 20 }} />
-                    <View style={{ flex: 1, gap: 6 }}>
-                      <Skeleton width="50%" />
-                      <Skeleton width="30%" height={12} />
+              {today.data ? (
+                <View style={styles.grid}>
+                  <Stat label={t('dashboard.cashIn')} value={money(today.data.totals.cash_in.volume)} />
+                  <Stat label={t('dashboard.cashOut')} value={money(today.data.totals.cash_out.volume)} />
+                  <Stat label={t('dashboard.netCash')} value={money(today.data.totals.cash_in.volume - today.data.totals.cash_out.volume)} />
+                  <Stat label={t('dashboard.commissions')} value={money(today.data.totals.commission)} accent />
+                </View>
+              ) : today.error && !offline ? (
+                <ErrorState error={today.error} onRetry={() => today.refetch()} />
+              ) : (
+                <View style={styles.grid}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <View key={i} style={styles.stat}>
+                      <Skeleton width={70} height={12} />
+                      <Skeleton width={110} height={20} />
                     </View>
-                  </View>
-                ))
-              : null}
-          </View>
-        </Card>
+                  ))}
+                </View>
+              )}
+            </Card>
+
+            <Card padded={false}>
+              <View style={styles.sectionHeader}>
+                <Text variant="overline" color="textMuted">
+                  {t('dashboard.recent')}
+                </Text>
+                <Pressable onPress={() => router.push('/operations')} hitSlop={12} accessibilityRole="link">
+                  <Text variant="label" color="primary">
+                    {t('common.seeAll')}
+                  </Text>
+                </Pressable>
+              </View>
+              <View style={styles.list}>
+                {today.data?.data.length === 0 ? <EmptyState message={t('dashboard.noOperations')} /> : null}
+                {today.data?.data.map((tx) => <TransactionRow key={tx.id} tx={tx} onPress={() => router.push(`/transaction/${tx.id}`)} />)}
+                {!today.data && today.isLoading
+                  ? [0, 1, 2].map((i) => (
+                      <View key={i} style={styles.skeletonRow}>
+                        <Skeleton width={40} height={40} style={{ borderRadius: 20 }} />
+                        <View style={{ flex: 1, gap: 6 }}>
+                          <Skeleton width="50%" />
+                          <Skeleton width="30%" height={12} />
+                        </View>
+                      </View>
+                    ))
+                  : null}
+              </View>
+            </Card>
+          </>
+        ) : null}
       </View>
 
       <Modal visible={infoOpen} transparent animationType="fade" onRequestClose={() => setInfoOpen(false)}>
@@ -197,6 +202,33 @@ export default function Dashboard() {
   );
 }
 
+/** A pending application: what the reinforced verification still needs, and whose turn it is. */
+function VerificationBanner({ code }: { code: string }) {
+  const { t } = useTranslation();
+  const state = verificationState(useOnboarding().data);
+  const open = () => router.push('/verification');
+  if (!state) return <Banner tone="info">{t('apply.pending', { code })}</Banner>;
+  if (state.rejected) {
+    return (
+      <Banner tone="warning" onPress={open} action={t('verification.open')}>
+        {t('verification.bannerRejected')}
+      </Banner>
+    );
+  }
+  if (state.missing > 0) {
+    return (
+      <Banner tone="info" onPress={open} action={t('verification.open')}>
+        {t('verification.banner', { missing: state.missing })}
+      </Banner>
+    );
+  }
+  return (
+    <Banner tone="info" onPress={open} action={t('verification.open')}>
+      {t('verification.bannerReview')}
+    </Banner>
+  );
+}
+
 /** Why the agent cannot operate yet (no application, under review, rejected, suspended). */
 function AgentStateBanner() {
   const { t } = useTranslation();
@@ -210,7 +242,7 @@ function AgentStateBanner() {
       </Banner>
     );
   }
-  if (agent.status === 'pending') return <Banner tone="info">{t('apply.pending', { code: agent.code })}</Banner>;
+  if (agent.status === 'pending') return <VerificationBanner code={agent.code} />;
   if (agent.status === 'rejected') {
     return (
       <Banner tone="warning" onPress={() => router.push('/apply')} action={t('apply.again')}>

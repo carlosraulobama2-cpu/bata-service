@@ -46,7 +46,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "La cámara se usa solo para escanear códigos QR de clientes.",
+          "cameraPermission": "La cámara se usa para escanear códigos QR de clientes y para fotografiar los documentos de tu verificación de agente.",
           "recordAudioAndroid": false
         }
       ],
@@ -54,6 +54,14 @@
         "expo-local-authentication",
         {
           "faceIDPermission": "Usamos Face ID para confirmar tus operaciones."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "La cámara se usa para fotografiar los documentos y el local de tu verificación de agente.",
+          "photosPermission": "Puedes elegir de tu galería las fotos de los documentos de tu verificación de agente.",
+          "microphonePermission": false
         }
       ],
       "expo-font",

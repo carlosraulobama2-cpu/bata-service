@@ -29,6 +29,8 @@ export interface RequestOptions {
   auth?: boolean;
   /** Money operation: one Idempotency-Key per operation (reused on retries) + the payment PIN. */
   money?: { idempotencyKey?: string; stepUp: StepUp; biometricPrompt?: string };
+  /** Multipart upload (photos). Sent as is: fetch sets the boundary in Content-Type. */
+  form?: FormData;
   timeoutMs?: number;
 }
 
@@ -70,7 +72,7 @@ async function refreshAccessToken(): Promise<boolean> {
   return refreshing;
 }
 
-async function rawFetch(path: string, init: { method: string; body?: string; headers: Record<string, string> }, timeoutMs = 20000): Promise<Response> {
+async function rawFetch(path: string, init: { method: string; body?: string | FormData; headers: Record<string, string> }, timeoutMs = 20000): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -81,7 +83,7 @@ async function rawFetch(path: string, init: { method: string; body?: string; hea
       headers: {
         Accept: 'application/json',
         'X-App-Version': config.appVersion,
-        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(typeof init.body === 'string' ? { 'Content-Type': 'application/json' } : {}),
         ...init.headers
       }
     });
@@ -101,13 +103,13 @@ async function pinFor(stepUp: StepUp, prompt: string): Promise<string> {
 }
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const method = options.method ?? (options.body === undefined ? 'GET' : 'POST');
+  const method = options.method ?? (options.body === undefined && !options.form ? 'GET' : 'POST');
   const headers: Record<string, string> = {};
   if (options.money) {
     headers['X-Transaction-PIN'] = await pinFor(options.money.stepUp, options.money.biometricPrompt ?? config.appName);
     if (options.money.idempotencyKey) headers['Idempotency-Key'] = options.money.idempotencyKey;
   }
-  const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+  const body = options.form ?? (options.body === undefined ? undefined : JSON.stringify(options.body));
   const attempt = (): Promise<Response> => {
     const token = useSession.getState().accessToken;
     const auth: Record<string, string> = options.auth !== false && token ? { Authorization: `Bearer ${token}` } : {};

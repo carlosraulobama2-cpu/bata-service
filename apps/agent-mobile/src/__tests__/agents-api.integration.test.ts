@@ -163,6 +163,21 @@ run('the agents app against api-agente', () => {
     await expect(endpoints.unlock({ stepUp: PIN, prompt: 'x' })).resolves.toEqual({ ok: true });
   });
 
+  it('reads the reinforced verification; an approved agent cannot change it', async () => {
+    const onboarding = await endpoints.onboarding();
+    expect(onboarding.rules_version).toMatch(/^\d{4}-\d{2}$/);
+    expect(onboarding.requirements.find((r) => r.code === 'identity')?.status).toBe('done');
+    expect(onboarding.documents.some((d) => d.kind === 'police_record' && d.required)).toBe(true);
+    const closed = await endpoints
+      .saveBusinessProfile({
+        legal_form: 'individual', tax_id: 'NIF-12345', license_number: 'LIC-1', activity: 'shop', years_in_business: 1, opening_hours: '8-20',
+        alt_phone_number: '', expected_daily_volume_minor: 100_000, float_source: 'Ahorros de la tienda', is_pep: false, pep_details: '',
+        no_criminal_record: true, accept_rules_version: onboarding.rules_version
+      })
+      .catch((e) => e);
+    expect(closed.code).toBe('verification_closed');
+  });
+
   it('an unknown customer and an expired session have their own codes', async () => {
     const missing = await endpoints.lookupCustomer({ customerId: 'BP-999999999' }).catch((e) => e);
     expect(missing.code).toBe('customer_not_found');

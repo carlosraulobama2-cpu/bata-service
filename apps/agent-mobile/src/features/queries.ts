@@ -5,7 +5,9 @@ import type { TransactionType } from '../api/types';
 /** Profile, agent status and float (one call: the float comes with /me). */
 export const useMe = () => useQuery({ queryKey: ['me'], queryFn: endpoints.me, staleTime: 15_000 });
 export const useLimits = () => useQuery({ queryKey: ['limits'], queryFn: endpoints.limits, staleTime: 30_000 });
-export const useToday = () => useQuery({ queryKey: ['transactions', 'today', 'recent'], queryFn: () => endpoints.transactions({ period: 'today', limit: 5 }), staleTime: 15_000 });
+/** Only for an active agent: anyone else gets agent_not_active from the API. */
+export const useToday = (enabled = true) =>
+  useQuery({ queryKey: ['transactions', 'today', 'recent'], queryFn: () => endpoints.transactions({ period: 'today', limit: 5 }), staleTime: 15_000, enabled });
 
 export const useTransactionList = (period: Period, type?: TransactionType) =>
   useInfiniteQuery({
