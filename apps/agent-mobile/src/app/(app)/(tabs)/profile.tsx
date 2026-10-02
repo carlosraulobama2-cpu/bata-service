@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Bell, ChevronRight, Gauge, LifeBuoy, LogOut, ShieldCheck, Smartphone } from 'lucide-react-native';
+import { Bell, ChevronRight, Gauge, LifeBuoy, LogOut, ShieldCheck } from 'lucide-react-native';
 import { ReactNode } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -13,14 +13,14 @@ import { config } from '../../../config';
 import { useMe } from '../../../features/queries';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
-import { formatDateTime } from '../../../utils/format';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const me = useMe();
   const agent = me.data?.agent;
-  const cooldown = me.data?.device.cooldown_until;
+  const user = me.data?.user;
+  const initials = (user?.name ?? '?').split(' ').filter(Boolean).slice(0, 2).map((w) => w.charAt(0)).join('');
   const statusColor = agent?.status === 'active' ? colors.success : agent?.status === 'suspended' ? colors.danger : colors.warning;
 
   const confirmSignOut = () => {
@@ -40,24 +40,23 @@ export default function ProfileScreen() {
       <Card style={styles.identity}>
         <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
           <Text variant="title" color="primary">
-            {(agent?.first_name ?? '?').charAt(0)}
-            {agent?.last_name_initial?.charAt(0) ?? ''}
+            {initials}
           </Text>
         </View>
-        {agent ? (
+        {user ? (
           <View style={styles.flex}>
-            <Text variant="headline">
-              {agent.first_name} {agent.last_name_initial}
-            </Text>
+            <Text variant="headline">{user.name}</Text>
             <Text variant="label" color="textMuted">
-              {agent.agent_code}
+              {agent?.code ?? user.email}
             </Text>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-              <Text variant="caption" style={{ color: statusColor, fontWeight: '700' }}>
-                {t(`profile.agentStatus.${agent.status}`, { defaultValue: agent.status }).toUpperCase()}
-              </Text>
-            </View>
+            {agent ? (
+              <View style={styles.statusRow}>
+                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                <Text variant="caption" style={{ color: statusColor, fontWeight: '700' }}>
+                  {t(`profile.agentStatus.${agent.status}`, { defaultValue: agent.status }).toUpperCase()}
+                </Text>
+              </View>
+            ) : null}
           </View>
         ) : (
           <View style={[styles.flex, { gap: 8 }]}>
@@ -69,10 +68,10 @@ export default function ProfileScreen() {
 
       {agent ? (
         <Card>
-          <InfoRow label={t('profile.agentId')} value={agent.agent_code} strong />
-          <InfoRow label={t('profile.category')} value={agent.tier?.name ?? '—'} />
-          <InfoRow label={t('profile.location')} value={agent.location.city ?? '—'} />
-          <InfoRow label={t('profile.business')} value={agent.business?.trade_name ?? '—'} last />
+          <InfoRow label={t('profile.agentId')} value={agent.code} strong />
+          <InfoRow label={t('profile.business')} value={agent.business_name} />
+          <InfoRow label={t('profile.location')} value={`${agent.address}, ${agent.city}`} />
+          <InfoRow label={t('profile.email')} value={user?.email ?? '—'} last />
         </Card>
       ) : null}
 
@@ -84,11 +83,6 @@ export default function ProfileScreen() {
         <Row icon={<ShieldCheck size={20} color={colors.text} />} label={t('profile.securityRow')} onPress={() => router.push('/security')} />
         <Row icon={<Bell size={20} color={colors.text} />} label={t('profile.notifications')} onPress={() => router.push('/notifications')} />
         <Row icon={<LifeBuoy size={20} color={colors.text} />} label={t('profile.help')} onPress={() => router.push('/help')} />
-        <Row
-          icon={<Smartphone size={20} color={colors.text} />}
-          label={t('profile.thisDevice')}
-          caption={cooldown && new Date(cooldown) > new Date() ? t('profile.cooldownActive', { date: formatDateTime(cooldown) }) : undefined}
-        />
         <Row icon={<LogOut size={20} color={colors.danger} />} label={t('auth.signOut')} danger onPress={confirmSignOut} last />
       </Card>
 

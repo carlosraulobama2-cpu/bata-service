@@ -1,10 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Lock } from 'lucide-react-native';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '../api/auth';
-import { ApiError, newIdempotencyKey } from '../api/client';
+import { ApiError } from '../api/client';
 import { endpoints } from '../api/endpoints';
 import type { StepUp } from '../api/types';
 import { errorMessage } from '../features/errors';
@@ -15,26 +15,25 @@ import { Button } from './Button';
 import { ConfirmSheet } from './ConfirmSheet';
 import { Text } from './Text';
 
-/** Covers the whole app until the agent confirms with PIN or biometrics (checked by the server). */
+/** Covers the whole app until the agent confirms with the payment PIN or biometrics (checked by the server). */
 export function LockScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const keyRef = useRef<string | null>(null);
 
   const submit = async (stepUp: StepUp) => {
-    keyRef.current ??= newIdempotencyKey();
     setBusy(true);
     setError(null);
     try {
-      await endpoints.unlock({ key: keyRef.current, stepUp, prompt: t('lock.biometricPrompt') });
+      await endpoints.unlock({ stepUp, prompt: t('lock.biometricPrompt') });
       useSession.getState().setLocked(false);
       void qc.invalidateQueries(); // show fresh balances, not what was on screen before
     } catch (err) {
-      keyRef.current = null;
-      if (err instanceof ApiError && err.code === 'BIOMETRIC_CANCELLED') return;
+      if (err instanceof ApiError && err.code === 'biometric_cancelled') return;
+      // No payment PIN on this account yet: the password is the only proof left, so sign in again.
+      if (err instanceof ApiError && err.code === 'pin_required') return void signOut();
       setError(errorMessage(err, t));
     } finally {
       setBusy(false);

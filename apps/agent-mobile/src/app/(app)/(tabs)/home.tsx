@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowDownToLine, ArrowUpFromLine, Bell, Info, QrCode, ScanLine } from 'lucide-react-native';
+import { ArrowDownToLine, ArrowUpFromLine, Bell, Info, ScanLine } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -13,35 +13,34 @@ import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { TransactionRow } from '../../../components/TransactionRow';
 import { usePushPermission } from '../../../features/push';
-import { useBalance, useMe, useToday, useUnreadCount } from '../../../features/queries';
+import { useMe, useToday, useUnreadCount } from '../../../features/queries';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
-import { formatDateTime, formatTime, localHour, money } from '../../../utils/format';
+import { formatTime, localHour, money } from '../../../utils/format';
 
-const LOW_FLOAT = 100_000; // configurable per agent in a later phase
+/** Same threshold as the server's default low-float notice (agent_low_float_alert_minor). */
+const LOW_FLOAT = 100_000;
 
 export default function Dashboard() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const me = useMe();
-  const balance = useBalance();
   const today = useToday();
   const unread = useUnreadCount().data?.unread_count ?? 0;
   const push = usePushPermission();
   const [infoOpen, setInfoOpen] = useState(false);
 
-  const refreshing = me.isRefetching || balance.isRefetching || today.isRefetching;
-  const refresh = () => Promise.all([me.refetch(), balance.refetch(), today.refetch()]);
-  const offline = [me.error, balance.error, today.error].some((e) => e instanceof ApiError && e.isNetwork);
+  const refreshing = me.isRefetching || today.isRefetching;
+  const refresh = () => Promise.all([me.refetch(), today.refetch()]);
+  const offline = [me.error, today.error].some((e) => e instanceof ApiError && e.isNetwork);
 
   const agent = me.data?.agent;
-  const compromised = !!me.data?.device.compromised;
-  const canOperate = agent?.status === 'active' && !compromised;
+  const user = me.data?.user;
+  const hasPin = !!user?.has_pin;
+  const canOperate = agent?.status === 'active' && hasPin;
   const hour = localHour();
   const greetingKey = hour < 12 ? 'dashboard.greetingMorning' : hour < 20 ? 'dashboard.greetingAfternoon' : 'dashboard.greetingEvening';
-  const pending = (today.data?.data ?? []).filter((tx) => tx.status === 'pending' || tx.status === 'processing');
-  const cooldownUntil = me.data?.device.cooldown_until;
-  const cooldownActive = !!cooldownUntil && new Date(cooldownUntil) > new Date();
+  const firstName = user?.name.split(' ')[0] ?? '';
 
   return (
     <Screen scroll edges={['top']} refreshing={refreshing} onRefresh={refresh} padded={false}>
@@ -50,11 +49,11 @@ export default function Dashboard() {
         <View style={styles.heroTop}>
           <View style={styles.flex}>
             <Text variant="overline" style={{ color: colors.heroMuted }} numberOfLines={1}>
-              {agent ? `${t('common.appName')} · ${agent.agent_code}` : t('common.appName')}
+              {agent ? `${t('common.appName')} · ${agent.code}` : t('common.appName')}
             </Text>
-            {agent ? (
+            {user ? (
               <Text variant="headline" style={{ color: colors.heroText }} numberOfLines={1}>
-                {t(greetingKey, { name: agent.first_name ?? '' })}
+                {t(greetingKey, { name: firstName })}
               </Text>
             ) : (
               <Skeleton width={180} height={22} style={{ opacity: 0.3 }} />
@@ -85,11 +84,11 @@ export default function Dashboard() {
           </Text>
           <Info size={16} color={colors.heroMuted} />
         </Pressable>
-        {balance.data ? (
+        {me.data ? (
           <Text variant="display" numeric style={{ color: colors.heroText }} adjustsFontSizeToFit numberOfLines={1} accessibilityLiveRegion="polite">
-            {money(balance.data.float.available)}
+            {money(me.data.float)}
           </Text>
-        ) : balance.isLoading ? (
+        ) : me.isLoading ? (
           <Skeleton width={220} height={40} style={{ opacity: 0.3 }} />
         ) : (
           <Text variant="display" style={{ color: colors.heroMuted }}>
@@ -97,8 +96,8 @@ export default function Dashboard() {
           </Text>
         )}
         <Text variant="caption" style={{ color: colors.heroMuted }}>
-          {balance.data && balance.data.float.held > 0 ? t('dashboard.floatHeld', { amount: money(balance.data.float.held) }) : t('dashboard.floatCaption')}
-          {balance.data ? `  ·  ${t('common.updatedAt', { time: formatTime(balance.data.float.as_of) })}` : ''}
+          {t('dashboard.floatCaption')}
+          {me.data ? `  ·  ${t('common.updatedAt', { time: formatTime(me.data.as_of) })}` : ''}
         </Text>
       </View>
 
@@ -111,34 +110,22 @@ export default function Dashboard() {
           </View>
           <View style={styles.actionRow}>
             <ActionTile label={t('dashboard.actionScan')} Icon={ScanLine} onPress={() => router.push('/qr/scan')} disabled={!canOperate || offline} />
-            <ActionTile label={t('dashboard.actionCollect')} Icon={QrCode} onPress={() => router.push('/qr/collect')} disabled={!canOperate || offline} />
           </View>
         </View>
 
         {offline ? <Banner tone="offline">{t('common.offline')}</Banner> : null}
+        <AgentStateBanner />
+        {agent?.status === 'active' && user && !hasPin ? (
+          <Banner tone="warning" onPress={() => router.push('/security/pin')} action={t('pinChange.createAction')}>
+            {t('dashboard.pinMissing')}
+          </Banner>
+        ) : null}
         {push.status === 'undetermined' && canOperate ? (
           <Banner tone="info" onPress={() => void push.enable()} action={t('notifications.enableAction')}>
             {t('notifications.enableBanner')}
           </Banner>
         ) : null}
-        {compromised ? (
-          <Banner tone="danger" onPress={() => router.push('/help')} action={t('support.contact')}>
-            {t('errors.DEVICE_COMPROMISED')}
-          </Banner>
-        ) : null}
-        {agent && agent.status === 'suspended' ? (
-          <Banner tone="danger" onPress={() => router.push('/help')} action={t('support.contact')}>
-            {t('errors.ACCOUNT_SUSPENDED')}
-          </Banner>
-        ) : null}
-        {agent && !['active', 'suspended'].includes(agent.status) ? <Banner tone="info">{t('errors.ACCOUNT_NOT_ACTIVE')}</Banner> : null}
-        {pending.length > 0 ? (
-          <Banner tone="warning" onPress={() => router.push(`/transaction/${pending[0]!.id}`)} action={t('common.seeAll')}>
-            {t('dashboard.pendingBanner', { count: pending.length })}
-          </Banner>
-        ) : null}
-        {cooldownActive ? <Banner tone="info">{t('profile.cooldownActive', { date: formatDateTime(cooldownUntil!) })}</Banner> : null}
-        {balance.data && balance.data.float.available < LOW_FLOAT ? <Banner tone="warning">{t('dashboard.lowFloat')}</Banner> : null}
+        {canOperate && me.data && me.data.float < LOW_FLOAT ? <Banner tone="warning">{t('dashboard.lowFloat')}</Banner> : null}
 
         {/* Today at a glance: numbers, not charts */}
         <Card>
@@ -147,10 +134,10 @@ export default function Dashboard() {
           </Text>
           {today.data ? (
             <View style={styles.grid}>
-              <Stat label={t('dashboard.cashIn')} value={money(today.data.totals.cash_in)} />
-              <Stat label={t('dashboard.cashOut')} value={money(today.data.totals.cash_out)} />
-              <Stat label={t('dashboard.qrPayments')} value={money(today.data.totals.qr_payment)} />
-              <Stat label={t('dashboard.commissions')} value={money(today.data.totals.commissions)} accent />
+              <Stat label={t('dashboard.cashIn')} value={money(today.data.totals.cash_in.volume)} />
+              <Stat label={t('dashboard.cashOut')} value={money(today.data.totals.cash_out.volume)} />
+              <Stat label={t('dashboard.netCash')} value={money(today.data.totals.cash_in.volume - today.data.totals.cash_out.volume)} />
+              <Stat label={t('dashboard.commissions')} value={money(today.data.totals.commission)} accent />
             </View>
           ) : today.error && !offline ? (
             <ErrorState error={today.error} onRetry={() => today.refetch()} />
@@ -200,10 +187,7 @@ export default function Dashboard() {
           <Card style={styles.modalCard}>
             <Text variant="headline">{t('dashboard.balancesInfoTitle')}</Text>
             <Text variant="body">{t('dashboard.balancesInfoFloat')}</Text>
-            <Text variant="body">
-              {t('dashboard.balancesInfoCommissions')}
-              {balance.data ? ` (${money(balance.data.commissions_pending.amount)})` : ''}
-            </Text>
+            <Text variant="body">{t('dashboard.balancesInfoCommissions')}</Text>
             <Text variant="body">{t('dashboard.balancesInfoCash')}</Text>
             <Button label={t('common.done')} onPress={() => setInfoOpen(false)} />
           </Card>
@@ -211,6 +195,37 @@ export default function Dashboard() {
       </Modal>
     </Screen>
   );
+}
+
+/** Why the agent cannot operate yet (no application, under review, rejected, suspended). */
+function AgentStateBanner() {
+  const { t } = useTranslation();
+  const me = useMe();
+  if (!me.data) return null;
+  const agent = me.data.agent;
+  if (!agent) {
+    return (
+      <Banner tone="info" onPress={() => router.push('/apply')} action={t('apply.action')}>
+        {t('apply.notAnAgent')}
+      </Banner>
+    );
+  }
+  if (agent.status === 'pending') return <Banner tone="info">{t('apply.pending', { code: agent.code })}</Banner>;
+  if (agent.status === 'rejected') {
+    return (
+      <Banner tone="warning" onPress={() => router.push('/apply')} action={t('apply.again')}>
+        {agent.status_note ? `${t('apply.rejected')} ${agent.status_note}` : t('apply.rejected')}
+      </Banner>
+    );
+  }
+  if (agent.status === 'suspended') {
+    return (
+      <Banner tone="danger" onPress={() => router.push('/help')} action={t('support.contact')}>
+        {t('errors.agent_not_active')}
+      </Banner>
+    );
+  }
+  return null;
 }
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {

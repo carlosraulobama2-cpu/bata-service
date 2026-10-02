@@ -2,46 +2,33 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { endpoints } from '../../../api/endpoints';
 import { Banner } from '../../../components/Banner';
 import { Button } from '../../../components/Button';
 import { Header } from '../../../components/Header';
 import { Scanner } from '../../../components/Scanner';
 import { Screen } from '../../../components/Screen';
 import { Text } from '../../../components/Text';
-import { errorMessage } from '../../../features/errors';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
-import { looksLikeVelyntQr } from '../../../utils/qr';
+import { classifyQr } from '../../../utils/qr';
 
 /**
- * Unified scan: the server says what the code is. A withdrawal QR opens the
- * cash-out review; a customer's personal QR opens a deposit to that customer.
+ * Unified scan: a customer's top-up QR opens a deposit of that amount, a withdrawal QR opens the
+ * withdrawal review. Each flow asks the server whether the code is still valid.
  */
 export default function QrScanScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pasted, setPasted] = useState('');
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
-  const handle = async (data: string) => {
+  const handle = (data: string) => {
     setError(null);
-    if (!looksLikeVelyntQr(data)) {
-      setError(t('errors.QR_INVALID'));
-      return;
-    }
-    setBusy(true);
-    try {
-      const result = await endpoints.scanQr(data.trim());
-      if (result.action === 'cash_out') router.replace({ pathname: '/cash-out', params: { qr: data.trim() } });
-      else router.replace({ pathname: '/cash-in', params: { token: result.customer.customer_token, masked: result.customer.customer_masked } });
-    } catch (err) {
-      setError(errorMessage(err, t));
-    } finally {
-      setBusy(false);
-    }
+    const kind = classifyQr(data);
+    if (kind === 'topup') router.replace({ pathname: '/cash-in', params: { topup: data.trim() } });
+    else if (kind === 'cashout') router.replace({ pathname: '/cash-out', params: { qr: data.trim() } });
+    else setError(kind === 'other_velynt' ? t('qr.notForAgents') : t('errors.invalid_qr'));
   };
 
   return (
@@ -57,7 +44,7 @@ export default function QrScanScreen() {
             <TextInput
               value={pasted}
               onChangeText={setPasted}
-              placeholder="BSV1.…"
+              placeholder='{"schema":"equatoriana.qr.topup",…}'
               placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
@@ -65,16 +52,11 @@ export default function QrScanScreen() {
               accessibilityLabel={t('qr.scan')}
               testID="qr-scan-paste"
             />
-            <Button label={t('common.continue')} onPress={() => void handle(pasted)} disabled={!pasted.trim()} loading={busy} />
+            <Button label={t('common.continue')} onPress={() => handle(pasted)} disabled={!pasted.trim()} />
           </>
         ) : (
-          <Scanner paused={busy} onCode={(data) => void handle(data)} />
+          <Scanner paused={false} onCode={handle} />
         )}
-        {busy ? (
-          <Text variant="label" color="textMuted" align="center">
-            {t('qr.checking')}
-          </Text>
-        ) : null}
         {error ? <Banner tone="danger">{error}</Banner> : null}
       </View>
     </Screen>

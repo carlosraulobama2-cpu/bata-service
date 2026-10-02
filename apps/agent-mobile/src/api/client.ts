@@ -1,11 +1,11 @@
 import * as Crypto from 'expo-crypto';
 import { config } from '../config';
-import { signWithBiometricKey, signWithDeviceKey, sha256Hex } from '../security/device-keys';
+import { pinFromBiometrics, rememberPinForBiometrics } from '../security/biometrics';
 import { KEYS, secureStorage } from '../security/storage';
 import { useSession } from '../state/session';
 import type { StepUp } from './types';
 
-/** Error with a stable API code; the UI turns the code into a message (never raw text). */
+/** Error with a stable API code (`code` of the agents API); the UI turns it into a message. */
 export class ApiError extends Error {
   constructor(
     readonly code: string,
@@ -19,7 +19,7 @@ export class ApiError extends Error {
 
   /** The request may or may not have reached the server. */
   get isNetwork(): boolean {
-    return this.code === 'NETWORK_OFFLINE';
+    return this.code === 'network_offline';
   }
 }
 
@@ -27,9 +27,24 @@ export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
   auth?: boolean;
-  /** Financial / security call: device signature + idempotency key (+ step-up). */
-  signed?: { idempotencyKey: string; stepUp?: StepUp; biometricPrompt?: string };
+  /** Money operation: one Idempotency-Key per operation (reused on retries) + the payment PIN. */
+  money?: { idempotencyKey?: string; stepUp: StepUp; biometricPrompt?: string };
   timeoutMs?: number;
+}
+
+/**
+ * Numbers the API only writes in `detail` ("Incorrect PIN. 3 attempts left", "Retry in 830s"):
+ * the app shows them in its own words.
+ */
+export function detailsFrom(detail: string, retryAfterHeader: string | null): Record<string, unknown> {
+  const details: Record<string, unknown> = {};
+  const left = /(\d+) attempts? left/i.exec(detail);
+  if (left) details.attempts_left = Number(left[1]);
+  const retry = retryAfterHeader ? Number(retryAfterHeader) : Number(/Retry in (\d+)\s*s/i.exec(detail)?.[1] ?? NaN);
+  if (Number.isFinite(retry) && retry > 0) details.retry_after_seconds = retry;
+  const minutes = /locked for (\d+) minutes/i.exec(detail);
+  if (minutes) details.retry_after_seconds = Number(minutes[1]) * 60;
+  return details;
 }
 
 let refreshing: Promise<boolean> | null = null;
@@ -44,7 +59,7 @@ async function refreshAccessToken(): Promise<boolean> {
       if (!res.ok) return false;
       const data = await res.json();
       await secureStorage.set(KEYS.refreshToken, data.refresh_token);
-      useSession.getState().setAccessToken(data.access_token);
+      useSession.getState().setAccessToken(data.token);
       return true;
     } catch {
       return false;
@@ -71,61 +86,59 @@ async function rawFetch(path: string, init: { method: string; body?: string; hea
       }
     });
   } catch {
-    throw new ApiError('NETWORK_OFFLINE', 0);
+    throw new ApiError('network_offline', 0);
   } finally {
     clearTimeout(timer);
   }
 }
 
+/** The PIN to send: typed, or unlocked from the keystore with fingerprint/face. */
+async function pinFor(stepUp: StepUp, prompt: string): Promise<string> {
+  if (stepUp.method === 'pin') return stepUp.pin;
+  const pin = await pinFromBiometrics(prompt);
+  if (!pin) throw new ApiError('biometric_cancelled', 0);
+  return pin;
+}
+
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = options.method ?? (options.body === undefined ? 'GET' : 'POST');
-  const attempt = async (): Promise<Response> => {
-    const headers: Record<string, string> = {};
-    const session = useSession.getState();
-    if (options.auth !== false && session.accessToken) headers.Authorization = `Bearer ${session.accessToken}`;
-    if (session.deviceId) headers['X-Device-Id'] = session.deviceId;
-
-    let body = options.body;
-    if (options.signed) {
-      const timestamp = String(Date.now());
-      const key = options.signed.idempotencyKey;
-      if (options.signed.stepUp) {
-        let agentAuth: Record<string, string>;
-        if (options.signed.stepUp.method === 'pin') {
-          agentAuth = { method: 'pin', pin: options.signed.stepUp.pin };
-        } else {
-          const bio = await signWithBiometricKey([method, path, timestamp, key].join('\n'), options.signed.biometricPrompt ?? 'VELYNT SERVICES');
-          if (!bio) throw new ApiError('BIOMETRIC_CANCELLED', 0);
-          agentAuth = { method: 'biometric', signature: bio };
-        }
-        body = { ...(body as object), agent_auth: agentAuth };
-      }
-      const raw = JSON.stringify(body ?? {});
-      const canonical = [method, path.split('?')[0], sha256Hex(raw), timestamp, key].join('\n');
-      headers['Idempotency-Key'] = key;
-      headers['X-Timestamp'] = timestamp;
-      headers['X-Device-Signature'] = await signWithDeviceKey(canonical);
-      return rawFetch(path, { method, body: raw, headers }, options.timeoutMs);
-    }
-    return rawFetch(path, { method, body: body === undefined ? undefined : JSON.stringify(body), headers }, options.timeoutMs);
+  const headers: Record<string, string> = {};
+  if (options.money) {
+    headers['X-Transaction-PIN'] = await pinFor(options.money.stepUp, options.money.biometricPrompt ?? config.appName);
+    if (options.money.idempotencyKey) headers['Idempotency-Key'] = options.money.idempotencyKey;
+  }
+  const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+  const attempt = (): Promise<Response> => {
+    const token = useSession.getState().accessToken;
+    const auth: Record<string, string> = options.auth !== false && token ? { Authorization: `Bearer ${token}` } : {};
+    return rawFetch(path, { method, body, headers: { ...headers, ...auth } }, options.timeoutMs);
   };
 
   let res = await attempt();
   if (res.status === 401 && options.auth !== false) {
-    const payload = await res.clone().json().catch(() => null);
-    if (payload?.error?.code === 'SESSION_EXPIRED' && (await refreshAccessToken())) {
-      res = await attempt();
-    } else if (['SESSION_EXPIRED', 'SESSION_REVOKED', 'UNAUTHENTICATED', 'DEVICE_NOT_TRUSTED'].includes(payload?.error?.code)) {
+    // Expired access token: refresh once and repeat. Anything else (session closed because the agent
+    // signed in on another phone, account gone): back to the login screen.
+    if (await refreshAccessToken()) res = await attempt();
+    if (res.status === 401) {
       await secureStorage.remove(KEYS.refreshToken);
       useSession.getState().setSignedOut();
     }
   }
 
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
   if (!res.ok) {
-    const e = data?.error ?? {};
-    throw new ApiError(e.code ?? 'INTERNAL_ERROR', res.status, e.details ?? {}, e.request_id ?? null);
+    const e = (data ?? {}) as { code?: string; detail?: string; request_id?: string };
+    throw new ApiError(e.code ?? (res.status >= 500 ? 'server_error' : 'error'), res.status, detailsFrom(e.detail ?? '', res.headers.get('Retry-After')), e.request_id ?? res.headers.get('X-Request-ID'));
+  }
+  // A typed PIN the server accepted: let fingerprint/face confirm next time (only once per PIN).
+  if (options.money?.stepUp.method === 'pin' && useSession.getState().biometricEnabled === false) {
+    void rememberPinForBiometrics(options.money.stepUp.pin).then((ok) => ok && useSession.getState().setBiometricEnabled(true));
   }
   return data as T;
 }

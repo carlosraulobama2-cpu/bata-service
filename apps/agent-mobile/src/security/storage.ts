@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 /**
- * Secrets (refresh token, device private key) live in the OS keystore via
+ * Secrets (refresh token, biometric-protected PIN) live in the OS keystore via
  * expo-secure-store (Android Keystore / iOS Keychain), readable only by
  * this app and only on this device.
  *
@@ -52,9 +52,9 @@ export const secureStorage = {
 
 export const KEYS = {
   refreshToken: 'bs.refresh_token',
-  deviceId: 'bs.device_id',
-  installationId: 'bs.installation_id',
-  deviceKey: 'bs.device_key',
-  biometricKey: 'bs.biometric_key',
-  phone: 'bs.phone'
+  /** Payment PIN behind biometrics: fingerprint/face unlock it and the app sends it like a typed PIN. */
+  biometricPin: 'bs.biometric_pin',
+  /** Not secret: only says the biometric PIN exists, so the app can offer fingerprint/face. */
+  biometricPinSet: 'bs.biometric_pin_set',
+  email: 'bs.email'
 } as const;

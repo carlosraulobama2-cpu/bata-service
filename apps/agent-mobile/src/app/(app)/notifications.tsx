@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, Bell, QrCode, Settings, ShieldAlert, Smartphone } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, Bell, Settings, Wallet } from 'lucide-react-native';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { endpoints } from '../../api/endpoints';
@@ -13,18 +13,15 @@ import { Text } from '../../components/Text';
 import { useNotifications } from '../../features/queries';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
-import { formatRelative, money } from '../../utils/format';
+import { formatRelative } from '../../utils/format';
 
+/** Notice types Velynt sends to an agent account (the text itself comes from the server). */
 const ICONS: Record<string, typeof Bell> = {
-  cash_in_completed: ArrowDownLeft,
-  cash_out_completed: ArrowUpRight,
-  qr_payment_completed: QrCode,
-  new_device_detected: Smartphone,
-  security_alert: ShieldAlert
+  cash_in: ArrowDownLeft,
+  cash_out: ArrowUpRight,
+  agent_low_float: Wallet
 };
-
-/** i18n key of a notification: "notif.<name>.title" -> "notif.<name>". */
-const baseKey = (n: AppNotification) => n.title_key.replace(/\.title$/, '');
+const ALERTS = new Set(['agent_low_float', 'security', 'cashout_locked']);
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
@@ -39,13 +36,10 @@ export default function NotificationsScreen() {
   const open = async (n: AppNotification) => {
     if (!n.read_at) await endpoints.readNotification(n.id).catch(() => undefined);
     void refreshBadge();
-    if (n.related_transaction_id) router.push(`/transaction/${n.related_transaction_id}`);
+    if (n.related_operation_id) router.push(`/transaction/${n.related_operation_id}`);
   };
 
-  const text = (n: AppNotification, part: 'title' | 'body') => {
-    const params = { ...n.params, amount: typeof n.params.amount === 'number' ? money(n.params.amount) : '' };
-    return t(`${baseKey(n)}.${part}`, { ...params, defaultValue: t(`notif.fallback.${part}`) });
-  };
+  const text = (n: AppNotification, part: 'title' | 'body') => n[part] || (part === 'title' ? t('notifications.fallbackTitle') : '');
 
   return (
     <Screen
@@ -98,7 +92,7 @@ export default function NotificationsScreen() {
         renderItem={({ item }) => {
           const Icon = ICONS[item.type] ?? Bell;
           const isUnread = !item.read_at;
-          const alert = item.type === 'security_alert' || item.type === 'new_device_detected';
+          const alert = ALERTS.has(item.type);
           return (
             <Pressable
               onPress={() => void open(item)}

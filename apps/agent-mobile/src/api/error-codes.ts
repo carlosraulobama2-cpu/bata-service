@@ -1,0 +1,65 @@
+/**
+ * Every `code` the Velynt agents API can return (velynt/api-agente/agent_errors.py: ERROR_CODES and
+ * STATUS_CODES, plus "server_error"), and the two the app produces itself. A test checks that each
+ * one has a Spanish message: when the API adds a code, add it here and in i18n/es.ts.
+ */
+export const API_ERROR_CODES = [
+  'insufficient_float',
+  'agent_cash_in_limit',
+  'agent_cash_out_limit',
+  'wrong_code',
+  'cashout_not_valid',
+  'cashout_not_found',
+  'not_a_cashout_code',
+  'topup_not_valid',
+  'topup_not_found',
+  'not_a_topup_code',
+  'invalid_qr',
+  'operation_not_found',
+  'notification_not_found',
+  'invalid_push_token',
+  'wrong_pin',
+  'pin_locked',
+  'pin_required',
+  'weak_pin',
+  'wrong_password',
+  'idempotency_key_required',
+  'idempotency_key_reused',
+  'not_an_agent',
+  'agent_not_active',
+  'wrong_client',
+  'already_applied',
+  'identity_not_verified',
+  'invalid_city',
+  'customer_not_found',
+  'customer_identifier_required',
+  'invalid_customer_id',
+  'customer_phone_not_verified',
+  'self_service',
+  'customer_insufficient_balance',
+  'customer_on_hold',
+  'customer_limit',
+  'payments_paused',
+  'invalid_amount',
+  'invalid_credentials',
+  'login_locked',
+  'rate_limited',
+  'session_expired',
+  'unauthenticated',
+  'account_frozen',
+  'https_required',
+  // By HTTP status, when no fragment matched
+  'bad_request',
+  'forbidden',
+  'not_found',
+  'conflict',
+  'invalid_request',
+  'locked',
+  'precondition_required',
+  'unavailable',
+  'server_error',
+  'error'
+] as const;
+
+/** Produced by the app: no answer from the server, or fingerprint/face cancelled. */
+export const APP_ERROR_CODES = ['network_offline', 'biometric_cancelled'] as const;

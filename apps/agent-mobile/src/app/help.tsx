@@ -10,8 +10,8 @@ import { useSession } from '../state/session';
 import { space } from '../theme/tokens';
 
 /**
- * Help & support. Reachable WITHOUT signing in (from the login and PIN
- * screens): an agent with a locked or blocked account can still call.
+ * Help & support. Reachable WITHOUT signing in (from the login screen):
+ * an agent with a locked or blocked account can still call.
  * `?tx=<id>` pre-writes the WhatsApp message about that operation.
  */
 export default function HelpScreen() {
@@ -26,7 +26,7 @@ export default function HelpScreen() {
       <Text variant="body" color="textMuted" style={{ marginBottom: space.lg }}>
         {txId ? t('support.reportIntro') : t('support.intro')}
       </Text>
-      <SupportPanel agentCode={me.data?.agent.agent_code} tx={tx.data} />
+      <SupportPanel agentCode={me.data?.agent?.code} tx={tx.data} />
     </Screen>
   );
 }

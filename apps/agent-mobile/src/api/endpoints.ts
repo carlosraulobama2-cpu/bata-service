@@ -1,84 +1,225 @@
-import { config } from '../config';
+import { periodRange, type Period } from '../utils/period';
 import { api } from './client';
-import type { AccessEvent, AgentQr, Balance, CommissionLine, CommissionSummary, DeviceInfo, NotificationPage, SecurityOverview, SessionInfo, ScanResult, Limits, LoginResponse, Me, StepUp, Transaction, TransactionPage, WithdrawalPreview } from './types';
+import type {
+  AgentProfile,
+  AgentUser,
+  AppNotification,
+  CommissionSummary,
+  Customer,
+  Figures,
+  Limits,
+  Me,
+  NotificationPage,
+  StepUp,
+  TopupPreview,
+  Totals,
+  Transaction,
+  TransactionPage,
+  TransactionType,
+  WithdrawalPreview
+} from './types';
 
-export type Period = 'today' | 'yesterday' | 'last_7_days' | 'this_month';
+export type { Period };
+
+// ---- What the agents API returns (velynt/api-agente/agent_schemas.py) ----
+
+interface AgentOut {
+  id: string;
+  code: string;
+  business_name: string;
+  city: string;
+  address: string;
+  status: AgentProfile['status'];
+  status_note: string;
+  daily_cash_in_limit_minor: number;
+  daily_cash_out_limit_minor: number;
+  created_at: string;
+}
+interface OperationOut {
+  id: string;
+  reference: string;
+  type: TransactionType;
+  amount_minor: number;
+  fee_minor: number;
+  commission_minor: number;
+  customer: Customer | null;
+  agent_code: string;
+  agent_name: string;
+  created_at: string;
+}
+interface FiguresOut {
+  count: number;
+  volume_minor: number;
+  commission_minor: number;
+}
+interface LoginOut {
+  token: string;
+  refresh_token: string;
+  user: AgentUser;
+  agent: AgentOut | null;
+}
+interface NotificationOut {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  related_operation_id: string | null;
+  created_at: string;
+  read_at: string | null;
+}
+
+// ---- Into the app's shapes ----
+
+/** "María N. O. · +240 •••• 4821": the masked name and phone the server gives, nothing else. */
+export const maskedCustomer = (c: Customer | null): string | null => (c ? [c.name, c.phone_number].filter(Boolean).join(' · ') : null);
+
+const toAgent = (a: AgentOut): AgentProfile => ({
+  id: a.id,
+  code: a.code,
+  business_name: a.business_name,
+  city: a.city,
+  address: a.address,
+  status: a.status,
+  status_note: a.status_note,
+  daily_cash_in_limit: a.daily_cash_in_limit_minor,
+  daily_cash_out_limit: a.daily_cash_out_limit_minor,
+  created_at: a.created_at
+});
+
+export const toTransaction = (o: OperationOut): Transaction => ({
+  id: o.id,
+  reference: o.reference,
+  type: o.type,
+  status: 'completed',
+  amount: o.amount_minor,
+  fee: o.fee_minor,
+  commission: o.commission_minor,
+  customer: o.customer,
+  customer_masked: maskedCustomer(o.customer),
+  agent_code: o.agent_code,
+  agent_name: o.agent_name,
+  created_at: o.created_at
+});
+
+const toFigures = (f: FiguresOut): Figures => ({ count: f.count, volume: f.volume_minor, commission: f.commission_minor });
+
+const toNotification = (n: NotificationOut): AppNotification => n;
+
+/** Money operations: the payment PIN (typed or via biometrics) and one Idempotency-Key per operation. */
+type MoneyInput = { key: string; stepUp: StepUp; prompt: string };
+const money = (input: MoneyInput) => ({ idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt });
+
+const operation = (p: Promise<{ operation: OperationOut }>) => p.then((r) => ({ transaction: toTransaction(r.operation) }));
+
+async function operationsPage(params: { since?: string | null; until?: string | null; type?: TransactionType; limit: number; offset?: number }) {
+  const q = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset ?? 0) });
+  if (params.type) q.set('type', params.type);
+  if (params.since) q.set('since', params.since);
+  if (params.until) q.set('until', params.until);
+  const page = await api<{ operations: OperationOut[]; pagination: { limit: number; offset: number; total: number }; totals: { cash_in: FiguresOut; cash_out: FiguresOut } }>(
+    `/agent/v1/operations?${q.toString()}`
+  );
+  const totals: Totals = {
+    cash_in: toFigures(page.totals.cash_in),
+    cash_out: toFigures(page.totals.cash_out),
+    commission: page.totals.cash_in.commission_minor + page.totals.cash_out.commission_minor
+  };
+  const next = page.pagination.offset + page.operations.length;
+  return { data: page.operations.map(toTransaction), totals, next_offset: next < page.pagination.total ? next : null } satisfies TransactionPage;
+}
 
 export const endpoints = {
-  publicConfig: () => api<{ support: { phone: string | null; whatsapp: string | null; hours: string | null }; min_app_version: string }>('/agent/v1/public/config', { auth: false }),
-  login: (body: { phone: string; pin: string; device: Record<string, unknown> }) => api<LoginResponse>('/agent/v1/auth/login', { body, auth: false }),
-  verifyOtp: (body: { challenge_id: string; code: string; device_keys: object }) =>
-    api<{ access_token: string; refresh_token: string; device: { id: string; cooldown_until: string | null } }>('/agent/v1/auth/verify-otp', { body, auth: false }),
-  logout: () => api<void>('/agent/v1/auth/logout', { method: 'POST' }),
+  login: (body: { email: string; password: string }) => api<LoginOut>('/agent/v1/auth/login', { body, auth: false }),
+  logout: () => api<{ ok: boolean }>('/agent/v1/auth/logout', { method: 'POST' }),
 
-  me: () => api<Me>('/agent/v1/me'),
-  balance: () => api<Balance>('/agent/v1/balance'),
-  limits: () => api<Limits>('/agent/v1/limits'),
-
-  transactions: (params: { period: Period; type?: string; limit?: number; cursor?: string | null }) => {
-    const q = new URLSearchParams({ period: params.period, limit: String(params.limit ?? 20) });
-    if (params.type) q.set('type', params.type);
-    if (params.cursor) q.set('cursor', params.cursor);
-    return api<TransactionPage>(`/agent/v1/transactions?${q.toString()}`);
+  me: async (): Promise<Me> => {
+    const r = await api<{ user: AgentUser; agent: AgentOut | null; float_minor: number }>('/agent/v1/me');
+    return { user: r.user, agent: r.agent ? toAgent(r.agent) : null, float: r.float_minor, as_of: new Date().toISOString() };
   },
-  transaction: (id: string) => api<{ transaction: Transaction }>(`/agent/v1/transactions/${id}`),
-  transactionByKey: (key: string) => api<{ transaction: Transaction }>(`/agent/v1/transactions/by-key/${key}`),
+  /** Ask to become an agent (needs a verified identity in the Velynt app). */
+  apply: (body: { business_name: string; city: string; address: string }) => api<{ agent: AgentOut }>('/agent/v1/apply', { body }).then((r) => toAgent(r.agent)),
+  /** Create or change the payment PIN; the account password proves it is the owner. */
+  setPin: (body: { password: string; pin: string }) => api<{ ok: boolean }>('/agent/v1/pin', { body }),
+  /** Opens the locked app: the server checks the PIN with the same wrong-PIN counter as payments. */
+  unlock: (input: { stepUp: StepUp; prompt: string }) => api<{ ok: boolean }>('/agent/v1/unlock', { method: 'POST', money: { stepUp: input.stepUp, biometricPrompt: input.prompt } }),
 
-  resolveWithdrawal: (code: { type: 'qr' | 'code'; value: string }) => api<WithdrawalPreview>('/agent/v1/cash-out/resolve', { body: { code } }),
-  cashOut: (input: { withdrawalRequestId: string; amount: number; key: string; stepUp: StepUp; prompt: string }) =>
-    api<{ transaction: Transaction }>('/agent/v1/cash-out', {
-      body: { withdrawal_request_id: input.withdrawalRequestId, amount: input.amount, currency: config.currency },
-      signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
-    }),
-  cashIn: (input: { customer: { type: 'phone' | 'token'; value: string }; amount: number; confirmDuplicate?: boolean; key: string; stepUp: StepUp; prompt: string }) =>
-    api<{ transaction: Transaction }>('/agent/v1/cash-in', {
-      body: { customer: input.customer, amount: input.amount, currency: config.currency, ...(input.confirmDuplicate ? { confirm_duplicate: true } : {}) },
-      signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
-    }),
-  createCollectQr: (input: { amount: number; key: string }) =>
-    api<AgentQr>('/agent/v1/qr/create', { body: { kind: 'collect', amount: input.amount, currency: config.currency }, signed: { idempotencyKey: input.key } }),
-  staticQr: (key: string) => api<AgentQr>('/agent/v1/qr/create', { body: { kind: 'agent_static' }, signed: { idempotencyKey: key } }),
-  qr: (id: string) => api<AgentQr>(`/agent/v1/qr/${id}`),
-  scanQr: (payload: string) => api<ScanResult>('/agent/v1/qr/scan', { body: { payload } }),
-  commissionSummary: () => api<CommissionSummary>('/agent/v1/commissions/summary'),
-  commissions: (params: { cursor?: string | null; limit?: number } = {}) => {
-    const q = new URLSearchParams({ limit: String(params.limit ?? 20) });
-    if (params.cursor) q.set('cursor', params.cursor);
-    return api<{ data: CommissionLine[]; next_cursor: string | null }>(`/agent/v1/commissions?${q.toString()}`);
+  limits: async (): Promise<Limits> => {
+    const s = await api<{ limits: { daily_cash_in_limit_minor: number; daily_cash_out_limit_minor: number; cash_in_used_today_minor: number; cash_out_used_today_minor: number } }>(
+      '/agent/v1/stats?days=1'
+    );
+    const view = (operation_type: TransactionType, max: number, used: number) => ({ operation_type, daily: { max, used, remaining: Math.max(0, max - used) } });
+    return {
+      limits: [
+        view('cash_in', s.limits.daily_cash_in_limit_minor, s.limits.cash_in_used_today_minor),
+        view('cash_out', s.limits.daily_cash_out_limit_minor, s.limits.cash_out_used_today_minor)
+      ]
+    };
   },
 
-  notifications: (cursor?: string | null) => api<NotificationPage>(`/agent/v1/notifications?limit=20${cursor ? `&cursor=${cursor}` : ''}`),
+  transactions: (params: { period: Period; type?: TransactionType; limit?: number; offset?: number }) =>
+    operationsPage({ ...periodRange(params.period), type: params.type, limit: params.limit ?? 20, offset: params.offset }),
+  transaction: (id: string) => operation(api(`/agent/v1/operations/${encodeURIComponent(id)}`)),
+
+  /** Before a deposit: the customer's masked name, to confirm out loud that it is them. */
+  lookupCustomer: (who: { phone: string } | { customerId: string }) => {
+    const q = 'phone' in who ? `phone_number=${encodeURIComponent(who.phone)}` : `customer_id=${encodeURIComponent(who.customerId)}`;
+    return api<{ customer: Customer }>(`/agent/v1/customers/lookup?${q}`).then((r) => r.customer);
+  },
+  cashIn: (input: MoneyInput & { customer: { phone: string } | { customerId: string }; amount: number }) =>
+    operation(
+      api('/agent/v1/cash-in/direct', {
+        body: { ...('phone' in input.customer ? { phone_number: input.customer.phone } : { customer_id: input.customer.customerId }), amount_minor: input.amount },
+        money: money(input)
+      })
+    ),
+  /** The customer's top-up QR (created in their Velynt app): who and how much. */
+  resolveTopup: (qr: string) =>
+    api<{ topup: { id: string; amount_minor: number; expires_at: string }; customer: Customer }>('/agent/v1/cash-in/resolve', { body: { qr } }).then(
+      (r): TopupPreview => ({ topup_id: r.topup.id, amount: r.topup.amount_minor, expires_at: r.topup.expires_at, customer: r.customer, customer_masked: maskedCustomer(r.customer)! })
+    ),
+  completeTopup: (input: MoneyInput & { topupId: string }) => operation(api(`/agent/v1/cash-in/topups/${encodeURIComponent(input.topupId)}`, { method: 'POST', money: money(input) })),
+
+  /** The customer's withdrawal: by its QR, or by their phone number + the 6-digit code. */
+  resolveWithdrawal: (by: { qr: string } | { phone: string; code: string }) =>
+    api<{ cashout: { id: string; amount_minor: number; fee_minor: number; expires_at: string }; customer: Customer; code: string }>('/agent/v1/cash-out/resolve', {
+      body: 'qr' in by ? { qr: by.qr } : { phone_number: by.phone, code: by.code }
+    }).then(
+      (r): WithdrawalPreview => ({
+        cashout_id: r.cashout.id,
+        amount: r.cashout.amount_minor,
+        fee: r.cashout.fee_minor,
+        expires_at: r.cashout.expires_at,
+        customer: r.customer,
+        customer_masked: maskedCustomer(r.customer)!,
+        code: r.code
+      })
+    ),
+  cashOut: (input: MoneyInput & { cashoutId: string; code: string }) =>
+    operation(api(`/agent/v1/cash-out/${encodeURIComponent(input.cashoutId)}/complete`, { body: { code: input.code }, money: money(input) })),
+
+  /** What the agent earned (commissions are credited to the float at once, with each operation). */
+  commissionSummary: async (): Promise<CommissionSummary> => {
+    const totals = (period: Period) => operationsPage({ ...periodRange(period), limit: 1 }).then((p) => p.totals);
+    const [today, week, month] = await Promise.all([totals('today'), totals('last_7_days'), totals('this_month')]);
+    return {
+      today: today.commission,
+      last_7_days: week.commission,
+      this_month: month.commission,
+      by_type_this_month: (['cash_in', 'cash_out'] as const)
+        .map((operation_type) => ({ operation_type, count: month[operation_type].count, amount: month[operation_type].commission }))
+        .filter((r) => r.count > 0)
+    };
+  },
+
+  notifications: async (offset = 0): Promise<NotificationPage> => {
+    const r = await api<{ notifications: NotificationOut[]; unread_count: number; pagination: { offset: number; total: number } }>(`/agent/v1/notifications?limit=20&offset=${offset}`);
+    const next = r.pagination.offset + r.notifications.length;
+    return { data: r.notifications.map(toNotification), unread_count: r.unread_count, next_offset: next < r.pagination.total ? next : null };
+  },
   unreadCount: () => api<{ unread_count: number }>('/agent/v1/notifications/unread-count'),
-  readNotification: (id: string) => api<{ unread_count: number }>(`/agent/v1/notifications/${id}/read`, { method: 'POST' }),
+  readNotification: (id: string) => api<{ unread_count: number }>(`/agent/v1/notifications/${encodeURIComponent(id)}/read`, { method: 'POST' }),
   readAllNotifications: () => api<{ unread_count: number }>('/agent/v1/notifications/read-all', { method: 'POST' }),
 
-  unlock: (input: { key: string; stepUp: StepUp; prompt: string }) =>
-    api<{ unlocked: true }>('/agent/v1/security/unlock', { body: {}, signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt } }),
-  reportIntegrity: (integrity: { rooted: boolean; emulator: boolean }) => api<{ compromised: boolean }>('/agent/v1/security/device-integrity', { body: integrity }),
-  registerPushToken: (token: string) => api<{ registered: boolean }>('/agent/v1/push-tokens', { body: { token } }),
-  notificationPreferences: () => api<{ data: { type: string; push_enabled: boolean; locked: boolean }[] }>('/agent/v1/notifications/preferences'),
-  setNotificationPreferences: (preferences: Record<string, boolean>) =>
-    api<{ data: { type: string; push_enabled: boolean; locked: boolean }[] }>('/agent/v1/notifications/preferences', { method: 'PUT', body: { preferences } }),
-
-  securityOverview: () => api<SecurityOverview>('/agent/v1/security/overview'),
-  devices: () => api<{ data: DeviceInfo[] }>('/agent/v1/security/devices'),
-  sessions: () => api<{ data: SessionInfo[] }>('/agent/v1/security/sessions'),
-  accessHistory: (cursor?: string | null) => api<{ data: AccessEvent[]; next_cursor: string | null }>(`/agent/v1/security/access-history?limit=20${cursor ? `&cursor=${cursor}` : ''}`),
-  revokeOtherSessions: (input: { key: string; stepUp: StepUp; prompt: string }) =>
-    api<{ revoked: number }>('/agent/v1/security/sessions/revoke-others', { body: {}, signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt } }),
-  revokeDevice: (input: { deviceId: string; key: string; stepUp: StepUp; prompt: string }) =>
-    api<{ revoked: true; sessions_revoked: number }>(`/agent/v1/security/devices/${input.deviceId}`, {
-      method: 'DELETE',
-      body: {},
-      signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
-    }),
-  changePin: (input: { currentPin: string; newPin: string; key: string }) =>
-    api<{ changed: true; other_sessions_revoked: number }>('/agent/v1/security/pin/change', { body: { current_pin: input.currentPin, new_pin: input.newPin }, signed: { idempotencyKey: input.key } }),
-
-  cancel: (id: string) => api<{ transaction: Transaction }>(`/agent/v1/transactions/${id}/cancel`, { method: 'POST' }),
-
-  /** Development only: simulates the customer confirming in the Velynt app. */
-  devConfirmDeposit: (transactionId: string) => api<{ result: string }>('/dev/deposits/confirm', { body: { agent_transaction_id: transactionId }, auth: false }),
-  /** Development only: simulates a customer paying a collect QR in the Velynt app. */
-  devPayQr: (payload: string) => api<{ result: string }>('/dev/qr/pay', { body: { payload }, auth: false })
+  registerPushToken: (token: string, platform: string) => api<{ ok: boolean }>('/agent/v1/push-token', { body: { token, platform } }),
+  unregisterPushToken: (token: string) => api<{ ok: boolean }>('/agent/v1/push-token', { method: 'DELETE', body: { token } })
 };

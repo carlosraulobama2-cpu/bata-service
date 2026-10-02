@@ -16,20 +16,29 @@ import { Scanner } from '../../../components/Scanner';
 import { Screen } from '../../../components/Screen';
 import { Text } from '../../../components/Text';
 import { errorMessage } from '../../../features/errors';
-import { useBalance } from '../../../features/queries';
+import { useMe } from '../../../features/queries';
 import { useCountdown } from '../../../features/useCountdown';
 import { useOperation } from '../../../features/useOperation';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
 import { formatCountdown, formatDate, formatTime, groupDigits, money } from '../../../utils/format';
 
+const PREFIX = '+240';
+const CODE_LENGTH = 6;
 type Step = 'scan' | 'code' | 'review';
 
+/**
+ * Withdrawal: the customer asked for cash in their Velynt app and got a QR and a 6-digit code.
+ * The agent scans the QR (or types the customer's phone + code), checks, confirms with the PIN and
+ * only then hands over the cash.
+ */
 export default function CashOutScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const balance = useBalance();
-  const [step, setStep] = useState<Step>(Platform.OS === 'web' ? 'code' : 'scan');
+  const me = useMe();
+  const firstStep: Step = Platform.OS === 'web' ? 'code' : 'scan';
+  const [step, setStep] = useState<Step>(firstStep);
+  const [digits, setDigits] = useState('');
   const [code, setCode] = useState('');
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,15 +47,13 @@ export default function CashOutScreen() {
   // Opened from the unified scanner with a withdrawal QR: go straight to the review.
   const { qr } = useLocalSearchParams<{ qr?: string }>();
 
-  const op = useOperation((key, stepUp) =>
-    endpoints.cashOut({ withdrawalRequestId: preview!.withdrawal_request_id, amount: preview!.amount, key, stepUp, prompt: t('confirm.biometricPrompt') })
-  );
+  const op = useOperation((key, stepUp) => endpoints.cashOut({ cashoutId: preview!.cashout_id, code: preview!.code, key, stepUp, prompt: t('confirm.biometricPrompt') }));
 
-  const resolve = async (value: { type: 'qr' | 'code'; value: string }) => {
+  const resolve = async (by: { qr: string } | { phone: string; code: string }) => {
     setResolving(true);
     setError(null);
     try {
-      setPreview(await endpoints.resolveWithdrawal(value));
+      setPreview(await endpoints.resolveWithdrawal(by));
       setStep('review');
     } catch (err) {
       setError(errorMessage(err, t));
@@ -56,9 +63,15 @@ export default function CashOutScreen() {
   };
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
+  const startOver = () => {
+    op.reset();
+    setPreview(null);
+    setCode('');
+    setStep(firstStep);
+  };
 
   useEffect(() => {
-    if (qr) void resolve({ type: 'qr', value: qr });
+    if (qr) void resolve({ qr });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qr]);
 
@@ -75,7 +88,6 @@ export default function CashOutScreen() {
 
   if (op.phase.kind === 'done') {
     const tx = op.phase.tx;
-    const ok = tx.status === 'completed';
     return (
       <Screen
         header={<Header leading="close" onLeading={close} />}
@@ -87,18 +99,13 @@ export default function CashOutScreen() {
           </>
         }
       >
-        <ResultView
-          tone={ok ? 'success' : 'failure'}
-          title={ok ? t('cashOut.successTitle') : t(`status.${tx.status}`)}
-          amount={money(tx.amount)}
-          instruction={ok ? t('cashOut.handOver', { amount: money(tx.amount) }) : undefined}
-        />
+        <ResultView tone="success" title={t('cashOut.successTitle')} amount={money(tx.amount)} instruction={t('cashOut.handOver', { amount: money(tx.amount) })} />
         <Card style={styles.receipt}>
-          <InfoRow label="Transaction ID" value={tx.reference} strong />
+          <InfoRow label={t('common.reference')} value={tx.reference} strong />
           <InfoRow label={t('common.customer')} value={tx.customer_masked ?? '—'} />
           <InfoRow label={t('common.commission')} value={money(tx.commission)} />
-          <InfoRow label={t('common.date')} value={formatDate(tx.completed_at ?? tx.created_at)} />
-          <InfoRow label={t('common.time')} value={formatTime(tx.completed_at ?? tx.created_at)} last />
+          <InfoRow label={t('common.date')} value={formatDate(tx.created_at)} />
+          <InfoRow label={t('common.time')} value={formatTime(tx.created_at)} last />
         </Card>
       </Screen>
     );
@@ -106,8 +113,8 @@ export default function CashOutScreen() {
 
   if (op.phase.kind === 'error') {
     return (
-      <Screen header={<Header leading="close" onLeading={close} />} footer={<Button label={t('common.back')} onPress={() => { op.reset(); setPreview(null); setStep(Platform.OS === 'web' ? 'code' : 'scan'); }} />}>
-        <ResultView tone="failure" title={t('status.failed')} instruction={op.phase.message} />
+      <Screen header={<Header leading="close" onLeading={close} />} footer={<Button label={t('common.back')} onPress={startOver} />}>
+        <ResultView tone="failure" title={t('cashOut.notCompletedTitle')} instruction={`${op.phase.message} ${t('cashOut.dontHandOver')}`} />
       </Screen>
     );
   }
@@ -115,10 +122,10 @@ export default function CashOutScreen() {
   // ----- Review -----
   if (step === 'review' && preview) {
     const expired = secondsLeft <= 0;
-    const floatAfter = balance.data ? balance.data.float.available + preview.amount : null;
+    const floatAfter = me.data ? me.data.float + preview.amount : null;
     return (
       <Screen
-        header={<Header leading="back" onLeading={() => { setPreview(null); setStep(Platform.OS === 'web' ? 'code' : 'scan'); }} title={t('cashOut.reviewTitle')} />}
+        header={<Header leading="back" onLeading={startOver} title={t('cashOut.reviewTitle')} />}
         scroll
         footer={<Button label={t('cashOut.confirm')} onPress={op.open} disabled={expired} testID="cashout-confirm" />}
       >
@@ -135,11 +142,11 @@ export default function CashOutScreen() {
         </View>
         <Card>
           <InfoRow label={t('common.customer')} value={preview.customer_masked} strong />
-          <InfoRow label={t('common.commission')} value={<Text variant="bodyStrong" color="success">{t('cashOut.youEarn', { amount: money(preview.commission) })}</Text>} />
+          {preview.fee > 0 ? <InfoRow label={t('cashOut.customerFee')} value={money(preview.fee)} /> : null}
           {floatAfter !== null ? <InfoRow label={t('cashOut.floatAfter')} value={money(floatAfter)} last /> : null}
         </Card>
         <View style={styles.expiry}>
-          <Banner tone={expired ? 'danger' : secondsLeft < 60 ? 'warning' : 'info'}>{expired ? t('errors.QR_EXPIRED') : t('cashOut.expiresIn', { time: formatCountdown(secondsLeft) })}</Banner>
+          <Banner tone={expired ? 'danger' : secondsLeft < 60 ? 'warning' : 'info'}>{expired ? t('errors.cashout_not_valid') : t('cashOut.expiresIn', { time: formatCountdown(secondsLeft) })}</Banner>
         </View>
         <Text variant="caption" color="textMuted" align="center" style={{ marginTop: space.md }}>
           {t('cashOut.dontHandOverYet')}
@@ -165,8 +172,10 @@ export default function CashOutScreen() {
     );
   }
 
-  // ----- Scan / type the code -----
+  // ----- Scan / type phone + code -----
   const codeDigits = code.replace(/\D/g, '');
+  const canResolve = digits.length === 9 && codeDigits.length === CODE_LENGTH;
+  const input = [styles.input, { color: colors.text, backgroundColor: colors.surface, borderColor: error ? colors.danger : colors.border }];
   return (
     <Screen header={<Header leading="close" onLeading={close} title={t('cashOut.title')} />} scroll>
       <View style={styles.content}>
@@ -176,27 +185,44 @@ export default function CashOutScreen() {
             <Text variant="body" color="textMuted">
               {t('cashOut.scanHint')}
             </Text>
-            <Scanner paused={resolving} onCode={(data) => void resolve({ type: 'qr', value: data })} />
+            <Scanner paused={resolving} onCode={(data) => void resolve({ qr: data })} />
             <Button variant="secondary" icon={<KeyboardIcon size={20} color={colors.primary} />} label={t('cashOut.enterCodeInstead')} onPress={() => setStep('code')} />
           </>
         ) : (
           <>
-            <Text variant="title">{t('cashOut.codeLabel')}</Text>
+            <Text variant="title">{t('cashOut.codeTitle')}</Text>
             <Text variant="body" color="textMuted">
-              {t('cashOut.scanHint')}
+              {t('cashOut.codeHint')}
             </Text>
+            <Text variant="label">{t('cashIn.customerPhoneLabel')}</Text>
+            <View style={[styles.phone, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text variant="bodyStrong" style={[styles.prefix, { borderRightColor: colors.border }]}>
+                🇬🇶 {PREFIX}
+              </Text>
+              <TextInput
+                value={groupDigits(digits)}
+                onChangeText={(v) => setDigits(v.replace(/\D/g, '').slice(0, 9))}
+                keyboardType="phone-pad"
+                autoFocus
+                placeholder="555 000 000"
+                placeholderTextColor={colors.textMuted}
+                style={[styles.phoneInput, { color: colors.text }]}
+                accessibilityLabel={t('cashIn.customerPhoneLabel')}
+                testID="withdrawal-phone"
+              />
+            </View>
+            <Text variant="label">{t('cashOut.codeLabel')}</Text>
             <TextInput
               value={groupDigits(codeDigits)}
-              onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, 9))}
-              placeholder={t('cashOut.codePlaceholder')}
+              onChangeText={(v) => setCode(v.replace(/\D/g, '').slice(0, CODE_LENGTH))}
+              placeholder="000 000"
               placeholderTextColor={colors.textMuted}
               keyboardType="number-pad"
-              autoFocus
-              style={[styles.codeInput, { color: colors.text, backgroundColor: colors.surface, borderColor: error ? colors.danger : colors.border }]}
+              style={input}
               accessibilityLabel={t('cashOut.codeLabel')}
               testID="withdrawal-code"
             />
-            <Button label={t('common.continue')} onPress={() => void resolve({ type: 'code', value: codeDigits })} disabled={codeDigits.length !== 9} loading={resolving} testID="withdrawal-continue" />
+            <Button label={t('common.continue')} onPress={() => void resolve({ phone: `${PREFIX}${digits}`, code: codeDigits })} disabled={!canResolve} loading={resolving} testID="withdrawal-continue" />
             {Platform.OS !== 'web' ? <Button variant="ghost" icon={<ScanLine size={20} color={colors.primary} />} label={t('cashOut.scanInstead')} onPress={() => setStep('scan')} /> : null}
           </>
         )}
@@ -209,7 +235,10 @@ export default function CashOutScreen() {
 
 const styles = StyleSheet.create({
   content: { gap: space.lg, paddingTop: space.sm },
-  codeInput: { height: 72, borderWidth: 1.5, borderRadius: radius.md, textAlign: 'center', fontSize: 30, letterSpacing: 4, fontWeight: '600' },
+  phone: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: radius.md, height: 60, overflow: 'hidden' },
+  prefix: { paddingHorizontal: space.lg, borderRightWidth: 1, lineHeight: 60 },
+  phoneInput: { flex: 1, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1, height: '100%' },
+  input: { height: 72, borderWidth: 1.5, borderRadius: radius.md, textAlign: 'center', fontSize: 30, letterSpacing: 4, fontWeight: '600' },
   amountBlock: { paddingVertical: space.xxl, gap: space.xs },
   expiry: { marginTop: space.lg },
   receipt: { marginTop: space.xl },

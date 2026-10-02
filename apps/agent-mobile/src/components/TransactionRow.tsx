@@ -1,11 +1,10 @@
-import { ArrowDownLeft, ArrowUpRight, QrCode, Receipt } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { Transaction } from '../api/types';
 import { useTheme } from '../theme/ThemeProvider';
 import { radius, space } from '../theme/tokens';
 import { formatTime, money } from '../utils/format';
-import { StatusBadge } from './StatusBadge';
 import { Text } from './Text';
 
 /**
@@ -16,8 +15,7 @@ import { Text } from './Text';
 export function TransactionRow({ tx, onPress, showDate }: { tx: Transaction; onPress?: () => void; showDate?: string }) {
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const Icon = tx.type === 'cash_out' ? ArrowUpRight : tx.type === 'cash_in' ? ArrowDownLeft : tx.type === 'qr_payment' ? QrCode : Receipt;
-  const muted = tx.status === 'failed' || tx.status === 'cancelled';
+  const Icon = tx.type === 'cash_out' ? ArrowUpRight : ArrowDownLeft;
   return (
     <Pressable
       accessibilityRole="button"
@@ -35,18 +33,14 @@ export function TransactionRow({ tx, onPress, showDate }: { tx: Transaction; onP
         </Text>
       </View>
       <View style={styles.right}>
-        <Text variant="bodyStrong" numeric style={muted ? { textDecorationLine: 'line-through', color: colors.textMuted } : undefined}>
+        <Text variant="bodyStrong" numeric>
           {money(tx.amount)}
         </Text>
-        {tx.status === 'completed' ? (
-          tx.commission > 0 ? (
-            <Text variant="caption" color="success" numeric>
-              +{money(tx.commission)}
-            </Text>
-          ) : null
-        ) : (
-          <StatusBadge status={tx.status} size="sm" />
-        )}
+        {tx.commission > 0 ? (
+          <Text variant="caption" color="success" numeric>
+            +{money(tx.commission)}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   );

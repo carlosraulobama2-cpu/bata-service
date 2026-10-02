@@ -4,7 +4,9 @@ Aplicación profesional para **agentes autorizados de Velynt**: cash-in, cash-ou
 
 Velynt Services es un producto **independiente** de la app Velynt (propio frontend, backend, autenticación y permisos), conectado a la infraestructura de Velynt mediante APIs internas seguras. **Todo movimiento de dinero se valida en el servidor y se registra en el ledger central de doble partida.** El agente nunca puede modificar un saldo.
 
-> Estado: diseño técnico completo y **Fase 1 en desarrollo**. El backend de agentes ([`apps/agent-api`](apps/agent-api)) implementa login seguro, cash-in, cash-out, cobros QR, límites, comisiones, historial y saldos sobre el ledger, y la app ([`apps/agent-mobile`](apps/agent-mobile)) cubre esos flujos de principio a fin.
+> Estado: diseño técnico completo y **Fase 1 en desarrollo**. La app ([`apps/agent-mobile`](apps/agent-mobile)) **está conectada al API de agentes de Velynt** ([`velynt/api-agente`](https://github.com/carlosraulobama2-cpu/velynt/tree/main/api-agente)), que mueve el dinero en el libro contable de Velynt: acceso, alta como agente, depósitos (por teléfono, nº de cliente o QR de recarga), retiros (QR o teléfono + código), historial, comisiones, avisos y PIN de pagos.
+>
+> El backend NestJS de este repositorio ([`apps/agent-api`](apps/agent-api)) y su ledger propio ([`db/`](db)) eran la implementación anterior, con Velynt simulado; la app ya no los usa. Se conservan como referencia de diseño (firma del dispositivo, cobro QR, motor de riesgo) para llevar a `api-agente` lo que haga falta.
 
 ![Pantallas de la app](docs/screenshots/overview.png)
 

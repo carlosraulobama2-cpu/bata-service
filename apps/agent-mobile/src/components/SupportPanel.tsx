@@ -2,7 +2,7 @@ import { MessageCircle, Phone, ShieldAlert } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { Transaction } from '../api/types';
-import { callSupport, problemMessage, usePublicConfig, whatsappSupport } from '../features/support';
+import { callSupport, problemMessage, supportContacts, whatsappSupport } from '../features/support';
 import { formatPhone } from '../utils/format';
 import { useTheme } from '../theme/ThemeProvider';
 import { radius, space } from '../theme/tokens';
@@ -10,21 +10,19 @@ import { Banner } from './Banner';
 import { Button } from './Button';
 import { Card } from './Card';
 import { InfoRow } from './InfoRow';
-import { Skeleton } from './States';
 import { Text } from './Text';
 
 /**
- * How to reach support: call or WhatsApp (numbers configured on the
- * server; hidden while they don't exist), what to have ready, and the
+ * How to reach support: call or WhatsApp (numbers set in the build with
+ * EXPO_PUBLIC_SUPPORT_*; hidden while unset), what to have ready, and the
  * anti-scam rule. `tx` pre-writes the WhatsApp message about an operation.
  */
 export function SupportPanel({ agentCode, tx }: { agentCode?: string; tx?: Transaction }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const cfg = usePublicConfig();
-  const support = cfg.data?.support;
+  const support = supportContacts();
   const message = problemMessage(t, agentCode ?? '', tx);
-  const none = support && !support.phone && !support.whatsapp;
+  const none = !support.phone && !support.whatsapp;
 
   return (
     <View style={styles.wrap}>
@@ -40,13 +38,12 @@ export function SupportPanel({ agentCode, tx }: { agentCode?: string; tx?: Trans
         </View>
       </View>
 
-      {cfg.isLoading ? <Skeleton height={120} /> : null}
-      {none || cfg.error ? <Banner tone="info">{t('support.notConfigured')}</Banner> : null}
-      {support?.whatsapp ? (
+      {none ? <Banner tone="info">{t('support.notConfigured')}</Banner> : null}
+      {support.whatsapp ? (
         <Button icon={<MessageCircle size={20} color={colors.onPrimary} />} label={tx ? t('support.whatsappAbout') : t('support.whatsapp')} onPress={() => void whatsappSupport(support.whatsapp!, message)} testID="support-whatsapp" />
       ) : null}
-      {support?.phone ? <Button variant="secondary" icon={<Phone size={20} color={colors.primary} />} label={t('support.call', { phone: formatPhone(support.phone) })} onPress={() => void callSupport(support.phone!)} testID="support-call" /> : null}
-      {support?.hours ? (
+      {support.phone ? <Button variant="secondary" icon={<Phone size={20} color={colors.primary} />} label={t('support.call', { phone: formatPhone(support.phone) })} onPress={() => void callSupport(support.phone!)} testID="support-call" /> : null}
+      {support.hours ? (
         <Text variant="caption" color="textMuted" align="center">
           {t('support.hours', { hours: support.hours })}
         </Text>

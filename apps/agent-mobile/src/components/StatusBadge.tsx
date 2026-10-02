@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, CheckCircle2, Clock3, Loader2, RotateCcw, XCircle } from 'lucide-react-native';
+import { CheckCircle2 } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { TransactionStatus } from '../api/types';
@@ -11,13 +11,7 @@ export function StatusBadge({ status, size = 'md' }: { status: TransactionStatus
   const { colors } = useTheme();
   const { t } = useTranslation();
   const map = {
-    completed: { fg: colors.success, bg: colors.successSoft, Icon: CheckCircle2 },
-    pending: { fg: colors.warning, bg: colors.warningSoft, Icon: Clock3 },
-    processing: { fg: colors.warning, bg: colors.warningSoft, Icon: Loader2 },
-    failed: { fg: colors.danger, bg: colors.dangerSoft, Icon: XCircle },
-    cancelled: { fg: colors.textMuted, bg: colors.neutralSoft, Icon: Ban },
-    reversed: { fg: colors.info, bg: colors.infoSoft, Icon: RotateCcw },
-    disputed: { fg: colors.danger, bg: colors.dangerSoft, Icon: AlertTriangle }
+    completed: { fg: colors.success, bg: colors.successSoft, Icon: CheckCircle2 }
   }[status];
   const iconSize = size === 'sm' ? 12 : 14;
   return (

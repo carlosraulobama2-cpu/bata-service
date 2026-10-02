@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { CommissionLine, CommissionSummary } from '../../../api/types';
+import type { CommissionSummary, Transaction } from '../../../api/types';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Screen } from '../../../components/Screen';
@@ -13,13 +13,17 @@ import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
 import { formatDateTime, money } from '../../../utils/format';
 
+/**
+ * What the agent earns. Velynt pays the commission into the float with each operation (same ledger
+ * entry), so there is nothing "pending": this screen is what was earned, by period and by type.
+ */
 export default function CommissionsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const summary = useCommissionSummary();
   const lines = useCommissionLines();
   const s = summary.data;
-  const rows = lines.data?.pages.flatMap((p) => p.data) ?? [];
+  const rows = (lines.data?.pages.flatMap((p) => p.data) ?? []).filter((tx) => tx.commission > 0);
 
   return (
     <Screen scroll edges={['top']} refreshing={summary.isRefetching || lines.isRefetching} onRefresh={() => Promise.all([summary.refetch(), lines.refetch()])}>
@@ -31,25 +35,23 @@ export default function CommissionsScreen() {
 
       <View style={[styles.hero, { backgroundColor: colors.successSoft }]}>
         <Text variant="label" color="success">
-          {t('commissions.pending')}
+          {t('commissions.month')}
         </Text>
         {s ? (
           <Text variant="display" numeric color="success" adjustsFontSizeToFit numberOfLines={1}>
-            {money(s.pending_settlement)}
+            {money(s.this_month)}
           </Text>
         ) : (
           <Skeleton width={180} height={40} />
         )}
         <Text variant="caption" color="success">
-          {t('commissions.pendingCaption')}
+          {t('commissions.paidAtOnce')}
         </Text>
       </View>
 
       <View style={styles.grid}>
         <Period label={t('commissions.today')} value={s?.today} />
         <Period label={t('commissions.week')} value={s?.last_7_days} />
-        <Period label={t('commissions.month')} value={s?.this_month} />
-        <Period label={t('commissions.allTime')} value={s?.all_time} />
       </View>
 
       <Text variant="overline" color="textMuted" style={styles.section}>
@@ -71,11 +73,11 @@ export default function CommissionsScreen() {
             {t('commissions.noneThisMonth')}
           </Text>
         ) : (
-          rows.map((line, i) => <Line key={line.id} line={line} last={i === rows.length - 1} />)
+          rows.map((tx, i) => <Line key={tx.id} tx={tx} last={i === rows.length - 1} />)
         )}
       </Card>
       {lines.hasNextPage ? (
-        <Button variant="ghost" label={t('security.loadMore')} loading={lines.isFetchingNextPage} onPress={() => void lines.fetchNextPage()} />
+        <Button variant="ghost" label={t('common.loadMore')} loading={lines.isFetchingNextPage} onPress={() => void lines.fetchNextPage()} />
       ) : lines.isFetchingNextPage ? (
         <ActivityIndicator color={colors.primary} />
       ) : null}
@@ -138,31 +140,26 @@ function Breakdown({ summary }: { summary: CommissionSummary }) {
   );
 }
 
-function Line({ line, last }: { line: CommissionLine; last: boolean }) {
+function Line({ tx, last }: { tx: Transaction; last: boolean }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   return (
     <Pressable
-      onPress={() => router.push(`/transaction/${line.transaction_id}`)}
+      onPress={() => router.push(`/transaction/${tx.id}`)}
       accessibilityRole="button"
       style={({ pressed }) => [styles.line, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, pressed && { backgroundColor: colors.neutralSoft }]}
     >
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="bodyStrong">
-          {t(`types.${line.operation_type}`)} · {line.reference}
+          {t(`types.${tx.type}`)} · {tx.reference}
         </Text>
         <Text variant="caption" color="textMuted">
-          {t('commissions.onAmount', { amount: money(line.base_amount) })} · {formatDateTime(line.accrued_at)}
+          {t('commissions.onAmount', { amount: money(tx.amount) })} · {formatDateTime(tx.created_at)}
         </Text>
       </View>
-      <View style={{ alignItems: 'flex-end', gap: 2 }}>
-        <Text variant="bodyStrong" numeric color="success">
-          {money(line.commission, { sign: true })}
-        </Text>
-        <Text variant="caption" color="textMuted">
-          {t(`commissions.lineStatus.${line.status}`)}
-        </Text>
-      </View>
+      <Text variant="bodyStrong" numeric color="success">
+        {money(tx.commission, { sign: true })}
+      </Text>
       <ChevronRight size={18} color={colors.textMuted} />
     </Pressable>
   );

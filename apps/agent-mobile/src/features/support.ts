@@ -1,11 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
 import { Linking } from 'react-native';
-import { endpoints } from '../api/endpoints';
 import type { Transaction } from '../api/types';
+import { config } from '../config';
 import { formatDateTime, money } from '../utils/format';
 
-/** Support contacts come from the server (they work before signing in, too). */
-export const usePublicConfig = () => useQuery({ queryKey: ['public-config'], queryFn: endpoints.publicConfig, staleTime: 10 * 60_000 });
+/** Support contacts come with the build (EXPO_PUBLIC_SUPPORT_*), so they work before signing in. */
+export const supportContacts = () => config.support;
 
 export const callSupport = (phone: string) => Linking.openURL(`tel:${phone}`);
 

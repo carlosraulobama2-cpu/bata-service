@@ -1,7 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { LimitView } from '../../api/types';
-import { Banner } from '../../components/Banner';
 import { Card } from '../../components/Card';
 import { Header } from '../../components/Header';
 import { Screen } from '../../components/Screen';
@@ -18,7 +17,6 @@ export default function LimitsScreen() {
   return (
     <Screen header={<Header title={t('limits.title')} />} scroll refreshing={q.isRefetching} onRefresh={() => q.refetch()}>
       <View style={styles.content}>
-        {q.data?.limits.some((l) => l.cooldown_applied) ? <Banner tone="info">{t('limits.cooldown')}</Banner> : null}
         {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : null}
         {q.isLoading ? <Skeleton height={220} /> : null}
         {q.data?.limits.map((l) => <LimitCard key={l.operation_type} limit={l} />)}
@@ -34,21 +32,10 @@ function LimitCard({ limit }: { limit: LimitView }) {
       <Text variant="headline" style={{ marginBottom: space.md }}>
         {t(`types.${limit.operation_type}`)}
       </Text>
-      <View style={styles.perTx}>
-        <Text variant="body" color="textMuted">
-          {t('limits.perTransaction')}
-        </Text>
-        <Text variant="bodyStrong" numeric>
-          {money(limit.per_transaction.max)}
-        </Text>
-      </View>
       <Meter label={t('limits.daily')} used={limit.daily.used} max={limit.daily.max} />
-      {limit.daily.count_max ? (
-        <Text variant="caption" color="textMuted" style={{ marginTop: -space.xs, marginBottom: space.md }}>
-          {t('limits.operationsToday', { used: limit.daily.count_used, max: limit.daily.count_max })}
-        </Text>
-      ) : null}
-      <Meter label={t('limits.monthly')} used={limit.monthly.used} max={limit.monthly.max} />
+      <Text variant="caption" color="textMuted">
+        {t('limits.resets')}
+      </Text>
     </Card>
   );
 }
@@ -77,7 +64,6 @@ function Meter({ label, used, max }: { label: string; used: number; max: number 
 
 const styles = StyleSheet.create({
   content: { gap: space.lg, paddingTop: space.sm },
-  perTx: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: space.lg },
   meter: { gap: space.sm, marginBottom: space.md },
   meterHead: { flexDirection: 'row', justifyContent: 'space-between', gap: space.sm },
   track: { height: 8, borderRadius: radius.pill, overflow: 'hidden' },

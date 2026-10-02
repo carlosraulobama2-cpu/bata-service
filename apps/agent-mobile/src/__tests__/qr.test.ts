@@ -1,28 +1,25 @@
-import qrcode from 'qrcode-generator';
-import { looksLikeVelyntQr, qrPath } from '../utils/qr';
+import { classifyQr } from '../utils/qr';
 
-describe('QR helpers', () => {
-  const payload = 'BSV1.K.Zx8fQ2kLm0pR7sT1uV3wYA.' + 'a'.repeat(86);
+describe('scanned QR', () => {
+  // The same JSON the Velynt app shows (backend/routers/topups.py, agents_core.cashout_qr_payload).
+  const topup = JSON.stringify({ schema: 'equatoriana.qr.topup', version: 1, topup_request_id: '0b8e2c1a-5f7d-4e3b-9a1c-2d3e4f5a6b7c' });
+  const cashout = JSON.stringify({ schema: 'equatoriana.qr.cashout', version: 1, cashout_request_id: '0b8e2c1a-5f7d-4e3b-9a1c-2d3e4f5a6b7c', code: '482913' });
 
-  it('recognises the VELYNT SERVICES format only by shape', () => {
-    expect(looksLikeVelyntQr(payload)).toBe(true);
-    expect(looksLikeVelyntQr('BSV1.W.wdr_123456')).toBe(true);
-    expect(looksLikeVelyntQr('  BSV1.C.abcdEFGH_-  ')).toBe(true);
-    expect(looksLikeVelyntQr('https://example.com')).toBe(false);
-    expect(looksLikeVelyntQr('BSV1.X.abcdefgh')).toBe(false);
-    expect(looksLikeVelyntQr('BSV2.K.abcdefgh')).toBe(false);
+  it('routes top-up and withdrawal codes by their schema', () => {
+    expect(classifyQr(topup)).toBe('topup');
+    expect(classifyQr(`  ${cashout}\n`)).toBe('cashout');
   });
 
-  it('draws exactly the dark modules of the code', () => {
-    const { size, path } = qrPath(payload);
-    const ref = qrcode(0, 'M');
-    ref.addData(payload, 'Byte');
-    ref.make();
-    expect(size).toBe(ref.getModuleCount());
-    let dark = 0;
-    for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (ref.isDark(r, c)) dark++;
-    expect(path.match(/M/g)?.length).toBe(dark);
-    // Finder pattern: top-left module is always dark.
-    expect(path.startsWith('M0 0h1v1h-1z')).toBe(true);
+  it('recognises other Velynt codes the agent cannot use', () => {
+    expect(classifyQr(JSON.stringify({ schema: 'equatoriana.qr.personal', version: 2, t: 'abc' }))).toBe('other_velynt');
+    expect(classifyQr(JSON.stringify({ schema: 'equatoriana.qr.payment' }))).toBe('other_velynt');
+  });
+
+  it('rejects anything else', () => {
+    expect(classifyQr('https://example.com')).toBe('unknown');
+    expect(classifyQr('BSV1.W.wdr_123456')).toBe('unknown');
+    expect(classifyQr('{"schema":"other.app"}')).toBe('unknown');
+    expect(classifyQr('null')).toBe('unknown');
+    expect(classifyQr('{"schema":"toString"}')).toBe('unknown');
   });
 });

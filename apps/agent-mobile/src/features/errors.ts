@@ -4,8 +4,8 @@ import { formatTime } from '../utils/format';
 
 /** Turns any error into the agent-facing sentence (plus attempts left / lock time when known). */
 export function errorMessage(err: unknown, t: TFunction): string {
-  if (!(err instanceof ApiError)) return t('errors.INTERNAL_ERROR');
-  let msg = t(`errors.${err.code}`, { defaultValue: t('errors.INTERNAL_ERROR') });
+  if (!(err instanceof ApiError)) return t('errors.server_error');
+  let msg = t(`errors.${err.code}`, { defaultValue: t('errors.server_error') });
   const left = err.details.attempts_left;
   if (typeof left === 'number' && left > 0) msg += ` ${t('errors.attemptsLeft', { count: left })}`;
   const lockedUntil = err.details.locked_until;

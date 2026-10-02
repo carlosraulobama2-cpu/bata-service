@@ -14,7 +14,7 @@ import { useTheme } from '../../../theme/ThemeProvider';
 import { space } from '../../../theme/tokens';
 import { formatDate, formatTime, money } from '../../../utils/format';
 
-type TypeFilter = 'all' | 'cash_in' | 'cash_out' | 'qr_payment';
+type TypeFilter = 'all' | 'cash_in' | 'cash_out';
 
 export default function OperationsScreen() {
   const { t } = useTranslation();
@@ -48,8 +48,7 @@ export default function OperationsScreen() {
           options={[
             { value: 'all', label: t('operations.all') },
             { value: 'cash_in', label: t('operations.filterIn') },
-            { value: 'cash_out', label: t('operations.filterOut') },
-            { value: 'qr_payment', label: t('operations.filterQr') }
+            { value: 'cash_out', label: t('operations.filterOut') }
           ]}
         />
       </View>
@@ -61,10 +60,9 @@ export default function OperationsScreen() {
         ListHeaderComponent={
           totals ? (
             <Card style={styles.totals}>
-              <Total label={t('dashboard.cashIn')} value={money(totals.cash_in)} />
-              <Total label={t('dashboard.cashOut')} value={money(totals.cash_out)} />
-              <Total label={t('dashboard.qrPayments')} value={money(totals.qr_payment)} />
-              <Total label={t('dashboard.commissions')} value={money(totals.commissions)} accent />
+              <Total label={t('dashboard.cashIn')} value={money(totals.cash_in.volume)} />
+              <Total label={t('dashboard.cashOut')} value={money(totals.cash_out.volume)} />
+              <Total label={t('dashboard.commissions')} value={money(totals.commission)} accent />
             </Card>
           ) : null
         }

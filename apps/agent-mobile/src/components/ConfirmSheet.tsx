@@ -11,8 +11,7 @@ import { radius, space } from '../theme/tokens';
 import { Keypad } from './Keypad';
 import { PinDots } from './PinDots';
 import { Text } from './Text';
-
-const PIN_LENGTH = 6;
+import { PIN_LENGTH } from '../utils/pin';
 
 interface Props {
   visible: boolean;

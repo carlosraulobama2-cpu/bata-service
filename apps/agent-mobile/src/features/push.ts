@@ -49,13 +49,24 @@ export async function enablePush(ask: boolean): Promise<PushStatus> {
   if (!p.granted && ask && p.canAskAgain) p = await Notifications.requestPermissionsAsync();
   if (!p.granted) return p.canAskAgain ? 'undetermined' : 'denied';
   const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId: projectId() });
-  await endpoints.registerPushToken(token);
+  await endpoints.registerPushToken(token, Platform.OS);
+  registeredToken = token;
   return 'granted';
 }
 
-/** Where a tapped notification takes the agent. */
+let registeredToken: string | null = null;
+
+/** On sign-out: this phone stops receiving this account's notices. */
+export async function forgetPushToken(): Promise<void> {
+  if (!registeredToken) return;
+  const token = registeredToken;
+  registeredToken = null;
+  await endpoints.unregisterPushToken(token);
+}
+
+/** Where a tapped notification takes the agent (Velynt sends the operation as `transfer_id`). */
 export function routeForNotification(data: Record<string, unknown> | undefined): string {
-  const tx = data?.transaction_id;
+  const tx = data?.transfer_id ?? data?.transaction_id;
   return typeof tx === 'string' && /^[0-9a-f-]{36}$/i.test(tx) ? `/transaction/${tx}` : '/notifications';
 }
 
@@ -89,7 +100,7 @@ export function usePushListeners(): void {
     void configure().then(() => enablePush(false)).catch(() => undefined);
     const received = Notifications.addNotificationReceivedListener(() => {
       void qc.invalidateQueries({ queryKey: ['notifications'] });
-      void qc.invalidateQueries({ queryKey: ['balance'] });
+      void qc.invalidateQueries({ queryKey: ['me'] });
       void qc.invalidateQueries({ queryKey: ['transactions'] });
     });
     const tapped = Notifications.addNotificationResponseReceivedListener((response) => {

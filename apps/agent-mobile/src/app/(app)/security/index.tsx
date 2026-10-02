@@ -1,217 +1,89 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ChevronRight, KeyRound, LogIn, MonitorSmartphone, ShieldAlert, Smartphone } from 'lucide-react-native';
-import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ChevronRight, Fingerprint, KeyRound, LogOut, Smartphone } from 'lucide-react-native';
+import { ReactNode } from 'react';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ApiError, newIdempotencyKey } from '../../../api/client';
-import { endpoints } from '../../../api/endpoints';
-import type { DeviceInfo, StepUp } from '../../../api/types';
-import { Banner } from '../../../components/Banner';
-import { Button } from '../../../components/Button';
+import { signOut } from '../../../api/auth';
 import { Card } from '../../../components/Card';
-import { ConfirmSheet } from '../../../components/ConfirmSheet';
 import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
-import { ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
-import { errorMessage } from '../../../features/errors';
-import { useAccessHistory, useDevices, useSecurityOverview, useSessions } from '../../../features/queries';
+import { useMe } from '../../../features/queries';
+import { forgetBiometricPin } from '../../../security/biometrics';
+import { useSession } from '../../../state/session';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { space } from '../../../theme/tokens';
-import { formatDate, formatDateTime } from '../../../utils/format';
 
-const FAILURE_EVENTS = new Set(['login_failed', 'otp_failed', 'account_locked', 'new_device_detected']);
-
+/**
+ * Account security in the agents app: the payment PIN, fingerprint/face on this phone and the
+ * session. One session per agent: signing in on another phone closes this one.
+ */
 export default function SecurityScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const qc = useQueryClient();
-  const overview = useSecurityOverview();
-  const sessions = useSessions();
-  const devices = useDevices();
-  const history = useAccessHistory();
-  // One confirmation sheet for both sensitive actions.
-  const [sheet, setSheet] = useState<{ action: 'others' | { device: DeviceInfo }; busy: boolean; error: string | null } | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const keyRef = useRef<string | null>(null);
+  const me = useMe();
+  const biometricEnabled = useSession((s) => s.biometricEnabled);
+  const hasPin = !!me.data?.user.has_pin;
 
-  const o = overview.data;
-  const others = (sessions.data?.data ?? []).filter((x) => !x.current);
-  const events = history.data?.pages.flatMap((p) => p.data) ?? [];
+  const turnOffBiometrics = async () => {
+    await forgetBiometricPin();
+    useSession.getState().setBiometricEnabled(false);
+  };
 
-  const deviceName = (d: DeviceInfo) => d.model ?? d.platform;
-
-  const confirm = async (stepUp: StepUp) => {
-    if (!sheet) return;
-    const action = sheet.action;
-    keyRef.current ??= newIdempotencyKey();
-    setSheet({ action, busy: true, error: null });
-    try {
-      if (action === 'others') {
-        const res = await endpoints.revokeOtherSessions({ key: keyRef.current, stepUp, prompt: t('confirm.biometricPrompt') });
-        setNotice(t('security.revokeOthersDone', { count: res.revoked }));
-      } else {
-        await endpoints.revokeDevice({ deviceId: action.device.id, key: keyRef.current, stepUp, prompt: t('confirm.biometricPrompt') });
-        setNotice(t('security.disconnectDone', { device: deviceName(action.device) }));
-      }
-      keyRef.current = null;
-      setSheet(null);
-      void qc.invalidateQueries({ queryKey: ['security'] });
-    } catch (err) {
-      if (!(err instanceof ApiError && err.isNetwork)) keyRef.current = null;
-      setSheet({ action, busy: false, error: err instanceof ApiError && err.code === 'BIOMETRIC_CANCELLED' ? null : errorMessage(err, t) });
-    }
+  const confirmSignOut = () => {
+    if (Platform.OS === 'web') return void signOut();
+    Alert.alert(t('auth.signOut'), t('auth.signOutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('auth.signOut'), style: 'destructive', onPress: () => void signOut() }
+    ]);
   };
 
   return (
-    <Screen
-      header={<Header title={t('security.title')} />}
-      scroll
-      refreshing={overview.isRefetching}
-      onRefresh={() => Promise.all([overview.refetch(), sessions.refetch(), devices.refetch(), history.refetch()])}
-    >
-      {overview.error ? <ErrorState error={overview.error} onRetry={() => overview.refetch()} /> : null}
-      {notice ? <Banner tone="success">{notice}</Banner> : null}
-      {o && o.failed_attempts_last_7_days > 0 ? (
-        <View style={{ marginBottom: space.md }}>
-          <Banner tone="warning">{`${t('security.failedAttempts', { count: o.failed_attempts_last_7_days })} ${t('security.notYou')}`}</Banner>
-        </View>
-      ) : null}
-
-      <Card>
-        {o ? (
-          <>
-            <Item icon={<Smartphone size={20} color={colors.text} />} title={t('security.thisDevice')} caption={`${o.this_device.model ?? o.this_device.platform}${o.this_device.trusted_at ? ` · ${t('security.trustedSince', { date: formatDate(o.this_device.trusted_at) })}` : ''}`} />
-            <Item
-              icon={<LogIn size={20} color={colors.text} />}
-              title={t('security.previousLogin')}
-              caption={o.previous_login ? [formatDateTime(o.previous_login.at), o.previous_login.device_model, o.previous_login.ip_masked].filter(Boolean).join(' · ') : t('security.noPreviousLogin')}
-            />
-            <Item icon={<KeyRound size={20} color={colors.primary} />} title={t('security.changePin')} caption={t('security.pinSetAt', { date: formatDate(o.pin.set_at) })} onPress={() => router.push('/security/pin')} last testID="security-change-pin" />
-          </>
-        ) : (
-          <Skeleton height={140} />
-        )}
-      </Card>
-
-      <Text variant="overline" color="textMuted" style={styles.section}>
-        {t('security.sessions')}
-      </Text>
-      <Card>
-        {(sessions.data?.data ?? []).map((x, i, all) => (
-          <Item
-            key={x.id}
-            icon={<MonitorSmartphone size={20} color={x.current ? colors.success : colors.text} />}
-            title={`${x.device_model ?? x.platform}${x.current ? ` · ${t('security.currentSession')}` : ''}`}
-            caption={[t('security.lastUsed', { date: formatDateTime(x.last_used_at ?? x.created_at) }), x.ip_masked].filter(Boolean).join(' · ')}
-            last={i === all.length - 1}
+    <Screen header={<Header title={t('security.title')} />} scroll>
+      <View style={styles.content}>
+        <Card padded={false} style={{ overflow: 'hidden' }}>
+          <Row
+            icon={<KeyRound size={20} color={colors.text} />}
+            label={hasPin ? t('security.changePin') : t('pinChange.createTitle')}
+            caption={t('security.pinCaption')}
+            onPress={() => router.push('/security/pin')}
+            testID="security-change-pin"
           />
-        ))}
-        {sessions.isLoading ? <Skeleton height={48} /> : null}
-      </Card>
-      <View style={{ marginTop: space.sm }}>
-        {others.length > 0 ? (
-          <Button variant="danger" label={t('security.revokeOthers')} onPress={() => setSheet({ action: 'others', busy: false, error: null })} testID="security-revoke-others" />
-        ) : sessions.data ? (
-          <Text variant="caption" color="textMuted" align="center">
-            {t('security.noOtherSessions')}
-          </Text>
-        ) : null}
+          <Row
+            icon={<Fingerprint size={20} color={colors.text} />}
+            label={t('security.biometrics')}
+            caption={biometricEnabled ? t('security.biometricsOn') : t('security.biometricsOff')}
+            onPress={biometricEnabled ? () => void turnOffBiometrics() : undefined}
+            action={biometricEnabled ? t('security.turnOff') : undefined}
+          />
+          <Row icon={<Smartphone size={20} color={colors.text} />} label={t('security.oneSession')} caption={t('security.oneSessionBody')} last />
+        </Card>
+        <Text variant="caption" color="textMuted">
+          {t('security.notYou')}
+        </Text>
+        <Card padded={false} style={{ overflow: 'hidden' }}>
+          <Row icon={<LogOut size={20} color={colors.danger} />} label={t('auth.signOut')} danger onPress={confirmSignOut} last />
+        </Card>
       </View>
-
-      <Text variant="overline" color="textMuted" style={styles.section}>
-        {t('security.devices')}
-      </Text>
-      <Card>
-        {(devices.data?.data ?? []).map((d, i, all) => (
-          <Item
-            key={d.id}
-            icon={<Smartphone size={20} color={d.status === 'revoked' ? colors.textMuted : colors.text} />}
-            title={`${d.model ?? d.platform}${d.current ? ` · ${t('security.thisDevice')}` : ''}`}
-            caption={d.status === 'revoked' ? `${t('security.deviceRevoked')}${d.revoked_at ? ` · ${formatDate(d.revoked_at)}` : ''}` : [d.os_version, d.app_version && `v${d.app_version}`, d.last_seen_at && t('security.lastUsed', { date: formatDateTime(d.last_seen_at) })].filter(Boolean).join(' · ')}
-            last={i === all.length - 1}
-            action={
-              d.status === 'trusted' && !d.current
-                ? { label: t('security.disconnect'), onPress: () => setSheet({ action: { device: d }, busy: false, error: null }), testID: `device-disconnect-${d.id}` }
-                : undefined
-            }
-          />
-        ))}
-        {devices.isLoading ? <Skeleton height={48} /> : null}
-      </Card>
-
-      <Text variant="overline" color="textMuted" style={styles.section}>
-        {t('security.history')}
-      </Text>
-      <Card>
-        {events.map((e, i) => {
-          const bad = FAILURE_EVENTS.has(e.event);
-          return (
-            <Item
-              key={e.id}
-              icon={bad ? <ShieldAlert size={20} color={colors.warning} /> : <LogIn size={20} color={colors.textMuted} />}
-              title={t(`security.events.${e.event}`, { defaultValue: e.event })}
-              caption={[formatDateTime(e.at), e.device_model, e.ip_masked].filter(Boolean).join(' · ')}
-              last={i === events.length - 1}
-            />
-          );
-        })}
-        {history.isLoading ? <Skeleton height={48} /> : null}
-      </Card>
-      {history.hasNextPage ? <Button variant="ghost" label={t('security.loadMore')} loading={history.isFetchingNextPage} onPress={() => void history.fetchNextPage()} /> : null}
-
-      <ConfirmSheet
-        visible={!!sheet}
-        busy={!!sheet?.busy}
-        error={sheet?.error ?? null}
-        onSubmit={confirm}
-        onClose={() => setSheet((x) => (x?.busy ? x : null))}
-        summary={
-          sheet && sheet.action !== 'others' ? (
-            <View style={{ gap: space.xs }}>
-              <Text variant="headline" align="center">
-                {t('security.disconnectTitle', { device: deviceName(sheet.action.device) })}
-              </Text>
-              <Text variant="caption" color="textMuted" align="center">
-                {t('security.disconnectBody')}
-              </Text>
-            </View>
-          ) : (
-            <Text variant="headline" align="center">
-              {t('security.revokeOthers')}
-            </Text>
-          )
-        }
-      />
     </Screen>
   );
 }
 
-function Item({
-  icon,
-  title,
-  caption,
-  onPress,
-  last,
-  testID,
-  action
-}: {
-  icon: React.ReactNode;
-  title: string;
-  caption?: string;
-  onPress?: () => void;
-  last?: boolean;
-  testID?: string;
-  action?: { label: string; onPress: () => void; testID?: string };
-}) {
+function Row({ icon, label, caption, onPress, action, danger, last, testID }: { icon: ReactNode; label: string; caption?: string; onPress?: () => void; action?: string; danger?: boolean; last?: boolean; testID?: string }) {
   const { colors } = useTheme();
-  const rowStyle = [styles.item, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }];
-  const content = (
-    <>
+  return (
+    <Pressable
+      disabled={!onPress}
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      testID={testID}
+      style={({ pressed }) => [styles.row, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, pressed && { backgroundColor: colors.neutralSoft }]}
+    >
       {icon}
       <View style={styles.flex}>
-        <Text variant="bodyStrong">{title}</Text>
+        <Text variant="bodyStrong" color={danger ? 'danger' : 'text'}>
+          {label}
+        </Text>
         {caption ? (
           <Text variant="caption" color="textMuted">
             {caption}
@@ -219,27 +91,18 @@ function Item({
         ) : null}
       </View>
       {action ? (
-        <Pressable onPress={action.onPress} accessibilityRole="button" accessibilityLabel={`${action.label}: ${title}`} hitSlop={8} testID={action.testID} style={styles.action}>
-          <Text variant="label" color="danger">
-            {action.label}
-          </Text>
-        </Pressable>
+        <Text variant="label" color="primary">
+          {action}
+        </Text>
+      ) : onPress && !danger ? (
+        <ChevronRight size={20} color={colors.textMuted} />
       ) : null}
-      {onPress ? <ChevronRight size={20} color={colors.textMuted} /> : null}
-    </>
-  );
-  // Only rows that navigate are pressable: a disabled parent would also disable the action button inside.
-  if (!onPress) return <View style={rowStyle}>{content}</View>;
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" testID={testID} style={({ pressed }) => [...rowStyle, pressed && { opacity: 0.7 }]}>
-      {content}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: space.xl, marginBottom: space.sm },
-  item: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md, minHeight: 56 },
+  content: { gap: space.md, paddingTop: space.sm },
   flex: { flex: 1, gap: 2 },
-  action: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.sm }
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, minHeight: 60, paddingVertical: space.md }
 });

@@ -1,5 +1,4 @@
 import '../i18n';
-import * as Crypto from 'expo-crypto';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
@@ -9,11 +8,6 @@ import { bootSession } from '../api/auth';
 import { protectAppSwitcher } from '../security/useNoScreenCapture';
 import { useSession } from '../state/session';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
-
-// @noble/curves may ask for randomness; route it to the OS CSPRNG.
-const g = globalThis as { crypto?: { getRandomValues?: unknown } };
-g.crypto ??= {};
-g.crypto.getRandomValues ??= Crypto.getRandomValues;
 
 void SplashScreen.preventAutoHideAsync();
 
