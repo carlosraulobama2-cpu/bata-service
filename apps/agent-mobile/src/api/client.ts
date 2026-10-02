@@ -147,3 +147,24 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
 /** A fresh idempotency key: one per logical operation, reused on retries. */
 export const newIdempotencyKey = () => Crypto.randomUUID();
+
+/**
+ * A private image (the profile photo) as a data: URL, loaded with the session like any API call.
+ * Image components cannot send the Authorization header on every platform, so the app reads it here.
+ */
+export async function imageDataUrl(path: string): Promise<string | null> {
+  const send = () => {
+    const token = useSession.getState().accessToken;
+    return rawFetch(path, { method: 'GET', headers: token ? { Authorization: `Bearer ${token}`, Accept: 'image/*' } : {} });
+  };
+  let res = await send();
+  if (res.status === 401 && (await refreshAccessToken())) res = await send();
+  if (!res.ok) return null;
+  const blob = await res.blob();
+  return await new Promise<string | null>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(blob);
+  });
+}

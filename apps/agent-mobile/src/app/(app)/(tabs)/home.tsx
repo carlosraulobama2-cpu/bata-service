@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { ArrowDownToLine, ArrowUpFromLine, Bell, Info, ScanLine } from 'lucide-react-native';
+import { ArrowDownToLine, ArrowUpFromLine, BarChart3, Bell, HandCoins, Info, ListOrdered, Repeat, Users, Wallet, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../../api/client';
 import { ActionTile } from '../../../components/ActionTile';
+import { Avatar } from '../../../components/Avatar';
+import { useSettings } from '../../../state/settings';
 import { Banner } from '../../../components/Banner';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -17,7 +19,7 @@ import { useOnboarding, verificationState } from '../../../features/verification
 import { useMe, useToday, useUnreadCount } from '../../../features/queries';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
-import { formatTime, localHour, money } from '../../../utils/format';
+import { formatTime, money } from '../../../utils/format';
 
 /** Same threshold as the server's default low-float notice (agent_low_float_alert_minor). */
 const LOW_FLOAT = 100_000;
@@ -39,9 +41,20 @@ export default function Dashboard() {
   const user = me.data?.user;
   const hasPin = !!user?.has_pin;
   const canOperate = agent?.status === 'active' && hasPin;
-  const hour = localHour();
-  const greetingKey = hour < 12 ? 'dashboard.greetingMorning' : hour < 20 ? 'dashboard.greetingAfternoon' : 'dashboard.greetingEvening';
   const firstName = user?.name.split(' ')[0] ?? '';
+  const hideBalance = useSettings((st) => st.hideBalance);
+  const [revealed, setRevealed] = useState(false);
+  const hidden = hideBalance && !revealed;
+  const cashNow = me.data?.cash ? (me.data.cash.expected ?? me.data.cash.declared) : null;
+  const active = agent?.status === 'active';
+  const quick = [
+    { label: t('dashboard.actionTransfer'), Icon: Repeat, onPress: () => router.push('/transfer'), disabled: !canOperate || offline },
+    { label: t('dashboard.actionMovements'), Icon: ListOrdered, onPress: () => router.push('/movements'), disabled: !active },
+    { label: t('dashboard.actionRequestFloat'), Icon: HandCoins, onPress: () => router.push('/float-request'), disabled: !active || offline },
+    { label: t('dashboard.actionCustomers'), Icon: Users, onPress: () => router.push('/customers'), disabled: !active },
+    { label: t('dashboard.actionStats'), Icon: BarChart3, onPress: () => router.push('/stats'), disabled: !active },
+    { label: t('dashboard.actionCash'), Icon: Wallet, onPress: () => router.push('/cash'), disabled: !active }
+  ];
 
   return (
     <Screen scroll edges={['top']} refreshing={refreshing} onRefresh={refresh} padded={false}>
@@ -54,12 +67,17 @@ export default function Dashboard() {
             </Text>
             {user ? (
               <Text variant="headline" style={{ color: colors.heroText }} numberOfLines={1}>
-                {t(greetingKey, { name: firstName })}
+                {t('dashboard.hello', { name: firstName })}
               </Text>
             ) : (
               <Skeleton width={180} height={22} style={{ opacity: 0.3 }} />
             )}
           </View>
+          {user ? (
+            <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel={t('settings.title')} hitSlop={8}>
+              <Avatar name={user.name} version={user.avatar_version} size={40} />
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={() => router.push('/notifications')}
             accessibilityRole="button"
@@ -86,9 +104,11 @@ export default function Dashboard() {
           <Info size={16} color={colors.heroMuted} />
         </Pressable>
         {me.data ? (
-          <Text variant="display" numeric style={{ color: colors.heroText }} adjustsFontSizeToFit numberOfLines={1} accessibilityLiveRegion="polite">
-            {money(me.data.float)}
-          </Text>
+          <Pressable onPress={() => setRevealed(!revealed)} accessibilityRole="button" accessibilityLabel={hidden ? t('dashboard.showBalance') : money(me.data.float)}>
+            <Text variant="display" numeric style={{ color: colors.heroText }} adjustsFontSizeToFit numberOfLines={1} accessibilityLiveRegion="polite">
+              {hidden ? t('dashboard.hidden') : money(me.data.float)}
+            </Text>
+          </Pressable>
         ) : me.isLoading ? (
           <Skeleton width={220} height={40} style={{ opacity: 0.3 }} />
         ) : (
@@ -97,9 +117,37 @@ export default function Dashboard() {
           </Text>
         )}
         <Text variant="caption" style={{ color: colors.heroMuted }}>
-          {t('dashboard.floatCaption')}
+          {agent?.max_float ? t('dashboard.limitOf', { max: money(agent.max_float), level: t(`levels.${agent.level}`) }) : t('dashboard.floatCaption')}
           {me.data ? `  ·  ${t('common.updatedAt', { time: formatTime(me.data.as_of) })}` : ''}
         </Text>
+        {agent?.status === 'active' ? (
+          <View style={styles.heroStats}>
+            <Pressable style={styles.heroStat} onPress={() => router.push('/cash')} accessibilityRole="button">
+              <Text variant="caption" style={{ color: colors.heroMuted }}>
+                {t('dashboard.cashLabel')}
+              </Text>
+              <Text variant="bodyStrong" numeric style={{ color: colors.heroText }}>
+                {hidden ? t('dashboard.hidden') : cashNow !== null ? money(cashNow) : t('dashboard.cashUnknown')}
+              </Text>
+            </Pressable>
+            <View style={styles.heroStat}>
+              <Text variant="caption" style={{ color: colors.heroMuted }}>
+                {t('dashboard.incomeToday')}
+              </Text>
+              <Text variant="bodyStrong" numeric style={{ color: colors.heroText }}>
+                {today.data ? money(today.data.totals.cash_in.volume) : '—'}
+              </Text>
+            </View>
+            <View style={styles.heroStat}>
+              <Text variant="caption" style={{ color: colors.heroMuted }}>
+                {t('dashboard.withdrawalsToday')}
+              </Text>
+              <Text variant="bodyStrong" numeric style={{ color: colors.heroText }}>
+                {today.data ? money(today.data.totals.cash_out.volume) : '—'}
+              </Text>
+            </View>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.body}>
@@ -109,8 +157,10 @@ export default function Dashboard() {
             <ActionTile label={t('dashboard.actionDeposit')} Icon={ArrowDownToLine} onPress={() => router.push('/cash-in')} disabled={!canOperate || offline} emphasis />
             <ActionTile label={t('dashboard.actionWithdraw')} Icon={ArrowUpFromLine} onPress={() => router.push('/cash-out')} disabled={!canOperate || offline} emphasis />
           </View>
-          <View style={styles.actionRow}>
-            <ActionTile label={t('dashboard.actionScan')} Icon={ScanLine} onPress={() => router.push('/qr/scan')} disabled={!canOperate || offline} />
+          <View style={styles.quickGrid}>
+            {quick.map((q) => (
+              <QuickAction key={q.label} label={q.label} Icon={q.Icon} onPress={q.onPress} disabled={q.disabled} />
+            ))}
           </View>
         </View>
 
@@ -273,8 +323,34 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
+function QuickAction({ label, Icon, onPress, disabled }: { label: string; Icon: LucideIcon; onPress: () => void; disabled?: boolean }) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.quick, { backgroundColor: colors.surface, borderColor: colors.border, opacity: disabled ? 0.45 : pressed ? 0.8 : 1 }]}
+    >
+      <View style={[styles.quickIcon, { backgroundColor: colors.primarySoft }]}>
+        <Icon size={22} color={colors.primary} strokeWidth={2.2} />
+      </View>
+      <Text variant="label" align="center" numberOfLines={2}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  heroStats: { flexDirection: 'row', gap: space.sm, marginTop: space.md },
+  heroStat: { flex: 1, gap: 2, padding: space.sm, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.10)' },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  quick: { width: '31.5%', minHeight: 92, borderWidth: 1, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', gap: space.xs, padding: space.sm },
+  quickIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   hero: { paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.xxxl + space.lg, gap: space.xs, borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.xl },
   bell: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: space.sm },

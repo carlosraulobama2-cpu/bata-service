@@ -1,6 +1,11 @@
 import { periodRange, type Period } from '../utils/period';
 import { api } from './client';
 import type {
+  CashPosition,
+  FloatMovement,
+  FloatRequest,
+  NearbyAgent,
+  Preferences,
   AgentProfile,
   AgentUser,
   AppNotification,
@@ -36,6 +41,8 @@ interface AgentOut {
   status_note: string;
   daily_cash_in_limit_minor: number;
   daily_cash_out_limit_minor: number;
+  level?: string;
+  max_float_minor?: number;
   created_at: string;
 }
 interface OperationOut {
@@ -71,7 +78,57 @@ interface NotificationOut {
   read_at: string | null;
 }
 
+interface CashOut {
+  declared_minor: number | null;
+  declared_at: string | null;
+  cash_in_since_minor: number;
+  cash_out_since_minor: number;
+  expected_minor: number | null;
+}
+interface FloatRequestOut {
+  id: string;
+  code: string;
+  amount_minor: number;
+  reason: string;
+  payment_reference: string;
+  has_proof: boolean;
+  status: FloatRequest['status'];
+  decision_note: string;
+  created_at: string;
+  decided_at: string | null;
+}
+interface FloatMovementOut {
+  id: string;
+  code: string;
+  kind: FloatMovement['kind'];
+  label: string;
+  direction: 'in' | 'out';
+  amount_minor: number;
+  reason: string;
+  other_agent: { code: string; business_name: string } | null;
+  created_at: string;
+}
+interface CustomerOut {
+  customer_id: string | null;
+  name: string;
+  phone_number: string | null;
+  operations: number;
+  deposits_minor: number;
+  withdrawals_minor: number;
+  last_at: string;
+}
+
 // ---- Into the app's shapes ----
+
+const toCash = (c: CashOut): CashPosition => ({
+  declared: c.declared_minor,
+  declared_at: c.declared_at,
+  cash_in_since: c.cash_in_since_minor,
+  cash_out_since: c.cash_out_since_minor,
+  expected: c.expected_minor
+});
+const toFloatRequest = (r: FloatRequestOut): FloatRequest => ({ ...r, amount: r.amount_minor });
+const toMovement = (m: FloatMovementOut): FloatMovement => ({ ...m, amount: m.amount_minor });
 
 /** "María N. O. · +240 •••• 4821": the masked name and phone the server gives, nothing else. */
 export const maskedCustomer = (c: Customer | null): string | null => (c ? [c.name, c.phone_number].filter(Boolean).join(' · ') : null);
@@ -86,6 +143,8 @@ const toAgent = (a: AgentOut): AgentProfile => ({
   status_note: a.status_note,
   daily_cash_in_limit: a.daily_cash_in_limit_minor,
   daily_cash_out_limit: a.daily_cash_out_limit_minor,
+  level: a.level ?? '1',
+  max_float: a.max_float_minor ?? 0,
   created_at: a.created_at
 });
 
@@ -136,9 +195,60 @@ export const endpoints = {
   logout: () => api<{ ok: boolean }>('/agent/v1/auth/logout', { method: 'POST' }),
 
   me: async (): Promise<Me> => {
-    const r = await api<{ user: AgentUser; agent: AgentOut | null; float_minor: number }>('/agent/v1/me');
-    return { user: r.user, agent: r.agent ? toAgent(r.agent) : null, float: r.float_minor, as_of: new Date().toISOString() };
+    const r = await api<{ user: AgentUser; agent: AgentOut | null; float_minor: number; cash?: CashOut | null }>('/agent/v1/me');
+    return { user: r.user, agent: r.agent ? toAgent(r.agent) : null, float: r.float_minor, cash: r.cash ? toCash(r.cash) : null, as_of: new Date().toISOString() };
   },
+
+  // ---- Float, cash, transfers, customers ----
+  floatRequests: () =>
+    api<{ requests: FloatRequestOut[]; max_float_minor: number; float_minor: number }>('/agent/v1/float-requests').then((r) => ({
+      requests: r.requests.map(toFloatRequest),
+      max_float: r.max_float_minor,
+      float: r.float_minor
+    })),
+  requestFloat: (body: { amount: number; reason: string; payment_reference: string }) =>
+    api<{ request: FloatRequestOut }>('/agent/v1/float-requests', { body: { amount_minor: body.amount, reason: body.reason, payment_reference: body.payment_reference } }).then((r) =>
+      toFloatRequest(r.request)
+    ),
+  uploadFloatProof: (id: string, photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
+    const form = new FormData();
+    form.append('file', { uri: photo.uri, name: photo.fileName || 'justificante.jpg', type: photo.mimeType || 'image/jpeg' } as unknown as Blob);
+    return api<{ request: FloatRequestOut }>(`/agent/v1/float-requests/${encodeURIComponent(id)}/proof`, { form, timeoutMs: 60000 }).then((r) => toFloatRequest(r.request));
+  },
+  cancelFloatRequest: (id: string) => api<{ request: FloatRequestOut }>(`/agent/v1/float-requests/${encodeURIComponent(id)}/cancel`, { method: 'POST' }).then((r) => toFloatRequest(r.request)),
+  cash: () => api<CashOut>('/agent/v1/cash').then(toCash),
+  countCash: (amount: number, note: string) =>
+    api<{ difference_minor: number | null; position: CashOut }>('/agent/v1/cash-count', { body: { amount_minor: amount, note } }).then((r) => ({
+      difference: r.difference_minor,
+      position: toCash(r.position)
+    })),
+  lookupAgent: (code: string) => api<{ agent: { code: string; business_name: string; city: string } }>(`/agent/v1/agents/lookup?code=${encodeURIComponent(code)}`).then((r) => r.agent),
+  transferToAgent: (input: MoneyInput & { toAgentCode: string; amount: number; reason: string }) =>
+    api<{ movement: FloatMovementOut; float_minor: number }>('/agent/v1/transfers', {
+      body: { to_agent_code: input.toAgentCode, amount_minor: input.amount, reason: input.reason },
+      money: money(input)
+    }).then((r) => ({ movement: toMovement(r.movement), float: r.float_minor })),
+  floatMovements: () => api<{ movements: FloatMovementOut[] }>('/agent/v1/float-movements').then((r) => r.movements.map(toMovement)),
+  customers: (offset = 0) =>
+    api<{ customers: CustomerOut[]; next_offset: number | null }>(`/agent/v1/customers?limit=30&offset=${offset}`).then((r) => ({
+      customers: r.customers.map((c) => ({ ...c, deposits: c.deposits_minor, withdrawals: c.withdrawals_minor })),
+      next_offset: r.next_offset
+    })),
+  nearbyAgents: () => api<{ agents: NearbyAgent[] }>('/agent/v1/nearby-agents').then((r) => r.agents),
+  stats: (days: number) =>
+    api<{ days: { date: string; cash_in: FiguresOut; cash_out: FiguresOut; commission_minor: number }[] }>(`/agent/v1/stats?days=${days}`).then((r) =>
+      r.days.map((d) => ({ date: d.date, cash_in: toFigures(d.cash_in), cash_out: toFigures(d.cash_out), commission: d.commission_minor }))
+    ),
+
+  // ---- Photo and settings ----
+  preferences: () => api<{ preferences: Preferences }>('/agent/v1/me/preferences').then((r) => r.preferences),
+  savePreferences: (change: Partial<Preferences>) => api<{ preferences: Preferences }>('/agent/v1/me/preferences', { method: 'PUT', body: change }).then((r) => r.preferences),
+  uploadAvatar: (photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
+    const form = new FormData();
+    form.append('file', { uri: photo.uri, name: photo.fileName || 'perfil.jpg', type: photo.mimeType || 'image/jpeg' } as unknown as Blob);
+    return api<{ has_avatar: boolean; avatar_version: number | null }>('/agent/v1/me/avatar', { method: 'PUT', form, timeoutMs: 60000 });
+  },
+  removeAvatar: () => api<{ has_avatar: boolean; avatar_version: number | null }>('/agent/v1/me/avatar', { method: 'DELETE' }),
   /** Ask to become an agent (needs a verified identity in the Velynt app). */
   apply: (body: { business_name: string; city: string; address: string }) => api<{ agent: AgentOut }>('/agent/v1/apply', { body }).then((r) => toAgent(r.agent)),
 

@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
-import { Bell, ChevronRight, Gauge, LifeBuoy, LogOut, ShieldCheck, BadgeCheck } from 'lucide-react-native';
+import { Bell, ChevronRight, Gauge, LifeBuoy, LogOut, ShieldCheck, BadgeCheck, Settings } from 'lucide-react-native';
 import { ReactNode } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '../../../api/auth';
+import { Avatar } from '../../../components/Avatar';
 import { Card } from '../../../components/Card';
 import { InfoRow } from '../../../components/InfoRow';
 import { Screen } from '../../../components/Screen';
@@ -38,11 +39,9 @@ export default function ProfileScreen() {
       </Text>
 
       <Card style={styles.identity}>
-        <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
-          <Text variant="title" color="primary">
-            {initials}
-          </Text>
-        </View>
+        <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel={t('settings.changePhoto')}>
+          <Avatar name={user?.name ?? initials} version={user?.avatar_version} size={64} />
+        </Pressable>
         {user ? (
           <View style={styles.flex}>
             <Text variant="headline">{user.name}</Text>
@@ -81,6 +80,7 @@ export default function ProfileScreen() {
       <Card padded={false} style={{ overflow: 'hidden' }}>
         <Row icon={<Gauge size={20} color={colors.text} />} label={t('profile.limits')} onPress={() => router.push('/limits')} />
         {me.data?.agent ? <Row icon={<BadgeCheck size={20} color={colors.text} />} label={t('verification.title')} onPress={() => router.push('/verification')} /> : null}
+        <Row icon={<Settings size={20} color={colors.text} />} label={t('settings.title')} onPress={() => router.push('/settings')} />
         <Row icon={<ShieldCheck size={20} color={colors.text} />} label={t('profile.securityRow')} onPress={() => router.push('/security')} />
         <Row icon={<Bell size={20} color={colors.text} />} label={t('profile.notifications')} onPress={() => router.push('/notifications')} />
         <Row icon={<LifeBuoy size={20} color={colors.text} />} label={t('profile.help')} onPress={() => router.push('/help')} />
