@@ -70,7 +70,7 @@ async function newCustomer() {
     return data;
   };
   const email = `agentapp_${Date.now()}_${Math.floor(Math.random() * 1e6)}@equatoriana.app`;
-  const { token } = await post('/api/auth/register', { email, password: 'testpass123', name: 'María Nsue Obiang' });
+  const { token } = await post('/api/auth/register', { email, password: 'testpass123', name: 'María Nsue Obiang', accept_terms: true });
   const phone = `+240555${String(Math.floor(Math.random() * 1e6)).padStart(6, '0')}`;
   const started = await post('/api/auth/phone/start', { phone_number: phone }, token);
   await post('/api/auth/phone/verify', { phone_number: phone, code: started.dev_code }, token);
