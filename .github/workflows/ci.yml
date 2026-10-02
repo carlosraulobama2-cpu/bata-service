@@ -5,32 +5,12 @@ on:
     branches: [main]
   pull_request:
 
+# The app talks to the Velynt agents API (velynt/api-agente), tested in that repository. Here: the
+# app and the shared money package. The integration test against a running Velynt stack runs only
+# when VELYNT_API_URL is set, so it is skipped in CI.
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      redis:
-        image: redis:7
-        ports: ["6379:6379"]
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
-      DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
-      TEST_REDIS_URL: redis://localhost:6379/15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -39,8 +19,6 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Database invariants
-        run: ./db/tests/run.sh
       - name: Typecheck
         run: pnpm -r typecheck
       - name: Build

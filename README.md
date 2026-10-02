@@ -1,16 +1,43 @@
 # VELYNT SERVICES
 
-Aplicación profesional para **agentes autorizados de Velynt**: cash-in, cash-out, cobros QR, comisiones, liquidaciones, KYC, seguridad y soporte.
+App para **agentes autorizados de Velynt**: depósitos y retiros de efectivo, comisiones, avisos y PIN de pagos.
 
-Velynt Services es un producto **independiente** de la app Velynt (propio frontend, backend, autenticación y permisos), conectado a la infraestructura de Velynt mediante APIs internas seguras. **Todo movimiento de dinero se valida en el servidor y se registra en el ledger central de doble partida.** El agente nunca puede modificar un saldo.
+**Un solo backend: el de Velynt.** La app ([`apps/agent-mobile`](apps/agent-mobile)) habla con el API de agentes de Velynt ([`velynt/api-agente`](https://github.com/carlosraulobama2-cpu/velynt/tree/main/api-agente)), que comparte la base de datos y el libro contable con la app de clientes Velynt. Este repositorio ya no tiene backend ni base de datos propios.
 
-> Estado: diseño técnico completo y **Fase 1 en desarrollo**. La app ([`apps/agent-mobile`](apps/agent-mobile)) **está conectada al API de agentes de Velynt** ([`velynt/api-agente`](https://github.com/carlosraulobama2-cpu/velynt/tree/main/api-agente)), que mueve el dinero en el libro contable de Velynt: acceso, alta como agente, depósitos (por teléfono, nº de cliente o QR de recarga), retiros (QR o teléfono + código), historial, comisiones, avisos y PIN de pagos.
->
-> El backend NestJS de este repositorio ([`apps/agent-api`](apps/agent-api)) y su ledger propio ([`db/`](db)) eran la implementación anterior, con Velynt simulado; la app ya no los usa. Se conservan como referencia de diseño (firma del dispositivo, cobro QR, motor de riesgo) para llevar a `api-agente` lo que haga falta.
+```
+App Velynt (clientes) ──────────► API principal (velynt/backend, :8000) ──┐
+Panel de control ───────────────► API principal (velynt/backend, :8000) ──┼──► PostgreSQL (un libro contable) + Redis
+App de agentes (este repo) ─────► API de agentes (velynt/api-agente, :8001) ┘
+```
 
-![Pantallas de la app](docs/screenshots/overview.png)
+Cómo pasa la información entre las dos apps (todo por el servidor de Velynt, nunca de app a app):
 
-## Documentación
+| Qué | App de clientes | App de agentes |
+|---|---|---|
+| Depósito directo | — | Busca al cliente por teléfono o nº `BP-…` (`/customers/lookup`), confirma el nombre, PIN → `/cash-in/direct`. El cliente ve el saldo y un aviso «Recarga recibida» |
+| Recarga con QR | «Recargar»: importe → QR (`/api/topups`), espera y ve «Recarga completada» | Escanea el QR (`/cash-in/resolve`), cobra el efectivo, PIN → `/cash-in/topups/{id}` |
+| Retiro de efectivo | «Retirar»: importe y comisión (`/api/cashouts/quote`), PIN → QR + código de 6 dígitos (`/api/cashouts`), espera y ve «Retiro completado» | Escanea el QR o escribe teléfono + código (`/cash-out/resolve`), PIN → `/cash-out/{id}/complete`, entrega el efectivo |
+| Dónde hay agentes | Lista de agentes activos en Recargar y Retirar (`/api/agents`) | El agente se da de alta en la app (`/apply`) y Velynt lo aprueba en el panel |
+
+## Código
+
+```
+apps/agent-mobile/  # App de agentes (Expo + React Native + TypeScript); ver su README
+packages/money/     # Importes enteros, formato "2.450.000 XAF", cálculo de comisiones
+packages/tsconfig/  # Configuración TypeScript compartida
+docs/               # Diseño original del producto (ver la nota abajo)
+```
+
+```bash
+pnpm install
+pnpm -r typecheck && pnpm -r build && pnpm -r test
+```
+
+El backend se arranca desde el repo `velynt` (`docker compose up -d agent-api`); ver [`apps/agent-mobile/README.md`](apps/agent-mobile/README.md).
+
+## Documentación (diseño original)
+
+> Estos documentos describen el diseño con el que empezó el proyecto, que incluía un backend propio (NestJS) y un ledger separado. **Ese backend se eliminó**: el dinero, las cuentas y las reglas viven ahora en Velynt. Siguen siendo útiles para la experiencia de usuario, la seguridad y las decisiones de negocio pendientes; lo que dicen del backend, la base de datos y la API ya no aplica.
 
 | # | Documento | Contenido |
 |---|---|---|
@@ -25,47 +52,6 @@ Velynt Services es un producto **independiente** de la app Velynt (propio fronte
 | 9 | [Estructura de código](docs/09-estructura-codigo.md) | Monorepo, app Expo, backend NestJS, admin, variables de entorno |
 | 10 | [Pruebas](docs/10-pruebas.md) | Estrategia y casos obligatorios |
 | 11 | [Roadmap](docs/11-roadmap.md) | Fases 0–4 |
-
-## Código
-
-```
-apps/agent-api/     # Agent Backend (NestJS + Kysely + PostgreSQL); ver su README
-apps/agent-mobile/  # App de agentes (Expo + React Native + TypeScript); ver su README
-packages/money/     # Importes enteros, formato "2.450.000 XAF", cálculo de comisiones
-packages/tsconfig/  # Configuración TypeScript compartida
-db/                 # Esquemas SQL (migraciones) y pruebas de invariantes
-```
-
-```bash
-pnpm install
-pnpm -r typecheck && pnpm -r build
-TEST_DATABASE_ADMIN_URL=postgresql://postgres:postgres@localhost:5432/postgres pnpm -r test
-```
-
-## Base de datos
-
-```
-db/
-├── 01_ledger.sql                    # Ledger de doble partida (servicio Ledger)
-├── 02_agent.sql                     # Base de datos del Agent Backend
-├── 03_roles_and_reference_data.sql  # Roles de BD (mínimo privilegio) + RBAC
-├── 04_qr_payments.sql               # Cobros QR: un uso, cliente fijado una vez, QR inmutables
-├── 05_security_and_code_attempts.sql # Historial de PIN y bloqueo por códigos inválidos
-├── 06_push_notifications.sql        # Cola de envío de push
-├── 07_device_integrity.sql          # Señales de root/jailbreak/emulador
-├── 08_risk_engine.sql               # Reglas de riesgo v1 (shadow), casos de fraude
-└── tests/
-    ├── invariants_test.sql          # 36 comprobaciones de reglas críticas
-    └── run.sh                       # crea una BD temporal, aplica y prueba
-```
-
-Ejecutar las pruebas (PostgreSQL 15+):
-
-```bash
-DATABASE_ADMIN_URL=postgresql://postgres@localhost:5432/postgres ./db/tests/run.sh
-```
-
-Lo que comprueban, entre otras cosas: que una operación repetida con la misma clave no mueve dinero dos veces, que una transacción desequilibrada es rechazada, que no hay descubiertos, que los asientos y audit logs no se pueden modificar ni borrar, que una operación completada no se puede editar, que un agente no puede pasar de `pending` a `active` y que quien aprueba no puede ser quien activa.
 
 ## Decisiones pendientes (por confirmar)
 
