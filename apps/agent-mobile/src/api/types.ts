@@ -44,6 +44,9 @@ export interface AgentProfile {
   status_note: string;
   daily_cash_in_limit: number;
   daily_cash_out_limit: number;
+  /** "1" | "2" | "3" | "enterprise": sets the maximum float and the daily limits. */
+  level: string;
+  max_float: number;
   created_at: string;
 }
 
@@ -54,6 +57,9 @@ export interface AgentUser {
   phone_number: string | null;
   kyc_status: string;
   has_pin: boolean;
+  has_avatar?: boolean;
+  /** Changes with every new photo: the image is cached by it. */
+  avatar_version?: number | null;
 }
 
 export interface Me {
@@ -62,7 +68,17 @@ export interface Me {
   agent: AgentProfile | null;
   /** E-money available to serve deposits. */
   float: number;
+  /** Cash in the till: last count and what Velynt expects now. null before the agent is active. */
+  cash: CashPosition | null;
   as_of: string;
+}
+
+export interface CashPosition {
+  declared: number | null;
+  declared_at: string | null;
+  cash_in_since: number;
+  cash_out_since: number;
+  expected: number | null;
 }
 
 export interface Figures {
@@ -205,4 +221,65 @@ export interface BusinessProfileInput {
   pep_details: string;
   no_criminal_record: boolean;
   accept_rules_version: string;
+}
+
+// ---- Float, cash, transfers, customers (velynt/api-agente/agent_routes/network.py) ----
+
+export interface FloatRequest {
+  id: string;
+  code: string;
+  amount: number;
+  reason: string;
+  payment_reference: string;
+  has_proof: boolean;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  decision_note: string;
+  created_at: string;
+  decided_at: string | null;
+}
+
+export interface FloatMovement {
+  id: string;
+  code: string;
+  kind: 'float_assign' | 'float_withdraw' | 'agent_transfer' | 'liquidity_in' | 'liquidity_out';
+  label: string;
+  direction: 'in' | 'out';
+  amount: number;
+  reason: string;
+  other_agent: { code: string; business_name: string } | null;
+  created_at: string;
+}
+
+export interface ServedCustomer {
+  customer_id: string | null;
+  name: string;
+  phone_number: string | null;
+  operations: number;
+  deposits: number;
+  withdrawals: number;
+  last_at: string;
+}
+
+export interface NearbyAgent {
+  code: string;
+  business_name: string;
+  address: string;
+  opening_hours: string;
+}
+
+export interface StatsDay {
+  date: string;
+  cash_in: Figures;
+  cash_out: Figures;
+  commission: number;
+}
+
+export interface Preferences {
+  theme: 'system' | 'light' | 'dark';
+  hide_balance: boolean;
+  language: string;
+  notify_payments: boolean;
+  notify_security: boolean;
+  notify_marketing: boolean;
+  notify_agent_float: boolean;
 }

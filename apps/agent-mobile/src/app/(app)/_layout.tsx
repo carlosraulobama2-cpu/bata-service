@@ -1,4 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { Redirect, Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { endpoints } from '../../api/endpoints';
+import { useSettings } from '../../state/settings';
 import { View } from 'react-native';
 import { LockScreen } from '../../components/LockScreen';
 import { usePushListeners } from '../../features/push';
@@ -14,6 +18,12 @@ export default function AppLayout() {
 function SignedIn() {
   usePushListeners();
   useInactivityLock();
+  // The agent's saved settings (theme, hidden balance) apply as soon as the session opens.
+  const prefs = useQuery({ queryKey: ['preferences'], queryFn: endpoints.preferences, staleTime: 60_000 });
+  const apply = useSettings((s) => s.apply);
+  useEffect(() => {
+    if (prefs.data) apply(prefs.data);
+  }, [prefs.data, apply]);
   const locked = useSession((s) => s.locked);
   return (
     <View style={{ flex: 1 }}>
@@ -26,6 +36,13 @@ function SignedIn() {
         <Stack.Screen name="apply" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="verification/index" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="verification/business" />
+        <Stack.Screen name="transfer/index" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="float-request/index" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="cash/index" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="movements/index" />
+        <Stack.Screen name="customers/index" />
+        <Stack.Screen name="stats/index" />
+        <Stack.Screen name="settings/index" />
         <Stack.Screen name="notification-settings" />
         <Stack.Screen name="security/pin" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       </Stack>

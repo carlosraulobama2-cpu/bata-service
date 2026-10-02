@@ -178,6 +178,33 @@ run('the agents app against api-agente', () => {
     expect(closed.code).toBe('verification_closed');
   });
 
+  it('float requests, cash count, movements, customers, nearby agents, stats and settings', async () => {
+    const before = await endpoints.floatRequests();
+    for (const r of before.requests.filter((x) => x.status === 'pending')) await endpoints.cancelFloatRequest(r.id);
+    const asked = await endpoints.requestFloat({ amount: 1_000, reason: 'Prueba de la app', payment_reference: 'APP-1' });
+    expect(asked.code).toMatch(/^SOL-/);
+    const twice = await endpoints.requestFloat({ amount: 1_000, reason: 'Otra', payment_reference: '' }).catch((e) => e);
+    expect(twice.code).toBe('float_request_pending');
+    expect((await endpoints.cancelFloatRequest(asked.id)).status).toBe('cancelled');
+
+    const counted = await endpoints.countCash(650_000, 'Prueba');
+    expect(counted.position.declared).toBe(650_000);
+    expect((await endpoints.me()).cash?.declared).toBe(650_000);
+
+    expect(Array.isArray(await endpoints.floatMovements())).toBe(true);
+    const served = await endpoints.customers();
+    expect(served.customers.length).toBeGreaterThan(0);
+    expect(served.customers[0]!.phone_number).toContain('*');
+    expect(Array.isArray(await endpoints.nearbyAgents())).toBe(true);
+    expect((await endpoints.stats(7)).length).toBe(7);
+
+    const missing = await endpoints.lookupAgent('AG-999999').catch((e) => e);
+    expect(missing.code).toBe('agent_not_found');
+    const saved = await endpoints.savePreferences({ theme: 'dark', hide_balance: false });
+    expect(saved.theme).toBe('dark');
+    await endpoints.savePreferences({ theme: 'system' });
+  });
+
   it('an unknown customer and an expired session have their own codes', async () => {
     const missing = await endpoints.lookupCustomer({ customerId: 'BP-999999999' }).catch((e) => e);
     expect(missing.code).toBe('customer_not_found');
