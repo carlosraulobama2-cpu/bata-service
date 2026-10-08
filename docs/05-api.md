@@ -318,6 +318,23 @@ Todo lo del inicio en una llamada (saldo, totales de hoy por tipo, comisiones de
 
 ## 7. Cash-in
 
+### POST /customers/verify
+
+Paso previo obligatorio. Autenticación: token de agente; agente `active`.
+
+```json
+// Request
+{ "phone": "+240555114821", "full_name": "Juan Mba" }
+// 200
+{
+  "status": "verified",
+  "customer": { "token": "ctk_…", "display_name": "Juan M.", "phone_masked": "****4821", "verified_at": "2026-10-08T09:12:00Z" },
+  "token_expires_at": "2026-10-08T10:47:00Z"
+}
+```
+
+Errores: `404 CUSTOMER_NOT_FOUND` (teléfono inexistente **o** nombre que no coincide: misma respuesta), `422 CUSTOMER_NOT_VERIFIED` (`details.kyc_status`: `pending` / `unverified` / `rejected`), `422 CUSTOMER_UNAVAILABLE` (cuenta bloqueada), `429 RATE_LIMITED` (más de 10 «no coincide» en 10 min). Cada comprobación genera audit log `CUSTOMER_VERIFY` sin el nombre escrito. El estado de verificación lo gestiona BataPay en su panel de control (contrato con Core: `verifyCustomer`, **por confirmar** con la API real).
+
 ### POST /cash-in
 
 Autenticación: token + firma de dispositivo + `agent_auth`. Permiso `self:cash_in.create`. Agente `active`.
@@ -325,7 +342,7 @@ Autenticación: token + firma de dispositivo + `agent_auth`. Permiso `self:cash_
 ```json
 // Request
 {
-  "customer": { "type": "token", "value": "ctk_…" },   // de POST /qr/scan; o { "type": "phone", "value": "+240222111222" }
+  "customer": { "type": "token", "value": "ctk_…" },   // de POST /customers/verify (un solo uso, 5 min)
   "amount": 100000,
   "currency": "XAF",
   "agent_auth": { "method": "pin", "pin": "482913" }

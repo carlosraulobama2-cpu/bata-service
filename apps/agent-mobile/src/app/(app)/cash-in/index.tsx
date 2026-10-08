@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { endpoints } from '../../../api/endpoints';
-import type { Transaction } from '../../../api/types';
+import { ApiError } from '../../../api/client';
+import type { CustomerCheck, Transaction } from '../../../api/types';
 import { AmountEntry } from '../../../components/AmountEntry';
 import { Banner } from '../../../components/Banner';
 import { Button } from '../../../components/Button';
@@ -20,6 +21,7 @@ import { errorMessage } from '../../../features/errors';
 import { useBalance, useLimits, useTransaction } from '../../../features/queries';
 import { useCountdown } from '../../../features/useCountdown';
 import { useOperation } from '../../../features/useOperation';
+import { NotVerifiedCard, VerifiedCustomerCard } from '../../../components/VerifiedCustomerCard';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
 import { formatCountdown, formatDate, formatTime, groupDigits, money } from '../../../utils/format';
@@ -34,10 +36,45 @@ export default function CashInScreen() {
   const limits = useLimits();
   const [step, setStep] = useState<Step>('customer');
   const [digits, setDigits] = useState('');
+  const [fullName, setFullName] = useState('');
   const [amount, setAmount] = useState(0);
+  const [check, setCheck] = useState<CustomerCheck | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState<{ code: string; message: string } | null>(null);
 
   const phone = `${PREFIX}${digits}`;
-  const op = useOperation((key, stepUp) => endpoints.cashIn({ phone, amount, key, stepUp, prompt: t('confirm.biometricPrompt') }));
+  const op = useOperation((key, stepUp) => endpoints.cashIn({ customerToken: check!.customer.token, amount, key, stepUp, prompt: t('confirm.biometricPrompt') }));
+
+  // Any edit invalidates a previous check: the deposit must go to exactly the customer that was verified.
+  const editCustomer = (fn: () => void) => {
+    fn();
+    setCheck(null);
+    setCheckError(null);
+  };
+
+  const verifyCustomer = async () => {
+    setChecking(true);
+    setCheckError(null);
+    try {
+      setCheck(await endpoints.verifyCustomer({ phone, fullName: fullName.trim() }));
+    } catch (err) {
+      setCheckError({ code: err instanceof ApiError ? err.code : 'INTERNAL_ERROR', message: errorMessage(err, t) });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  // Amount and review only exist for a verified customer.
+  useEffect(() => {
+    if (!check && step !== 'customer') setStep('customer');
+  }, [check, step]);
+
+  /** After a failed attempt the single-use check may be spent: verify again (fields stay filled). */
+  const backToCustomer = () => {
+    op.reset();
+    setCheck(null);
+    setStep('customer');
+  };
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
   const limit = limits.data?.limits.find((l) => l.operation_type === 'cash_in');
@@ -53,7 +90,7 @@ export default function CashInScreen() {
     return null;
   }, [amount, limit, available, t]);
 
-  if (op.phase.kind === 'done') return <Following tx={op.phase.tx} onClose={close} onRestart={() => { op.reset(); setAmount(0); setDigits(''); setStep('customer'); }} />;
+  if (op.phase.kind === 'done') return <Following tx={op.phase.tx} onClose={close} onRestart={() => { op.reset(); setAmount(0); setDigits(''); setFullName(''); setCheck(null); setStep('customer'); }} />;
 
   if (op.phase.kind === 'verifying') {
     return (
@@ -67,32 +104,71 @@ export default function CashInScreen() {
 
   if (op.phase.kind === 'error') {
     return (
-      <Screen header={<Header leading="close" onLeading={close} />} footer={<Button label={t('common.back')} onPress={() => { op.reset(); setStep('amount'); }} />}>
+      <Screen header={<Header leading="close" onLeading={close} />} footer={<Button label={t('common.back')} onPress={backToCustomer} />}>
         <ResultView tone="failure" title={t('status.failed')} instruction={op.phase.message} />
       </Screen>
     );
   }
 
   if (step === 'customer') {
-    const valid = digits.length === 9;
+    const canCheck = digits.length === 9 && fullName.trim().split(/\s+/).length >= 2 && !checking;
     return (
       <Screen
         header={<Header leading="close" onLeading={close} title={t('cashIn.title')} />}
-        footer={<Button label={t('common.continue')} disabled={!valid} onPress={() => setStep('amount')} testID="cashin-customer-continue" />}
+        footer={
+          check ? (
+            <>
+              <Button label={t('common.continue')} onPress={() => setStep('amount')} testID="cashin-customer-continue" />
+              <Button variant="ghost" label={t('cashIn.changeCustomer')} onPress={() => editCustomer(() => { setFullName(''); setDigits(''); })} />
+            </>
+          ) : (
+            <Button label={t('cashIn.verifyCustomer')} disabled={!canCheck} loading={checking} onPress={verifyCustomer} testID="cashin-verify" />
+          )
+        }
         scroll
       >
         <View style={styles.content}>
           <Text variant="title">{t('cashIn.customerTitle')}</Text>
-          <Text variant="label">{t('cashIn.customerPhoneLabel')}</Text>
+          <Text variant="body" color="textMuted">
+            {t('cashIn.customerSubtitle')}
+          </Text>
+
+          <Text variant="label" nativeID="customerName" style={styles.label}>
+            {t('cashIn.customerNameLabel')}
+          </Text>
+          <TextInput
+            value={fullName}
+            onChangeText={(v) => editCustomer(() => setFullName(v.replace(/\s{2,}/g, ' ').slice(0, 120)))}
+            autoCapitalize="words"
+            autoCorrect={false}
+            autoComplete="name"
+            textContentType="name"
+            autoFocus
+            returnKeyType="next"
+            placeholder={t('cashIn.customerNamePlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            style={[styles.textField, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
+            accessibilityLabelledBy="customerName"
+            testID="cashin-name"
+          />
+          <Text variant="caption" color="textMuted">
+            {t('cashIn.customerNameHint')}
+          </Text>
+
+          <Text variant="label" style={styles.label}>
+            {t('cashIn.customerPhoneLabel')}
+          </Text>
           <View style={[styles.phone, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text variant="bodyStrong" style={[styles.prefix, { borderRightColor: colors.border }]}>
-              🇬🇶 {PREFIX}
-            </Text>
+            <View style={[styles.prefix, { borderRightColor: colors.border }]}>
+              <Text variant="bodyStrong" numberOfLines={1}>
+                🇬🇶 {PREFIX}
+              </Text>
+            </View>
             <TextInput
               value={groupDigits(digits)}
-              onChangeText={(v) => setDigits(v.replace(/\D/g, '').slice(0, 9))}
+              onChangeText={(v) => editCustomer(() => setDigits(v.replace(/\D/g, '').slice(0, 9)))}
+              onSubmitEditing={() => canCheck && void verifyCustomer()}
               keyboardType="phone-pad"
-              autoFocus
               placeholder="555 000 000"
               placeholderTextColor={colors.textMuted}
               style={[styles.phoneInput, { color: colors.text }]}
@@ -100,13 +176,28 @@ export default function CashInScreen() {
               testID="cashin-phone"
             />
           </View>
-          <Text variant="caption" color="textMuted">
-            {t('cashIn.customerHint')}
-          </Text>
+
+          <View style={styles.result}>
+            {checking ? (
+              <Text variant="label" color="textMuted" align="center">
+                {t('cashIn.verifying')}
+              </Text>
+            ) : null}
+            {check ? <VerifiedCustomerCard name={check.customer.display_name} phone={check.customer.phone_masked} verifiedAt={check.customer.verified_at} /> : null}
+            {checkError?.code === 'CUSTOMER_NOT_VERIFIED' ? <NotVerifiedCard message={checkError.message} /> : null}
+            {checkError && checkError.code !== 'CUSTOMER_NOT_VERIFIED' ? <Banner tone="danger">{checkError.message}</Banner> : null}
+          </View>
+          {check ? (
+            <Text variant="caption" color="textMuted">
+              {t('cashIn.customerHint')}
+            </Text>
+          ) : null}
         </View>
       </Screen>
     );
   }
+
+  if (!check) return null; // effect above sends the agent back to the customer step
 
   if (step === 'amount') {
     const hint = limit ? `${t('cashIn.perTxLimit', { amount: money(limit.per_transaction.max) })} · ${t('cashIn.remainingToday', { amount: money(limit.daily.remaining) })}` : undefined;
@@ -141,7 +232,17 @@ export default function CashInScreen() {
         </Text>
       </View>
       <Card>
-        <InfoRow label={t('common.customer')} value={`****${digits.slice(-4)}`} strong />
+        <InfoRow
+          label={t('common.customer')}
+          value={
+            <View style={styles.customerValue}>
+              <Text variant="bodyStrong">{check?.customer.display_name}</Text>
+              <Text variant="caption" color="success">
+                ✓ {t('cashIn.verifiedTitle')} · {check?.customer.phone_masked}
+              </Text>
+            </View>
+          }
+        />
         {available !== undefined ? <InfoRow label={t('cashOut.floatAfter')} value={money(available - amount)} last /> : null}
       </Card>
       <View style={{ marginTop: space.lg }}>
@@ -156,7 +257,7 @@ export default function CashInScreen() {
         summary={
           <View style={styles.sheetSummary}>
             <Text variant="label" color="textMuted">
-              {t('cashIn.title')} · ****{digits.slice(-4)}
+              {t('cashIn.title')} · {check?.customer.display_name} · {check?.customer.phone_masked}
             </Text>
             <Text variant="amount" numeric>
               {money(amount)}
@@ -281,9 +382,13 @@ function Following({ tx: initial, onClose, onRestart }: { tx: Transaction; onClo
 }
 
 const styles = StyleSheet.create({
-  content: { gap: space.md, paddingTop: space.sm },
+  content: { gap: space.sm, paddingTop: space.sm },
+  label: { marginTop: space.md },
+  textField: { height: 60, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 18 },
+  result: { marginTop: space.lg, gap: space.md },
+  customerValue: { alignItems: 'flex-end', gap: 2, flexShrink: 1 },
   phone: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: radius.md, height: 60, overflow: 'hidden' },
-  prefix: { paddingHorizontal: space.lg, borderRightWidth: 1, lineHeight: 60 },
+  prefix: { paddingHorizontal: space.lg, borderRightWidth: 1, height: '100%', justifyContent: 'center' },
   phoneInput: { flex: 1, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1, height: '100%' },
   amountBlock: { paddingVertical: space.xxl, gap: space.xs },
   sheetSummary: { alignItems: 'center', gap: space.xs },

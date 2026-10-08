@@ -85,4 +85,10 @@ export type LoginResponse =
   | { status: 'authenticated'; access_token: string; refresh_token: string; access_token_expires_in: number; agent: { agent_code: string; first_name: string | null; status: string } }
   | { status: 'otp_required'; challenge_id: string; destination_masked: string; expires_in: number; reason: string };
 
+export interface CustomerCheck {
+  status: 'verified';
+  customer: { token: string; display_name: string; phone_masked: string; verified_at: string | null };
+  token_expires_at: string;
+}
+
 export type StepUp = { method: 'pin'; pin: string } | { method: 'biometric' };

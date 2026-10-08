@@ -12,7 +12,7 @@ Diseño de referencia: [docs/02-ux-ui.md](../../docs/02-ux-ui.md).
 | Acceso | Teléfono (+240) → PIN en teclado propio → OTP por SMS en dispositivo nuevo → registro de claves del dispositivo |
 | Inicio | Saldo operativo del ledger, explicación de cada saldo, acciones grandes (Depositar, Retirar, Escanear QR), resumen de hoy, últimas operaciones, avisos (pendientes, saldo bajo, cuenta suspendida, dispositivo nuevo, sin conexión) |
 | Retiro | Escáner QR o código de 9 dígitos → revisión (importe bloqueado, cuenta atrás de caducidad, comisión, saldo tras la operación) → PIN o biometría → «Retiro completado · Entrega X en efectivo» |
-| Depósito | Teléfono del cliente → importe con teclado propio y avisos de límites en vivo → revisión → PIN o biometría → espera de confirmación del cliente con cuenta atrás y cancelación → resultado |
+| Depósito | Nombre y teléfono del cliente → «Verificar cliente» (tarjeta verde «Cliente verificado · Juan M.» si BataPay lo aprobó en el panel de control; aviso si no está verificado o los datos no coinciden) → importe con teclado propio y avisos de límites en vivo → revisión → PIN o biometría → espera de confirmación del cliente con cuenta atrás y cancelación → resultado |
 | Operaciones | Filtros por periodo y tipo, totales, scroll infinito, detalle con historial de estados y recibo para compartir (cliente enmascarado) |
 | Comisiones | Pendiente de liquidar (ledger), hoy / 7 días / mes, volumen del mes |
 | Perfil | Agent ID, estado, categoría, negocio, límites con barras de uso, dispositivo, cerrar sesión |

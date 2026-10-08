@@ -15,7 +15,8 @@ export const CashOutSchema = z.object({
 });
 
 export const CashInSchema = z.object({
-  customer: z.object({ type: z.enum(['phone', 'token']), value: z.string().min(4).max(200) }),
+  // Token returned by POST /customers/verify (name + phone checked, customer verified).
+  customer: z.object({ type: z.literal('token'), value: z.string().min(8).max(200) }),
   amount,
   currency: z.literal('XAF'),
   agent_auth: AgentAuthSchema

@@ -11,15 +11,22 @@ describe('Cash-in', () => {
   beforeAll(async () => {
     h = await Harness.start();
     agent = await h.createAgent(phone, PIN, 300_000);
-    customerRef = await h.core.addCustomer(customerPhone);
+    customerRef = await h.core.addCustomer(customerPhone, 'XAF', 0, { fullName: 'Juan Pablo Mba Nsue' });
     s = await h.login(phone);
     h.clock.advance(25 * 3600 * 1000); // past the new-device cooldown
     s = await h.login(phone, PIN, s.device);
   });
   afterAll(() => h.stop());
 
-  const create = (amount: number, customer: object = { type: 'phone', value: customerPhone }) =>
-    h.signedPost(s, '/agent/v1/cash-in', { customer, amount, currency: 'XAF', agent_auth: { method: 'pin', pin: PIN } });
+  const verify = (fullName = 'Juan Mba', phone = customerPhone) =>
+    h.request('POST', '/agent/v1/customers/verify', { body: { phone, full_name: fullName }, headers: { authorization: `Bearer ${s.accessToken}` } });
+
+  /** Like the app: verify name + phone first, then create the deposit with the returned token. */
+  const create = async (amount: number) => {
+    const v = await verify();
+    if (v.status !== 200) return v;
+    return h.signedPost(s, '/agent/v1/cash-in', { customer: { type: 'token', value: v.body.customer.token }, amount, currency: 'XAF', agent_auth: { method: 'pin', pin: PIN } });
+  };
 
   const confirm = (tx: { id: string }) =>
     h.db
@@ -102,13 +109,13 @@ describe('Cash-in', () => {
     expect(cashIn.daily.used).toBe(100_000); // only the completed one counts
   });
 
-  it('does not reveal whether a customer exists', async () => {
-    const res = await create(10_000, { type: 'phone', value: '+240555999999' });
+  it('blocked customers cannot receive deposits', async () => {
+    const p = '+240555007777';
+    const ref = await h.core.addCustomer(p, 'XAF', 0, { fullName: 'Ana Nchama Obono' });
+    h.core.blockCustomer(ref);
+    const res = await verify('Ana Nchama', p);
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe('CUSTOMER_UNAVAILABLE');
-    h.core.blockCustomer(customerRef);
-    const blocked = await create(10_000);
-    expect(blocked.body.error.code).toBe('CUSTOMER_UNAVAILABLE');
   });
 
   it('accepts only correctly signed, recent Core events', async () => {

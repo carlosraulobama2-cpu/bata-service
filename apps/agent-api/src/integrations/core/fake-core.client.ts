@@ -3,13 +3,19 @@ import { maskPhone } from '@bata/money';
 import { Clock } from '../../common/time/clock';
 import { randomNumericCode, randomToken } from '../../common/crypto/secrets';
 import { customerWallet, LedgerClient } from '../ledger/ledger.client';
-import { CoreClient, CoreConflictError, ResolvedCustomer, WithdrawalRequest } from './core.client';
+import { CoreClient, CoreConflictError, CustomerKycStatus, CustomerVerification, ResolvedCustomer, WithdrawalRequest } from './core.client';
+import { displayName, namesMatch } from './name-match';
 
 interface FakeCustomer {
   ref: string;
   phone: string;
+  fullName: string;
   status: 'active' | 'blocked';
+  kycStatus: CustomerKycStatus;
+  verifiedAt: Date | null;
 }
+
+const TOKEN_TTL_MS = 5 * 60 * 1000;
 
 interface FakeDeposit {
   id: string;
@@ -28,7 +34,7 @@ interface FakeDeposit {
 export class FakeCoreClient extends CoreClient {
   readonly holdSourceSystem = 'batapay-core';
   private readonly customers = new Map<string, FakeCustomer>();
-  private readonly tokens = new Map<string, string>();
+  private readonly tokens = new Map<string, { ref: string; expiresAt: Date }>();
   private readonly withdrawals = new Map<string, WithdrawalRequest & { code: string }>();
   readonly deposits = new Map<string, FakeDeposit>();
 
@@ -41,11 +47,24 @@ export class FakeCoreClient extends CoreClient {
 
   // ---- simulator helpers (what the BataPay app / core would do) ----
 
-  async addCustomer(phone: string, currency = 'XAF', initialBalance = 0): Promise<string> {
+  async addCustomer(
+    phone: string,
+    currency = 'XAF',
+    initialBalance = 0,
+    profile: { fullName?: string; kycStatus?: CustomerKycStatus } = {}
+  ): Promise<string> {
     const existing = [...this.customers.values()].find((c) => c.phone === phone);
     if (existing) return existing.ref;
     const ref = `cus_${randomUUID()}`;
-    this.customers.set(ref, { ref, phone, status: 'active' });
+    const kycStatus = profile.kycStatus ?? 'verified';
+    this.customers.set(ref, {
+      ref,
+      phone,
+      fullName: profile.fullName ?? 'Cliente Demo',
+      status: 'active',
+      kycStatus,
+      verifiedAt: kycStatus === 'verified' ? this.clock.now() : null
+    });
     await this.ledger.openAccount(customerWallet(ref, currency), 'liability');
     if (initialBalance > 0) {
       await this.ledger.post({
@@ -68,9 +87,18 @@ export class FakeCoreClient extends CoreClient {
     if (c) c.status = 'blocked';
   }
 
+  /** What the BataPay control panel does when staff approve (or revoke) a customer's verification. */
+  setKycStatus(phone: string, kycStatus: CustomerKycStatus): boolean {
+    const c = [...this.customers.values()].find((x) => x.phone === phone);
+    if (!c) return false;
+    c.kycStatus = kycStatus;
+    c.verifiedAt = kycStatus === 'verified' ? this.clock.now() : null;
+    return true;
+  }
+
   issueCustomerToken(ref: string): string {
     const token = `ctk_${randomToken(16)}`;
-    this.tokens.set(token, ref);
+    this.tokens.set(token, { ref, expiresAt: new Date(this.clock.now().getTime() + TOKEN_TTL_MS) });
     return token;
   }
 
@@ -106,14 +134,30 @@ export class FakeCoreClient extends CoreClient {
   async resolveCustomer(input: { phone?: string; customerToken?: string }): Promise<ResolvedCustomer | null> {
     let customer: FakeCustomer | undefined;
     if (input.customerToken) {
-      const ref = this.tokens.get(input.customerToken);
+      const entry = this.tokens.get(input.customerToken);
       this.tokens.delete(input.customerToken); // single use
-      customer = ref ? this.customers.get(ref) : undefined;
+      customer = entry && entry.expiresAt > this.clock.now() ? this.customers.get(entry.ref) : undefined;
     } else if (input.phone) {
       customer = [...this.customers.values()].find((c) => c.phone === input.phone);
     }
     if (!customer) return null;
-    return { customerRef: customer.ref, masked: maskPhone(customer.phone), canReceive: customer.status === 'active' };
+    return { customerRef: customer.ref, masked: maskPhone(customer.phone), canReceive: customer.status === 'active', kycStatus: customer.kycStatus };
+  }
+
+  async verifyCustomer(input: { phone: string; fullName: string }): Promise<CustomerVerification | null> {
+    const customer = [...this.customers.values()].find((c) => c.phone === input.phone);
+    if (!customer || !namesMatch(input.fullName, customer.fullName)) return null;
+    const customerToken = this.issueCustomerToken(customer.ref);
+    return {
+      customerRef: customer.ref,
+      masked: maskPhone(customer.phone),
+      canReceive: customer.status === 'active',
+      kycStatus: customer.kycStatus,
+      displayName: displayName(customer.fullName),
+      verifiedAt: customer.verifiedAt,
+      customerToken,
+      tokenExpiresAt: this.tokens.get(customerToken)!.expiresAt
+    };
   }
 
   async createDepositRequest(input: { agentTransactionId: string; customerRef: string; amount: number }): Promise<{ depositRequestId: string }> {

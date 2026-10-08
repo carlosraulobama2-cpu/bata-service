@@ -4,10 +4,27 @@
  * deposit and their withdrawal requests. The agent service only ever
  * receives an opaque customer reference and a masked phone.
  */
+/** Customer verification (KYC) status, managed by BataPay in its control panel. */
+export type CustomerKycStatus = 'verified' | 'pending' | 'unverified' | 'rejected';
+
 export interface ResolvedCustomer {
   customerRef: string;
   masked: string;
   canReceive: boolean;
+  kycStatus: CustomerKycStatus;
+}
+
+/**
+ * Result of checking name + phone typed by the agent. Only returned when
+ * the name matches the customer's registered name; the agent never sees
+ * the registered name in full, only "Juan M.".
+ */
+export interface CustomerVerification extends ResolvedCustomer {
+  displayName: string;
+  verifiedAt: Date | null;
+  /** Single-use, short-lived reference to this customer for the next operation. */
+  customerToken: string;
+  tokenExpiresAt: Date;
 }
 
 export interface WithdrawalRequest {
@@ -32,6 +49,8 @@ export abstract class CoreClient {
   /** Only these customer-hold references are captured by the ledger on cash-out. */
   abstract readonly holdSourceSystem: string;
   abstract resolveCustomer(input: { phone?: string; customerToken?: string }): Promise<ResolvedCustomer | null>;
+  /** null = no customer with that phone, or the name does not match (indistinguishable on purpose). */
+  abstract verifyCustomer(input: { phone: string; fullName: string }): Promise<CustomerVerification | null>;
   abstract createDepositRequest(input: {
     agentCode: string;
     agentTransactionId: string;

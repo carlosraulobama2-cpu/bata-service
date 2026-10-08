@@ -74,7 +74,13 @@ S: completed ─▶ push a A y Cl ─▶ A ve "DEPÓSITO COMPLETADO" ─▶ guar
 
 Paso a paso:
 1. El cliente entrega el efectivo **o lo muestra** (recomendación de UX: contar el efectivo antes de confirmar).
-2. A pulsa DEPOSITAR y escanea el QR personal del cliente (o introduce su teléfono) → ve `****4821`.
+2. A pulsa DEPOSITAR y escribe el **nombre y apellidos** y el **teléfono** del cliente → «Verificar cliente».
+   C comprueba que el teléfono es de un cliente, que el nombre coincide (sin distinguir mayúsculas ni tildes; basta nombre + un apellido) y que su **verificación está aprobada** por el personal de BataPay en el panel de control.
+   - Verificado → tarjeta verde «Cliente verificado · Juan M. · ****4821 · Verificado el 08/10/2026» y se puede continuar.
+   - Verificación pendiente o rechazada → «Este cliente aún no está verificado…»; no se puede continuar.
+   - Teléfono inexistente o nombre que no coincide → el mismo mensaje en ambos casos («Los datos no coinciden…»), para no revelar quién tiene cuenta.
+   - Más de 10 «no coincide» en 10 minutos → pausa temporal del agente (evita adivinar datos de clientes).
+   La verificación devuelve un token de un solo uso (5 min) que identifica a ese cliente en el depósito; cambiar nombre o teléfono la anula.
 3. A introduce 100.000 → la app muestra límite disponible y comisión.
 4. A confirma con PIN/biometría → `POST /cash-in` con `Idempotency-Key`.
 5. S valida (ver [05-api.md §7](05-api.md#7-cash-in)) → hold → estado `pending` → pide confirmación a C.

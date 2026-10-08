@@ -16,7 +16,8 @@ Stack: Node.js 22 · TypeScript · NestJS 11 (Fastify) · Kysely · PostgreSQL. 
 | Firma de dispositivo (ECDSA P-256) en operaciones + confirmación con PIN o biometría | ✅ |
 | Idempotencia en la API (`Idempotency-Key`), por operación y en el ledger | ✅ |
 | Cash-out (código/QR del cliente, uso único, asiento que captura el hold del cliente) | ✅ |
-| Cash-in (hold del float, confirmación del cliente vía evento firmado de Core, expiración, cancelación) | ✅ |
+| Verificación del cliente antes del depósito (nombre + teléfono, verificación aprobada en el panel de control, respuesta única para «no existe» y «no coincide», pausa anti-adivinanza) | ✅ |
+| Cash-in (solo con token de verificación; hold del float, confirmación del cliente vía evento firmado de Core, expiración, cancelación) | ✅ |
 | Límites por nivel + excepciones + enfriamiento, con contadores bloqueados por fila | ✅ |
 | Comisiones desde plan configurable, contabilizadas en la misma transacción del ledger | ✅ |
 | Reconciliador de operaciones en `processing` (reintento idempotente) | ✅ |
@@ -47,7 +48,7 @@ pnpm db:migrate && pnpm db:seed && pnpm dev
 
 El seed crea el agente **AG-000001** (`SEED_AGENT_PHONE` / `SEED_AGENT_PIN`) con 2.450.000 XAF de float, un nivel, límites y un plan de comisiones **de ejemplo** (valores reales por confirmar).
 
-Endpoints de desarrollo (solo con `ENABLE_DEV_ENDPOINTS=true`; la configuración lo rechaza en producción): crear clientes (`POST /dev/customers`), crear solicitudes de retiro (`POST /dev/withdrawals`), confirmar un depósito como si fuera el cliente (`POST /dev/deposits/confirm`) y leer el último OTP enviado (`GET /dev/otp?phone=`).
+Endpoints de desarrollo (solo con `ENABLE_DEV_ENDPOINTS=true`; la configuración lo rechaza en producción): crear clientes con nombre y estado de verificación (`POST /dev/customers`), simular la aprobación o revocación en el panel de control (`POST /dev/customers/kyc`), crear solicitudes de retiro (`POST /dev/withdrawals`), confirmar un depósito como si fuera el cliente (`POST /dev/deposits/confirm`) y leer el último OTP enviado (`GET /dev/otp?phone=`).
 
 ## Pruebas
 

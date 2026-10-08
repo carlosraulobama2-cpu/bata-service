@@ -32,13 +32,16 @@ export class CashInService {
     @Inject(ENV) private readonly env: Env
   ) {}
 
-  async create(agent: AgentContext, input: { customer: { type: 'phone' | 'token'; value: string }; amount: number; currency: string }, idempotencyKey: string): Promise<AgentTransaction> {
+  async create(agent: AgentContext, input: { customer: { type: 'token'; value: string }; amount: number; currency: string }, idempotencyKey: string): Promise<AgentTransaction> {
     assertCanOperate(agent);
     const existing = await this.db.selectFrom('agent.agent_transactions').selectAll().where('agent_id', '=', agent.agentId).where('idempotency_key', '=', idempotencyKey).executeTakeFirst();
     if (existing) return existing;
 
-    const customer = await this.core.resolveCustomer(input.customer.type === 'phone' ? { phone: input.customer.value } : { customerToken: input.customer.value });
-    if (!customer || !customer.canReceive) throw Errors.customerUnavailable();
+    const customer = await this.core.resolveCustomer({ customerToken: input.customer.value });
+    if (!customer) throw Errors.customerCheckExpired(); // token unknown, used or expired
+    if (!customer.canReceive) throw Errors.customerUnavailable();
+    // Verification is re-checked now: it may have been revoked since the agent's check.
+    if (customer.kycStatus !== 'verified') throw Errors.customerNotVerified({ kyc_status: customer.kycStatus });
 
     const expiresAt = new Date(this.clock.now().getTime() + this.env.CASH_IN_CONFIRMATION_TTL_SECONDS * 1000);
     let tx = await this.db.transaction().execute(async (trx) => {
@@ -61,7 +64,7 @@ export class CashInService {
           commission_rule_id: commission.ruleId,
           customer_ref: customer.customerRef,
           customer_masked: customer.masked,
-          method: input.customer.type === 'token' ? 'qr' : 'phone',
+          method: 'phone',
           qr_id: null,
           core_request_ref: null,
           idempotency_key: idempotencyKey,

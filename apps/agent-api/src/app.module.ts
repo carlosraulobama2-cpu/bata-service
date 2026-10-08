@@ -22,6 +22,8 @@ import { SessionsService } from './modules/auth/sessions.service';
 import { StepUpService } from './modules/auth/step-up.service';
 import { DevController } from './modules/dev/dev.controller';
 import { CoreEventsController } from './modules/internal/core-events.controller';
+import { CustomersController } from './modules/customers/customers.controller';
+import { CustomersService } from './modules/customers/customers.service';
 import { CashInService } from './modules/operations/cash-in.service';
 import { CashOutService } from './modules/operations/cash-out.service';
 import { CommissionsService } from './modules/operations/commissions.service';
@@ -84,9 +86,10 @@ export class AppModule {
       CashInService,
       TransactionsService,
       ReconcilerService,
+      CustomersService,
       JobsService
     ];
-    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, OperationsController, CoreEventsController];
+    const controllers: DynamicModule['controllers'] = [AuthController, AgentController, CustomersController, OperationsController, CoreEventsController];
     if (env.ENABLE_DEV_ENDPOINTS && env.NODE_ENV !== 'production') controllers.push(DevController);
     return { module: AppModule, providers, controllers };
   }

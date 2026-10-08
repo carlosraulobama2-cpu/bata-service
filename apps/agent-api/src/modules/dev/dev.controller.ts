@@ -33,9 +33,24 @@ export class DevController {
 
   @Post('customers')
   async addCustomer(@Body() body: unknown) {
-    const input = z.object({ phone: z.string().regex(/^\+[1-9]\d{6,14}$/), balance: z.number().int().nonnegative().default(0) }).parse(body);
-    const ref = await this.fake().addCustomer(input.phone, 'XAF', input.balance);
-    return { customer_ref: ref, customer_token: this.fake().issueCustomerToken(ref) };
+    const input = z
+      .object({
+        phone: z.string().regex(/^\+[1-9]\d{6,14}$/),
+        full_name: z.string().min(3).default('Cliente Demo'),
+        kyc_status: z.enum(['verified', 'pending', 'unverified', 'rejected']).default('verified'),
+        balance: z.number().int().nonnegative().default(0)
+      })
+      .parse(body);
+    const ref = await this.fake().addCustomer(input.phone, 'XAF', input.balance, { fullName: input.full_name, kycStatus: input.kyc_status });
+    return { customer_ref: ref };
+  }
+
+  /** Simulates BataPay staff approving or revoking a customer's verification in the control panel. */
+  @Post('customers/kyc')
+  setKyc(@Body() body: unknown) {
+    const input = z.object({ phone: z.string(), kyc_status: z.enum(['verified', 'pending', 'unverified', 'rejected']) }).parse(body);
+    if (!this.fake().setKycStatus(input.phone, input.kyc_status)) throw Errors.notFound();
+    return { phone: input.phone, kyc_status: input.kyc_status };
   }
 
   @Post('withdrawals')

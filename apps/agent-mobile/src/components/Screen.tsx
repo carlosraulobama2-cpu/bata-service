@@ -25,6 +25,7 @@ export function Screen({ children, scroll, footer, header, padded = true, refres
   const bg = background ?? colors.bg;
   const body = scroll ? (
     <ScrollView
+      style={styles.fill}
       contentContainerStyle={[padded && styles.padded, styles.grow, contentStyle]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
@@ -39,7 +40,7 @@ export function Screen({ children, scroll, footer, header, padded = true, refres
   return (
     <SafeAreaView edges={edges} style={[styles.root, { backgroundColor: bg }]}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <KeyboardAvoidingView style={styles.grow} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {header}
         {body}
         {footer ? <View style={[styles.footer, { backgroundColor: bg }]}>{footer}</View> : null}
@@ -50,6 +51,8 @@ export function Screen({ children, scroll, footer, header, padded = true, refres
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  // The body takes the remaining height and scrolls inside it, so the footer action never leaves the screen.
+  fill: { flex: 1 },
   grow: { flexGrow: 1 },
   padded: { paddingHorizontal: space.xl, paddingBottom: space.xl },
   footer: { paddingHorizontal: space.xl, paddingTop: space.md, paddingBottom: space.lg, gap: space.sm }

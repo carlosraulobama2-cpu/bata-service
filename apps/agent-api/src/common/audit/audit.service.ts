@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Clock } from '../time/clock';
 import type { AgentDb, AgentTrx } from '../db/database';
 
 export interface AuditEntry {
@@ -25,10 +26,14 @@ export interface AuditEntry {
  */
 @Injectable()
 export class AuditService {
+  constructor(private readonly clock: Clock) {}
+
   async record(db: AgentDb | AgentTrx, entry: AuditEntry): Promise<void> {
     await db
       .insertInto('agent.agent_audit_logs')
       .values({
+        // One time source for the whole service (the same clock that rate windows use).
+        occurred_at: this.clock.now(),
         stream: entry.agentId ? `agent:${entry.agentId}` : `${entry.actorType}:${entry.actorId ?? 'anonymous'}`,
         actor_type: entry.actorType,
         actor_id: entry.actorId,

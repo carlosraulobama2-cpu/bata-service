@@ -1,6 +1,6 @@
 import { config } from '../config';
 import { api } from './client';
-import type { Balance, Limits, LoginResponse, Me, StepUp, Transaction, TransactionPage, WithdrawalPreview } from './types';
+import type { Balance, CustomerCheck, Limits, LoginResponse, Me, StepUp, Transaction, TransactionPage, WithdrawalPreview } from './types';
 
 export type Period = 'today' | 'yesterday' | 'last_7_days' | 'this_month';
 
@@ -29,9 +29,10 @@ export const endpoints = {
       body: { withdrawal_request_id: input.withdrawalRequestId, amount: input.amount, currency: config.currency },
       signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
     }),
-  cashIn: (input: { phone: string; amount: number; key: string; stepUp: StepUp; prompt: string }) =>
+  verifyCustomer: (input: { phone: string; fullName: string }) => api<CustomerCheck>('/agent/v1/customers/verify', { body: { phone: input.phone, full_name: input.fullName } }),
+  cashIn: (input: { customerToken: string; amount: number; key: string; stepUp: StepUp; prompt: string }) =>
     api<{ transaction: Transaction }>('/agent/v1/cash-in', {
-      body: { customer: { type: 'phone', value: input.phone }, amount: input.amount, currency: config.currency },
+      body: { customer: { type: 'token', value: input.customerToken }, amount: input.amount, currency: config.currency },
       signed: { idempotencyKey: input.key, stepUp: input.stepUp, biometricPrompt: input.prompt }
     }),
   cancel: (id: string) => api<{ transaction: Transaction }>(`/agent/v1/transactions/${id}/cancel`, { method: 'POST' }),
