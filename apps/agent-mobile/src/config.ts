@@ -3,8 +3,9 @@ const env = (value: string | undefined) => (value && value.trim() ? value.trim()
 
 export const config = {
   appName: 'VELYNT SERVICES',
-  /** The Velynt agents API (velynt/api-agente). Android emulator -> host machine: http://10.0.2.2:8001 */
-  apiBaseUrl: (process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8001').replace(/\/$/, ''),
+  /** The Velynt agents API (velynt/server/src/agent). Android emulator -> host machine: http://10.0.2.2:8001 */
+  // Release builds must not default to localhost (it would be the phone itself): fall back to production.
+  apiBaseUrl: (process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (__DEV__ ? 'http://localhost:8001' : 'https://velynt.onrender.com')).replace(/\/$/, ''),
   appVersion: '1.0.0',
   currency: 'XAF' as const,
   timeZone: 'Africa/Malabo',

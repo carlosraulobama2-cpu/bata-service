@@ -1,7 +1,7 @@
 {
   "name": "velynt-services",
   "private": true,
-  "description": "VELYNT SERVICES — app para agentes autorizados de Velynt (el backend es velynt/api-agente)",
+  "description": "VELYNT SERVICES — app para agentes autorizados de Velynt (el backend es velynt/server/src/agent)",
   "packageManager": "pnpm@10.0.0",
   "engines": {
     "node": ">=22"

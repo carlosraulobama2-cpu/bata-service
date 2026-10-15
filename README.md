@@ -2,12 +2,12 @@
 
 App para **agentes autorizados de Velynt**: depósitos y retiros de efectivo, comisiones, avisos y PIN de pagos.
 
-**Un solo backend: el de Velynt.** La app ([`apps/agent-mobile`](apps/agent-mobile)) habla con el API de agentes de Velynt ([`velynt/api-agente`](https://github.com/carlosraulobama2-cpu/velynt/tree/main/api-agente)), que comparte la base de datos y el libro contable con la app de clientes Velynt. Este repositorio ya no tiene backend ni base de datos propios.
+**Un solo backend: el de Velynt.** La app ([`apps/agent-mobile`](apps/agent-mobile)) habla con el API de agentes de Velynt ([`velynt/server/src/agent`](https://github.com/carlosraulobama2-cpu/velynt/tree/main/server/src/agent)), que comparte la base de datos y el libro contable con la app de clientes Velynt. Este repositorio ya no tiene backend ni base de datos propios.
 
 ```
 App Velynt (clientes) ──────────► API principal (velynt/backend, :8000) ──┐
 Panel de control ───────────────► API principal (velynt/backend, :8000) ──┼──► PostgreSQL (un libro contable) + Redis
-App de agentes (este repo) ─────► API de agentes (velynt/api-agente, :8001) ┘
+App de agentes (este repo) ─────► API de agentes (velynt/server/src/agent, :8001) ┘
 ```
 
 Cómo pasa la información entre las dos apps (todo por el servidor de Velynt, nunca de app a app):
