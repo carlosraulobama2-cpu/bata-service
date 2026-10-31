@@ -26,7 +26,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.USE_FINGERPRINT"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
@@ -85,6 +86,13 @@
     "scheme": "velyntservices",
     "experiments": {
       "typedRoutes": false
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bfcf1baa-f26c-4ab8-9fec-c14337610dc1"
+      }
+    },
+    "owner": "carlosbaxx"
   }
 }
