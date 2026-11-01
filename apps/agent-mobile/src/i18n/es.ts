@@ -38,7 +38,36 @@ export const es = {
     oneSessionHint: 'Solo puedes tener la app de agentes abierta en un teléfono: al entrar aquí se cierra en cualquier otro.',
     troubleSigningIn: '¿Problemas para entrar?',
     signOut: 'Cerrar sesión',
-    signOutConfirm: '¿Seguro que quieres cerrar la sesión en este dispositivo?'
+    signOutConfirm: '¿Seguro que quieres cerrar la sesión en este dispositivo?',
+    noAccount: '¿No tienes cuenta Velynt?',
+    createAccount: 'Crear cuenta'
+  },
+  register: {
+    title: 'Crea tu cuenta',
+    body: 'Es tu cuenta Velynt: con ella entras aquí y en la app de clientes. Después verificas tu identidad y pides ser agente.',
+    nameLabel: 'Nombre y apellidos',
+    phoneLabel: 'Teléfono',
+    emailLabel: 'Correo electrónico',
+    passwordLabel: 'Contraseña',
+    passwordHint: 'Al menos 8 caracteres. Con ella entrarás en la app de agentes.',
+    terms: 'Acepto los Términos y la Política de privacidad de Velynt.',
+    readTerms: 'Leer los términos',
+    submit: 'Crear mi cuenta',
+    haveAccount: '¿Ya tienes cuenta? Entrar'
+  },
+  openCustomer: {
+    title: 'Abrir cuenta a un cliente',
+    intro: 'Para un cliente que todavía no tiene Velynt. Rellénalo con él: el cliente escribe sus 4 números y acepta las condiciones.',
+    nameLabel: 'Nombre del cliente',
+    phoneLabel: 'Teléfono del cliente',
+    pinLabel: 'Sus 4 números (los elige el cliente)',
+    pinHint: 'Serán su contraseña y su PIN para pagar. Que no los vea nadie más.',
+    terms: 'El cliente acepta los Términos y la Política de privacidad de Velynt.',
+    submit: 'Abrir la cuenta',
+    doneTitle: 'Cuenta abierta',
+    doneBody: '{{name}} ya tiene cuenta Velynt ({{id}}). Que descargue la app Velynt y entre con su teléfono y sus 4 números; allí confirmará su teléfono por SMS y verificará su identidad.',
+    another: 'Abrir otra cuenta',
+    action: 'Abrir cuenta'
   },
   dashboard: {
     hello: 'Hola, {{name}}',
@@ -167,7 +196,8 @@ export const es = {
     empty: 'Todavía no has atendido a ningún cliente.',
     nearby: 'Agentes cerca de ti',
     nearbyHint: 'Si no tienes efectivo o saldo, envía al cliente a otro agente de tu ciudad.',
-    noNearby: 'No hay otros agentes activos en tu ciudad.'
+    noNearby: 'No hay otros agentes activos en tu ciudad.',
+    openAccount: 'Abrir cuenta a un cliente'
   },
   stats: {
     title: 'Estadísticas',
@@ -475,6 +505,12 @@ export const es = {
     resets: 'El límite diario se reinicia cada día a la 01:00 (hora de Malabo).'
   },
   errors: {
+    // Creating accounts (sign-up, or an account opened for a customer)
+    phone_taken: 'Ese teléfono ya tiene una cuenta Velynt.',
+    email_taken: 'Ese correo ya está registrado. Entra con él o usa otro.',
+    terms_required: 'Hay que aceptar los Términos y la Política de privacidad.',
+    weak_password: 'Elige una contraseña de al menos 8 caracteres.',
+    open_limit: 'Has abierto el máximo de cuentas de hoy. Vuelve a intentarlo mañana.',
     // Float, transfers, photo
     float_request_pending: 'Ya tienes una solicitud de saldo pendiente. Cancélala o espera a Velynt.',
     over_max_float: 'Esa cantidad supera el saldo máximo de tu nivel.',

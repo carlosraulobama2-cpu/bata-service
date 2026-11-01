@@ -54,6 +54,15 @@ export async function signIn(email: string, password: string): Promise<void> {
   useSession.getState().setSignedIn(res.token);
 }
 
+/** Creates the Velynt account from the agents app and signs in with it (same steps as signIn). */
+export async function signUp(input: { name: string; email: string; phoneNumber: string; password: string }): Promise<void> {
+  const res = await endpoints.register({ name: input.name.trim(), email: input.email.trim().toLowerCase(), phone_number: input.phoneNumber, password: input.password, accept_terms: true });
+  await secureStorage.set(KEYS.email, res.user.email);
+  await secureStorage.set(KEYS.refreshToken, res.refresh_token);
+  useSession.getState().setBiometricEnabled(await hasBiometricPin());
+  useSession.getState().setSignedIn(res.token);
+}
+
 export async function signOut(): Promise<void> {
   await forgetPushToken().catch(() => undefined);
   await endpoints.logout().catch(() => undefined); // offline or already closed: sign out locally anyway

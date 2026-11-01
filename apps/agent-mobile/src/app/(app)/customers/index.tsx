@@ -30,6 +30,7 @@ export default function CustomersScreen() {
   return (
     <Screen header={<Header leading="close" onLeading={close} title={t('customers.title')} />} scroll>
       <View style={styles.content}>
+        <Button label={t('customers.openAccount')} onPress={() => router.push('/customers/open')} testID="customers-open-account" />
         <Text variant="body" color="textMuted">
           {t('customers.intro')}
         </Text>

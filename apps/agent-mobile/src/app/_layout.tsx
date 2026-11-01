@@ -2,6 +2,7 @@ import '../i18n';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
+import { Platform, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ApiError } from '../api/client';
 import { bootSession } from '../api/auth';
@@ -21,9 +22,19 @@ const queryClient = new QueryClient({
   }
 });
 
+/** On a computer the web is a phone-wide column in the middle, like the Velynt customer web; on a phone, the whole screen. */
+const DESKTOP_COLUMN = 480;
+
 function RootStack() {
   const { colors } = useTheme();
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }} />;
+  const { width } = useWindowDimensions();
+  const stack = <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }} />;
+  if (Platform.OS !== 'web' || width <= DESKTOP_COLUMN + 120) return stack;
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.border }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: DESKTOP_COLUMN, alignSelf: 'center', backgroundColor: colors.bg, overflow: 'hidden' }}>{stack}</View>
+    </View>
+  );
 }
 
 export default function RootLayout() {

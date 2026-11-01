@@ -115,6 +115,8 @@ export default function LoginScreen() {
       </Text>
 
       <View style={styles.links}>
+        <Text variant="body" color="textMuted">{t('auth.noAccount')}</Text>
+        <Button variant="secondary" label={t('auth.createAccount')} onPress={() => router.push('/register')} testID="login-create-account" />
         <Button variant="ghost" label={t('auth.troubleSigningIn')} onPress={() => router.push('/help')} />
       </View>
     </Screen>
@@ -126,5 +128,5 @@ const styles = StyleSheet.create({
   logo: { width: 56, height: 56, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', marginBottom: space.sm },
   field: { gap: space.sm, marginBottom: space.lg },
   input: { height: 56, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 17 },
-  links: { marginTop: space.xl, alignItems: 'center' }
+  links: { marginTop: space.xl, alignItems: 'center', gap: space.sm }
 });

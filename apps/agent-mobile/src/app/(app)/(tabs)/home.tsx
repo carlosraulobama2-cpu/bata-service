@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ArrowDownToLine, ArrowUpFromLine, BarChart3, Bell, HandCoins, Info, ListOrdered, Repeat, Users, Wallet, type LucideIcon } from 'lucide-react-native';
+import { ArrowDownToLine, ArrowUpFromLine, BarChart3, Bell, HandCoins, Info, ListOrdered, Repeat, UserPlus, Users, Wallet, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +52,7 @@ export default function Dashboard() {
     { label: t('dashboard.actionMovements'), Icon: ListOrdered, onPress: () => router.push('/movements'), disabled: !active },
     { label: t('dashboard.actionRequestFloat'), Icon: HandCoins, onPress: () => router.push('/float-request'), disabled: !active || offline },
     { label: t('dashboard.actionCustomers'), Icon: Users, onPress: () => router.push('/customers'), disabled: !active },
+    { label: t('openCustomer.action'), Icon: UserPlus, onPress: () => router.push('/customers/open'), disabled: !active || offline },
     { label: t('dashboard.actionStats'), Icon: BarChart3, onPress: () => router.push('/stats'), disabled: !active },
     { label: t('dashboard.actionCash'), Icon: Wallet, onPress: () => router.push('/cash'), disabled: !active }
   ];

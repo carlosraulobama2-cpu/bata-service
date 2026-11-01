@@ -192,6 +192,12 @@ async function operationsPage(params: { since?: string | null; until?: string | 
 
 export const endpoints = {
   login: (body: { email: string; password: string }) => api<LoginOut>('/agent/v1/auth/login', { body, auth: false }),
+  /** A new Velynt account from the agents app (then: identity check and the agent application). */
+  register: (body: { name: string; email: string; phone_number: string; password: string; accept_terms: boolean }) =>
+    api<LoginOut>('/agent/v1/auth/register', { body, auth: false }),
+  /** An account opened for a customer at the counter; the customer chose the 4 numbers. */
+  openCustomer: (body: { name: string; phone_number: string; pin: string; accept_terms: boolean }) =>
+    api<{ customer: { id: string; name: string; phone_number: string; customer_id: string } }>('/agent/v1/customers/open', { body }),
   logout: () => api<{ ok: boolean }>('/agent/v1/auth/logout', { method: 'POST' }),
 
   me: async (): Promise<Me> => {
