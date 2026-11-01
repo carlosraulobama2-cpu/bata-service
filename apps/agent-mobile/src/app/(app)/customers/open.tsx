@@ -141,6 +141,10 @@ export default function OpenCustomerScreen() {
           {t('openCustomer.terms')}
         </Text>
       </Pressable>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Button variant="ghost" label={t('legal.terms')} onPress={() => router.push('/legal/terms')} />
+        <Button variant="ghost" label={t('legal.privacy')} onPress={() => router.push('/legal/privacy')} />
+      </View>
       {error ? <Banner tone="danger">{error}</Banner> : null}
     </Screen>
   );

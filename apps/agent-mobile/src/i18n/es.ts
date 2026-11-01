@@ -42,6 +42,11 @@ export const es = {
     noAccount: '¿No tienes cuenta Velynt?',
     createAccount: 'Crear cuenta'
   },
+  legal: {
+    terms: 'Términos y condiciones',
+    privacy: 'Política de privacidad',
+    version: 'Versión {{version}} · {{updated}}'
+  },
   register: {
     title: 'Crea tu cuenta',
     body: 'Es tu cuenta Velynt: con ella entras aquí y en la app de clientes. Después verificas tu identidad y pides ser agente.',
@@ -51,7 +56,6 @@ export const es = {
     passwordLabel: 'Contraseña',
     passwordHint: 'Al menos 8 caracteres. Con ella entrarás en la app de agentes.',
     terms: 'Acepto los Términos y la Política de privacidad de Velynt.',
-    readTerms: 'Leer los términos',
     submit: 'Crear mi cuenta',
     haveAccount: '¿Ya tienes cuenta? Entrar'
   },

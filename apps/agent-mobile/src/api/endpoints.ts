@@ -192,6 +192,9 @@ async function operationsPage(params: { since?: string | null; until?: string | 
 
 export const endpoints = {
   login: (body: { email: string; password: string }) => api<LoginOut>('/agent/v1/auth/login', { body, auth: false }),
+  /** The terms or the privacy policy (no session needed). */
+  legal: (kind: 'terms' | 'privacy') =>
+    api<{ kind: string; title: string; version: string; updated: string; intro?: string; sections: { heading: string; paragraphs: string[] }[] }>(`/agent/v1/legal/${kind}`, { auth: false }),
   /** A new Velynt account from the agents app (then: identity check and the agent application). */
   register: (body: { name: string; email: string; phone_number: string; password: string; accept_terms: boolean }) =>
     api<LoginOut>('/agent/v1/auth/register', { body, auth: false }),

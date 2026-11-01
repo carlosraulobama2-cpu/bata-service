@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { signUp } from '../../api/auth';
 import { Banner } from '../../components/Banner';
@@ -14,7 +14,6 @@ import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TERMS_URL = 'https://velyntpay.vercel.app/legal/terms';
 type Field = 'name' | 'phone' | 'email' | 'password';
 
 /**
@@ -133,7 +132,11 @@ export default function RegisterScreen() {
           {t('register.terms')}
         </Text>
       </Pressable>
-      <Button variant="ghost" label={t('register.readTerms')} onPress={() => void Linking.openURL(TERMS_URL)} />
+      {/* Read inside the app: never the customer web (it could open another account signed in on this browser). */}
+      <View style={styles.legalLinks}>
+        <Button variant="ghost" label={t('legal.terms')} onPress={() => router.push('/legal/terms')} testID="register-read-terms" />
+        <Button variant="ghost" label={t('legal.privacy')} onPress={() => router.push('/legal/privacy')} testID="register-read-privacy" />
+      </View>
 
       {error ? <Banner tone="danger">{error}</Banner> : null}
       <Button variant="ghost" label={t('register.haveAccount')} onPress={close} />
@@ -148,4 +151,5 @@ const styles = StyleSheet.create({
   input: { height: 56, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 17 },
   check: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.sm },
   box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  legalLinks: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },
 });
