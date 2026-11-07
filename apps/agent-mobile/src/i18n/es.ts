@@ -571,6 +571,11 @@ export const es = {
     customer_insufficient_balance: 'El cliente no tiene saldo suficiente.',
     customer_on_hold: 'La cuenta del cliente está en revisión. No se puede operar ahora.',
     customer_limit: 'La operación supera los límites de la cuenta del cliente.',
+    customer_kyc_required: 'El cliente aún no ha verificado su identidad. Que la complete en la app de Velynt y vuelve a intentarlo.',
+    cashout_paid_elsewhere: 'Otro agente ya pagó esta retirada. No entregues el efectivo.',
+    day_already_closed: 'Ya cerraste la caja de hoy.',
+    customer_over_max_balance: 'Con este depósito el cliente pasaría de su saldo máximo. Prueba con un importe menor.',
+    customer_new_account_cash_limit: 'El cliente está en su primera semana y ya llegó a su límite diario de efectivo. Puede retirar más mañana.',
     // PIN and access
     wrong_pin: 'PIN incorrecto.',
     pin_locked: 'Demasiados PIN incorrectos. Los pagos están bloqueados un rato.',
