@@ -44,7 +44,7 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
     <View style={styles.center}>
       <CloudOff size={36} color={colors.textMuted} />
       <Text variant="body" color="textMuted" align="center">
-        {t(`errors.${code}`, { defaultValue: t('errors.INTERNAL_ERROR') })}
+        {t(`errors.${code}`, { defaultValue: t('errors.server_error') })}
       </Text>
       {onRetry ? <Button label={t('common.retry')} variant="secondary" onPress={onRetry} /> : null}
     </View>
