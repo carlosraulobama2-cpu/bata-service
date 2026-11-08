@@ -28,5 +28,5 @@ export function MoneyInput({ value, onChange, testID, autoFocus }: { value: numb
 
 const styles = StyleSheet.create({
   box: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, height: 60 },
-  input: { flex: 1, minWidth: 0, fontSize: 24, fontWeight: '600', height: '100%' }
+  input: { fontFamily: 'Outfit_400Regular', flex: 1, minWidth: 0, fontSize: 24, fontWeight: '600', height: '100%' }
 });

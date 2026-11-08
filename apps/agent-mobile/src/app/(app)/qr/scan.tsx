@@ -65,5 +65,5 @@ export default function QrScanScreen() {
 
 const styles = StyleSheet.create({
   content: { gap: space.lg, paddingTop: space.sm },
-  input: { minHeight: 56, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 15 }
+  input: { fontFamily: 'Outfit_400Regular', minHeight: 56, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 15 }
 });

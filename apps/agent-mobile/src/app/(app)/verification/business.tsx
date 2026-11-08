@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   content: { gap: space.lg, paddingTop: space.sm, paddingBottom: space.xl },
   field: { gap: space.sm },
   input: { minHeight: 52, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 17 },
-  multiline: { minHeight: 88, paddingTop: space.md, textAlignVertical: 'top' },
+  multiline: { fontFamily: 'Outfit_400Regular', minHeight: 88, paddingTop: space.md, textAlignVertical: 'top' },
   tick: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs },
   box: { width: 26, height: 26, borderRadius: radius.sm, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   rule: { marginTop: space.sm }

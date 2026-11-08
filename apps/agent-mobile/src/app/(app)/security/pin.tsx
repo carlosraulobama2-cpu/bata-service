@@ -163,7 +163,7 @@ export default function ChangePinScreen() {
 
 const styles = StyleSheet.create({
   form: { gap: space.md, paddingTop: space.lg },
-  input: { height: 56, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 17 },
+  input: { fontFamily: 'Outfit_400Regular', height: 56, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 17 },
   top: { flex: 1, justifyContent: 'center', gap: space.md },
   status: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.lg }
 });

@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   content: { gap: space.lg, paddingTop: space.sm },
   phone: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: radius.md, height: 60, overflow: 'hidden' },
   prefix: { paddingHorizontal: space.lg, borderRightWidth: 1, height: '100%', justifyContent: 'center' },
-  phoneInput: { flex: 1, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1, height: '100%' },
+  phoneInput: { fontFamily: 'Outfit_400Regular', flex: 1, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1, height: '100%' },
   input: { height: 72, borderWidth: 1.5, borderRadius: radius.md, textAlign: 'center', fontSize: 30, letterSpacing: 4, fontWeight: '600' },
   amountBlock: { paddingVertical: space.xxl, gap: space.xs },
   expiry: { marginTop: space.lg },

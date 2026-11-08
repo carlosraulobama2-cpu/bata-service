@@ -336,8 +336,8 @@ const styles = StyleSheet.create({
   content: { gap: space.md, paddingTop: space.sm },
   phone: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: radius.md, height: 60, overflow: 'hidden' },
   prefix: { paddingHorizontal: space.lg, borderRightWidth: 1, height: '100%', justifyContent: 'center' },
-  phoneInput: { flex: 1, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1, height: '100%' },
-  textInput: { height: 60, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1 },
+  phoneInput: { fontFamily: 'Outfit_400Regular', flex: 1, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1, height: '100%' },
+  textInput: { fontFamily: 'Outfit_400Regular', height: 60, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 20, letterSpacing: 1 },
   amountBlock: { paddingVertical: space.xxl, gap: space.xs },
   sheetSummary: { alignItems: 'center', gap: space.xs }
 });

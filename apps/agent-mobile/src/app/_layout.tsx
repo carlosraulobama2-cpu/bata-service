@@ -1,6 +1,9 @@
 import '../i18n';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
+import { SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold } from '@expo-google-fonts/outfit';
 import { useEffect } from 'react';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -22,8 +25,8 @@ const queryClient = new QueryClient({
   }
 });
 
-/** On a computer the web is a phone-wide column in the middle, like the Velynt customer web; on a phone, the whole screen. */
-const DESKTOP_COLUMN = 480;
+/** On a computer the web is a phone-wide column in the middle on Velynt's cream, with a soft shadow; on a phone, the whole screen. */
+const DESKTOP_COLUMN = 520;
 
 function RootStack() {
   const { colors } = useTheme();
@@ -31,14 +34,24 @@ function RootStack() {
   const stack = <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg }, animation: 'slide_from_right' }} />;
   if (Platform.OS !== 'web' || width <= DESKTOP_COLUMN + 120) return stack;
   return (
-    <View style={{ flex: 1, backgroundColor: colors.border }}>
-      <View style={{ flex: 1, width: '100%', maxWidth: DESKTOP_COLUMN, alignSelf: 'center', backgroundColor: colors.bg, overflow: 'hidden' }}>{stack}</View>
+    <View style={{ flex: 1, backgroundColor: colors.surfaceAlt, paddingVertical: 16 }}>
+      <View
+        style={{
+          flex: 1, width: '100%', maxWidth: DESKTOP_COLUMN, alignSelf: 'center', backgroundColor: colors.bg, overflow: 'hidden', borderRadius: 28,
+          shadowColor: '#4A2040', shadowOpacity: 0.12, shadowRadius: 32, shadowOffset: { width: 0, height: 12 }
+        }}
+      >
+        {stack}
+      </View>
     </View>
   );
 }
 
 export default function RootLayout() {
   const status = useSession((s) => s.status);
+  // Velynt's fonts (the customer app's): Space Grotesk for titles and amounts, Outfit for text.
+  const [fontsLoaded, fontError] = useFonts({ SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold });
+  const fontsReady = fontsLoaded || !!fontError;
 
   useEffect(() => {
     protectAppSwitcher();
@@ -46,11 +59,11 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (status !== 'booting') void SplashScreen.hideAsync();
+    if (status !== 'booting' && fontsReady) void SplashScreen.hideAsync();
     if (status === 'signedOut') queryClient.clear(); // nothing from the previous session stays in memory
-  }, [status]);
+  }, [status, fontsReady]);
 
-  if (status === 'booting') return null;
+  if (status === 'booting' || !fontsReady) return null;
 
   return (
     <SafeAreaProvider>

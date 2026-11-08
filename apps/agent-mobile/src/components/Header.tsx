@@ -28,13 +28,13 @@ export function Header({ title, leading = 'back', onLeading, trailing }: Props) 
             accessibilityLabel={leading === 'close' ? t('common.close') : t('common.back')}
             hitSlop={8}
             onPress={onLeading ?? (() => (router.canGoBack() ? router.back() : router.replace('/')))}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: pressed ? colors.neutralSoft : 'transparent' }]}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: colors.surfaceAlt, opacity: pressed ? 0.7 : 1 }]}
           >
-            <Icon size={26} color={colors.text} />
+            <Icon size={20} color={colors.primary} strokeWidth={1.8} />
           </Pressable>
         )}
       </View>
-      <Text variant="headline" numberOfLines={1} style={styles.title} accessibilityRole="header">
+      <Text variant="overline" color="textMuted" numberOfLines={1} style={styles.title} accessibilityRole="header">
         {title}
       </Text>
       <View style={[styles.side, styles.trailing]}>{trailing}</View>
@@ -46,6 +46,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.sm, minHeight: 56 },
   side: { width: touch.min + space.sm },
   trailing: { alignItems: 'flex-end', paddingRight: space.sm },
-  title: { flex: 1, textAlign: 'center' },
-  iconBtn: { width: touch.min, height: touch.min, borderRadius: touch.min / 2, alignItems: 'center', justifyContent: 'center' }
+  title: { flex: 1, textAlign: 'center', fontSize: 12, letterSpacing: 2 },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginLeft: space.xs }
 });

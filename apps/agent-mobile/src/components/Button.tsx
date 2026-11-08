@@ -22,8 +22,8 @@ interface Props {
 export function Button({ label, onPress, variant = 'primary', icon, loading, disabled, style, accessibilityHint, testID }: Props) {
   const { colors } = useTheme();
   const inactive = disabled || loading;
-  const bg = { primary: colors.primary, secondary: colors.primarySoft, ghost: 'transparent', danger: colors.dangerSoft }[variant];
-  const fg = { primary: colors.onPrimary, secondary: colors.primary, ghost: colors.primary, danger: colors.danger }[variant];
+  const bg = { primary: colors.primary, secondary: 'transparent', ghost: 'transparent', danger: colors.dangerSoft }[variant];
+  const fg = { primary: colors.onPrimary, secondary: colors.text, ghost: colors.primary, danger: colors.danger }[variant];
 
   return (
     <Pressable
@@ -39,6 +39,7 @@ export function Button({ label, onPress, variant = 'primary', icon, loading, dis
       }}
       style={({ pressed }) => [
         styles.base,
+        variant === 'secondary' && { borderWidth: 1, borderColor: colors.border },
         { backgroundColor: variant === 'primary' && pressed ? colors.primaryPressed : bg, opacity: inactive ? 0.5 : pressed && variant !== 'primary' ? 0.75 : 1 },
         style
       ]}
@@ -58,6 +59,6 @@ export function Button({ label, onPress, variant = 'primary', icon, loading, dis
 }
 
 const styles = StyleSheet.create({
-  base: { minHeight: touch.button, borderRadius: radius.lg, paddingHorizontal: space.xl, alignItems: 'center', justifyContent: 'center' },
+  base: { minHeight: touch.button, borderRadius: radius.pill, paddingHorizontal: space.xl, alignItems: 'center', justifyContent: 'center' },
   content: { flexDirection: 'row', alignItems: 'center', gap: space.sm }
 });

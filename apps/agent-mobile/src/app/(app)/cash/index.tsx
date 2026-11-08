@@ -91,5 +91,5 @@ export default function CashScreen() {
 
 const styles = StyleSheet.create({
   content: { gap: space.md, paddingTop: space.sm, paddingBottom: space.xl },
-  input: { minHeight: 52, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 17 }
+  input: { fontFamily: 'Outfit_400Regular', minHeight: 52, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 17 }
 });

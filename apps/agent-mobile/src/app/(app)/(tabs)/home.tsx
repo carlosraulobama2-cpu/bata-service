@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { ArrowDownToLine, ArrowUpFromLine, BarChart3, Bell, HandCoins, Info, ListOrdered, Repeat, UserPlus, Users, Wallet, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../../api/client';
 import { ActionTile } from '../../../components/ActionTile';
@@ -18,7 +19,7 @@ import { usePushPermission } from '../../../features/push';
 import { useOnboarding, verificationState } from '../../../features/verification';
 import { useMe, useToday, useUnreadCount } from '../../../features/queries';
 import { useTheme } from '../../../theme/ThemeProvider';
-import { radius, space } from '../../../theme/tokens';
+import { radius, space, tintBg, tints } from '../../../theme/tokens';
 import { formatTime, money } from '../../../utils/format';
 
 /** Same threshold as the server's default low-float notice (agent_low_float_alert_minor). */
@@ -48,19 +49,19 @@ export default function Dashboard() {
   const cashNow = me.data?.cash ? (me.data.cash.expected ?? me.data.cash.declared) : null;
   const active = agent?.status === 'active';
   const quick = [
-    { label: t('dashboard.actionTransfer'), Icon: Repeat, onPress: () => router.push('/transfer'), disabled: !canOperate || offline },
-    { label: t('dashboard.actionMovements'), Icon: ListOrdered, onPress: () => router.push('/movements'), disabled: !active },
-    { label: t('dashboard.actionRequestFloat'), Icon: HandCoins, onPress: () => router.push('/float-request'), disabled: !active || offline },
-    { label: t('dashboard.actionCustomers'), Icon: Users, onPress: () => router.push('/customers'), disabled: !active },
-    { label: t('openCustomer.action'), Icon: UserPlus, onPress: () => router.push('/customers/open'), disabled: !active || offline },
-    { label: t('dashboard.actionStats'), Icon: BarChart3, onPress: () => router.push('/stats'), disabled: !active },
-    { label: t('dashboard.actionCash'), Icon: Wallet, onPress: () => router.push('/cash'), disabled: !active }
+    { tint: tints.indigo, label: t('dashboard.actionTransfer'), Icon: Repeat, onPress: () => router.push('/transfer'), disabled: !canOperate || offline },
+    { tint: tints.blue, label: t('dashboard.actionMovements'), Icon: ListOrdered, onPress: () => router.push('/movements'), disabled: !active },
+    { tint: tints.amber, label: t('dashboard.actionRequestFloat'), Icon: HandCoins, onPress: () => router.push('/float-request'), disabled: !active || offline },
+    { tint: tints.teal, label: t('dashboard.actionCustomers'), Icon: Users, onPress: () => router.push('/customers'), disabled: !active },
+    { tint: tints.pink, label: t('openCustomer.action'), Icon: UserPlus, onPress: () => router.push('/customers/open'), disabled: !active || offline },
+    { tint: tints.purple, label: t('dashboard.actionStats'), Icon: BarChart3, onPress: () => router.push('/stats'), disabled: !active },
+    { tint: tints.green, label: t('dashboard.actionCash'), Icon: Wallet, onPress: () => router.push('/cash'), disabled: !active }
   ];
 
   return (
     <Screen scroll edges={['top']} refreshing={refreshing} onRefresh={refresh} padded={false}>
       {/* Hero: who I am + what I can operate with */}
-      <View style={[styles.hero, { backgroundColor: colors.hero }]}>
+      <LinearGradient colors={[colors.hero, colors.heroEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
         <View style={styles.heroTop}>
           <View style={styles.flex}>
             <Text variant="overline" style={{ color: colors.heroMuted }} numberOfLines={1}>
@@ -149,7 +150,7 @@ export default function Dashboard() {
             </View>
           </View>
         ) : null}
-      </View>
+      </LinearGradient>
 
       <View style={styles.body}>
         {/* Primary actions: always visible, big, two taps from any operation */}
@@ -160,7 +161,7 @@ export default function Dashboard() {
           </View>
           <View style={styles.quickGrid}>
             {quick.map((q) => (
-              <QuickAction key={q.label} label={q.label} Icon={q.Icon} onPress={q.onPress} disabled={q.disabled} />
+              <QuickAction key={q.label} label={q.label} Icon={q.Icon} onPress={q.onPress} disabled={q.disabled} tint={q.tint} />
             ))}
           </View>
         </View>
@@ -240,7 +241,7 @@ export default function Dashboard() {
 
       <Modal visible={infoOpen} transparent animationType="fade" onRequestClose={() => setInfoOpen(false)}>
         <View style={[styles.modalBackdrop, { backgroundColor: colors.overlay }]}>
-          <Card style={styles.modalCard}>
+          <Card floating style={styles.modalCard}>
             <Text variant="headline">{t('dashboard.balancesInfoTitle')}</Text>
             <Text variant="body">{t('dashboard.balancesInfoFloat')}</Text>
             <Text variant="body">{t('dashboard.balancesInfoCommissions')}</Text>
@@ -324,7 +325,7 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
-function QuickAction({ label, Icon, onPress, disabled }: { label: string; Icon: LucideIcon; onPress: () => void; disabled?: boolean }) {
+function QuickAction({ label, Icon, onPress, disabled, tint }: { label: string; Icon: LucideIcon; onPress: () => void; disabled?: boolean; tint: string }) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -333,10 +334,10 @@ function QuickAction({ label, Icon, onPress, disabled }: { label: string; Icon: 
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.quick, { backgroundColor: colors.surface, borderColor: colors.border, opacity: disabled ? 0.45 : pressed ? 0.8 : 1 }]}
+      style={({ pressed }) => [styles.quick, { backgroundColor: colors.surfaceAlt, opacity: disabled ? 0.45 : pressed ? 0.8 : 1 }]}
     >
-      <View style={[styles.quickIcon, { backgroundColor: colors.primarySoft }]}>
-        <Icon size={22} color={colors.primary} strokeWidth={2.2} />
+      <View style={[styles.quickIcon, { backgroundColor: tintBg(tint) }]}>
+        <Icon size={21} color={tint} strokeWidth={1.8} />
       </View>
       <Text variant="label" align="center" numberOfLines={2}>
         {label}
@@ -348,17 +349,20 @@ function QuickAction({ label, Icon, onPress, disabled }: { label: string; Icon: 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   heroStats: { flexDirection: 'row', gap: space.sm, marginTop: space.md },
-  heroStat: { flex: 1, gap: 2, padding: space.sm, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.10)' },
+  heroStat: { flex: 1, gap: 2, padding: space.sm, borderRadius: radius.md, backgroundColor: 'rgba(255,255,255,0.12)' },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  quick: { width: '31.5%', minHeight: 92, borderWidth: 1, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', gap: space.xs, padding: space.sm },
-  quickIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  hero: { paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.xxxl + space.lg, gap: space.xs, borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl },
+  quick: { width: '31.5%', minHeight: 96, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', gap: space.sm, padding: space.sm },
+  quickIcon: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  hero: {
+    marginHorizontal: space.lg, marginTop: space.md, paddingHorizontal: space.xl, paddingTop: space.lg, paddingBottom: space.xl, gap: space.xs, borderRadius: radius.card,
+    shadowColor: '#4A2040', shadowOpacity: 0.28, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 8
+  },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginBottom: space.xl },
   bell: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: space.sm },
   badge: { position: 'absolute', top: 4, right: 2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
   badgeText: { color: '#FFFFFF', fontSize: 10, lineHeight: 12, fontWeight: '700' },
   balanceLabel: { flexDirection: 'row', alignItems: 'center', gap: space.xs, alignSelf: 'flex-start', minHeight: 32 },
-  body: { paddingHorizontal: space.lg, marginTop: -space.xxxl, gap: space.lg, paddingBottom: space.xxl },
+  body: { paddingHorizontal: space.lg, marginTop: space.xl, gap: space.lg, paddingBottom: space.xxl },
   actions: { gap: space.sm },
   actionRow: { flexDirection: 'row', gap: space.sm },
   cardTitle: { marginBottom: space.md },

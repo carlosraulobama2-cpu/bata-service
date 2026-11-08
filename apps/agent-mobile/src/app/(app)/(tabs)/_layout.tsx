@@ -48,8 +48,8 @@ function TabBar({ state, navigation }: { state: { index: number; routes: { name:
             onPress={() => navigation.navigate(item.name)}
             style={styles.item}
           >
-            <item.Icon size={24} color={color} strokeWidth={focused ? 2.4 : 2} />
-            <Text variant="caption" style={{ color, fontWeight: focused ? '600' : '400', fontSize: 11 }}>
+            <item.Icon size={23} color={color} strokeWidth={focused ? 2 : 1.6} />
+            <Text variant="caption" style={{ color, fontWeight: focused ? '500' : '400', fontSize: 11 }}>
               {item.label}
             </Text>
           </Pressable>
@@ -74,5 +74,5 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: space.sm },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 48 },
-  qr: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginTop: -28, borderWidth: 4, shadowColor: '#0B5FFF', shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 }
+  qr: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginTop: -28, borderWidth: 4, shadowColor: '#4A2040', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 }
 });

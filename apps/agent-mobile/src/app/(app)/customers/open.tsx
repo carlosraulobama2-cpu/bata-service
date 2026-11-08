@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   field: { gap: space.sm, marginBottom: space.lg },
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   input: { height: 56, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: space.lg, fontSize: 17 },
-  pin: { letterSpacing: 12, fontSize: 22, width: 160 },
+  pin: { fontFamily: 'Outfit_400Regular', letterSpacing: 12, fontSize: 22, width: 160 },
   check: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.sm, marginBottom: space.lg },
   box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });
