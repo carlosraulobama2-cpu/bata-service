@@ -25,6 +25,7 @@ export function Screen({ children, scroll, footer, header, padded = true, refres
   const bg = background ?? colors.bg;
   const body = scroll ? (
     <ScrollView
+      style={styles.fill}
       contentContainerStyle={[padded && styles.padded, styles.grow, contentStyle]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
@@ -39,7 +40,8 @@ export function Screen({ children, scroll, footer, header, padded = true, refres
   return (
     <SafeAreaView edges={edges} style={[styles.root, { backgroundColor: bg }]}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <KeyboardAvoidingView style={styles.grow} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Bounded to the screen (flex: 1, not flexGrow): on the web it grew with its content, so the list did not scroll and the footer's button ended below the window. */}
+      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {header}
         {body}
         {footer ? <View style={[styles.footer, { backgroundColor: bg }]}>{footer}</View> : null}
@@ -51,6 +53,7 @@ export function Screen({ children, scroll, footer, header, padded = true, refres
 const styles = StyleSheet.create({
   root: { flex: 1 },
   grow: { flexGrow: 1 },
+  fill: { flex: 1, minHeight: 0 },
   padded: { paddingHorizontal: space.xl, paddingBottom: space.xl },
   footer: { paddingHorizontal: space.xl, paddingTop: space.md, paddingBottom: space.lg, gap: space.sm }
 });
