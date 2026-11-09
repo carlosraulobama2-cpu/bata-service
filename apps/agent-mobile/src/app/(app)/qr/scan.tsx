@@ -38,9 +38,12 @@ export default function QrScanScreen() {
         <Text variant="body" color="textMuted">
           {t('qr.scanHint')}
         </Text>
+        <Scanner paused={false} onCode={handle} />
         {Platform.OS === 'web' ? (
           <>
-            <Banner tone="info">{t('qr.webNoCamera')}</Banner>
+            <Text variant="caption" color="textMuted">
+              {t('qr.webNoCamera')}
+            </Text>
             <TextInput
               value={pasted}
               onChangeText={setPasted}
@@ -52,11 +55,9 @@ export default function QrScanScreen() {
               accessibilityLabel={t('qr.scan')}
               testID="qr-scan-paste"
             />
-            <Button label={t('common.continue')} onPress={() => handle(pasted)} disabled={!pasted.trim()} />
+            <Button variant="secondary" label={t('common.continue')} onPress={() => handle(pasted)} disabled={!pasted.trim()} />
           </>
-        ) : (
-          <Scanner paused={false} onCode={handle} />
-        )}
+        ) : null}
         {error ? <Banner tone="danger">{error}</Banner> : null}
       </View>
     </Screen>

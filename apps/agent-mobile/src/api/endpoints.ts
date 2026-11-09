@@ -1,5 +1,23 @@
 import { periodRange, type Period } from '../utils/period';
+import { Platform } from 'react-native';
 import { api } from './client';
+
+type Photo = { uri: string; mimeType?: string | null; fileName?: string | null; file?: File };
+
+/**
+ * Adds a picked photo to a form. React Native's FormData takes { uri, name, type }; a browser needs a real
+ * Blob (the picker gives a blob: or data: uri, or the File itself), or the photo is sent as "[object Object]".
+ */
+async function appendPhoto(form: FormData, photo: Photo, fallbackName: string): Promise<void> {
+  const name = photo.fileName || fallbackName;
+  const type = photo.mimeType || 'image/jpeg';
+  if (Platform.OS === 'web') {
+    const blob = photo.file ?? (await (await fetch(photo.uri)).blob());
+    form.append('file', blob, name);
+    return;
+  }
+  form.append('file', { uri: photo.uri, name, type } as unknown as Blob);
+}
 import type {
   CashPosition,
   FloatMovement,
@@ -219,9 +237,9 @@ export const endpoints = {
     api<{ request: FloatRequestOut }>('/agent/v1/float-requests', { body: { amount_minor: body.amount, reason: body.reason, payment_reference: body.payment_reference } }).then((r) =>
       toFloatRequest(r.request)
     ),
-  uploadFloatProof: (id: string, photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
+  uploadFloatProof: async (id: string, photo: Photo) => {
     const form = new FormData();
-    form.append('file', { uri: photo.uri, name: photo.fileName || 'justificante.jpg', type: photo.mimeType || 'image/jpeg' } as unknown as Blob);
+    await appendPhoto(form, photo, 'justificante.jpg');
     return api<{ request: FloatRequestOut }>(`/agent/v1/float-requests/${encodeURIComponent(id)}/proof`, { form, timeoutMs: 60000 }).then((r) => toFloatRequest(r.request));
   },
   cancelFloatRequest: (id: string) => api<{ request: FloatRequestOut }>(`/agent/v1/float-requests/${encodeURIComponent(id)}/cancel`, { method: 'POST' }).then((r) => toFloatRequest(r.request)),
@@ -252,23 +270,24 @@ export const endpoints = {
   // ---- Photo and settings ----
   preferences: () => api<{ preferences: Preferences }>('/agent/v1/me/preferences').then((r) => r.preferences),
   savePreferences: (change: Partial<Preferences>) => api<{ preferences: Preferences }>('/agent/v1/me/preferences', { method: 'PUT', body: change }).then((r) => r.preferences),
-  uploadAvatar: (photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
+  uploadAvatar: async (photo: Photo) => {
     const form = new FormData();
-    form.append('file', { uri: photo.uri, name: photo.fileName || 'perfil.jpg', type: photo.mimeType || 'image/jpeg' } as unknown as Blob);
+    await appendPhoto(form, photo, 'perfil.jpg');
     return api<{ has_avatar: boolean; avatar_version: number | null }>('/agent/v1/me/avatar', { method: 'PUT', form, timeoutMs: 60000 });
   },
   removeAvatar: () => api<{ has_avatar: boolean; avatar_version: number | null }>('/agent/v1/me/avatar', { method: 'DELETE' }),
-  /** Ask to become an agent (needs a verified identity in the Velynt app). */
+  /** Ask to become an agent (the identity is checked in the verification that follows). */
   apply: (body: { business_name: string; city: string; address: string }) => api<{ agent: AgentOut }>('/agent/v1/apply', { body }).then((r) => toAgent(r.agent)),
 
   /** Reinforced agent verification: what is missing, the business data and the photos. */
   onboarding: () => api<Onboarding>('/agent/v1/onboarding'),
   saveBusinessProfile: (body: BusinessProfileInput) => api<Onboarding>('/agent/v1/onboarding/profile', { method: 'PUT', body }),
-  uploadDocument: (kind: string, photo: { uri: string; mimeType?: string | null; fileName?: string | null }) => {
+  /** Last step of the application: the agent accepts the rules document (earnings and duties). */
+  acceptRules: (version: string) => api<Onboarding>('/agent/v1/onboarding/rules', { body: { accept_rules_version: version } }),
+  uploadDocument: async (kind: string, photo: Photo) => {
     const form = new FormData();
-    form.append('kind', kind);
-    // React Native's FormData takes a file as { uri, name, type }.
-    form.append('file', { uri: photo.uri, name: photo.fileName || `${kind}.jpg`, type: photo.mimeType || 'image/jpeg' } as unknown as Blob);
+    form.append('kind', kind); // before the file: the server reads the fields that come first
+    await appendPhoto(form, photo, `${kind}.jpg`);
     return api<{ document: VerificationDocument }>('/agent/v1/onboarding/documents', { form, timeoutMs: 60000 }).then((r) => r.document);
   },
 

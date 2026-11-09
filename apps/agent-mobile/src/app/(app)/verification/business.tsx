@@ -8,7 +8,6 @@ import { endpoints } from '../../../api/endpoints';
 import type { Activity, LegalForm } from '../../../api/types';
 import { Banner } from '../../../components/Banner';
 import { Button } from '../../../components/Button';
-import { Card } from '../../../components/Card';
 import { Chips } from '../../../components/Chips';
 import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
@@ -52,7 +51,6 @@ export default function BusinessScreen() {
   const [pep, setPep] = useState<'no' | 'yes'>('no');
   const [pepDetails, setPepDetails] = useState('');
   const [noRecord, setNoRecord] = useState(false);
-  const [accept, setAccept] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -75,7 +73,6 @@ export default function BusinessScreen() {
     setNoRecord(p.no_criminal_record);
   }, [data, loaded]);
 
-  const rules = t('verification.form.rules', { returnObjects: true }) as string[];
   const volumeNumber = Number(volume.replace(/\D/g, '')) || 0;
   const valid =
     license.trim().length >= 3 &&
@@ -83,8 +80,7 @@ export default function BusinessScreen() {
     volumeNumber > 0 &&
     floatSource.trim().length >= 10 &&
     (pep === 'no' || pepDetails.trim().length >= 5) &&
-    noRecord &&
-    accept;
+    noRecord;
 
   const save = async () => {
     if (!data) return;
@@ -102,8 +98,7 @@ export default function BusinessScreen() {
         float_source: floatSource.trim(),
         is_pep: pep === 'yes',
         pep_details: pep === 'yes' ? pepDetails.trim() : '',
-        no_criminal_record: noRecord,
-        accept_rules_version: data.rules_version
+        no_criminal_record: noRecord
       });
       qc.setQueryData(['onboarding'], updated);
       router.back();
@@ -182,15 +177,6 @@ export default function BusinessScreen() {
         {pep === 'yes' ? field(t('verification.form.pepDetails'), <TextInput value={pepDetails} onChangeText={setPepDetails} style={input} maxLength={280} />) : null}
 
         <Tick checked={noRecord} onPress={() => setNoRecord(!noRecord)} label={t('verification.form.criminal')} testID="business-no-record" />
-        <Card>
-          <Text variant="bodyStrong">{t('verification.form.rulesTitle')}</Text>
-          {rules.map((rule) => (
-            <Text key={rule} variant="body" color="textMuted" style={styles.rule}>
-              • {rule}
-            </Text>
-          ))}
-        </Card>
-        <Tick checked={accept} onPress={() => setAccept(!accept)} label={t('verification.form.accept')} testID="business-accept" />
         {error ? <Banner tone="danger">{error}</Banner> : null}
       </View>
     </Screen>

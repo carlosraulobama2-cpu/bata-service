@@ -84,11 +84,28 @@ export default function VerificationScreen() {
   const done = data.requirements.filter((r) => r.status === 'done').length;
   const label = (status: RequirementStatus) =>
     ({ done: t('verification.done'), rejected: t('verification.rejected'), in_review: t('verification.inReview'), missing: t('verification.missing') })[status];
-  const business = data.requirements.filter((r) => r.code === 'business' || r.code === 'declarations');
-  const businessDone = business.every((r) => r.status === 'done');
+  const businessDone = data.requirements.find((r) => r.code === 'business')?.status === 'done';
+  // Before sending: the business data and every photo. Identity, phone and PIN are listed above and Velynt checks them too.
+  const pendingPhotos = data.documents.filter((d) => d.required && (!d.document || d.document.status === 'rejected')).length;
+  const rulesAccepted = !!data.terms?.rules_accepted || data.requirements.find((r) => r.code === 'declarations')?.status === 'done';
+  const send = () => {
+    setMessage(null);
+    if (!businessDone) return setMessage({ tone: 'danger', text: 'Rellena primero los datos del negocio.' });
+    if (pendingPhotos) return setMessage({ tone: 'danger', text: pendingPhotos === 1 ? 'Te falta 1 foto por enviar.' : `Te faltan ${pendingPhotos} fotos por enviar.` });
+    router.push('/verification/rules');
+  };
+  const footer = editable ? (
+    <Button
+      label={rulesAccepted ? 'Ver normas de agente' : 'Enviar solicitud'}
+      variant={rulesAccepted ? 'secondary' : 'primary'}
+      onPress={send}
+      style={!rulesAccepted && (!businessDone || pendingPhotos) ? { opacity: 0.6 } : undefined}
+      testID="verification-send"
+    />
+  ) : undefined;
 
   return (
-    <Screen header={header} scroll>
+    <Screen header={header} scroll footer={footer}>
       <View style={styles.content}>
         <Text variant="body" color="textMuted">
           {t('verification.intro')}

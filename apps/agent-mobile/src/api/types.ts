@@ -204,6 +204,16 @@ export interface Onboarding {
   ready_to_approve: boolean;
   profile: BusinessProfile | null;
   documents: { kind: string; label: string; required: boolean; document: VerificationDocument | null }[];
+  /** Today's figures for the agent rules document (bps: 50 = 0,5 %). */
+  terms?: AgentTerms;
+}
+
+export interface AgentTerms {
+  cash_in_commission_bps: number;
+  cash_out_commission_bps: number;
+  cash_out_fee_bps: number;
+  referral_commission_minor: number;
+  rules_accepted: boolean;
 }
 
 export interface BusinessProfileInput {
@@ -218,7 +228,8 @@ export interface BusinessProfileInput {
   is_pep: boolean;
   pep_details: string;
   no_criminal_record: boolean;
-  accept_rules_version: string;
+  /** Older flow: the rules are now accepted on their own step (endpoints.acceptRules). */
+  accept_rules_version?: string;
 }
 
 // ---- Float, cash, transfers, customers (velynt/api-agente/agent_routes/network.py) ----

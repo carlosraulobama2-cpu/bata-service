@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Keyboard as KeyboardIcon, ScanLine } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { endpoints } from '../../../api/endpoints';
 import type { WithdrawalPreview } from '../../../api/types';
@@ -36,7 +36,7 @@ export default function CashOutScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const me = useMe();
-  const firstStep: Step = Platform.OS === 'web' ? 'code' : 'scan';
+  const firstStep: Step = 'scan'; // web too: Scanner.web.tsx uses the browser camera
   const [step, setStep] = useState<Step>(firstStep);
   const [digits, setDigits] = useState('');
   const [code, setCode] = useState('');
@@ -223,7 +223,7 @@ export default function CashOutScreen() {
               testID="withdrawal-code"
             />
             <Button label={t('common.continue')} onPress={() => void resolve({ phone: `${PREFIX}${digits}`, code: codeDigits })} disabled={!canResolve} loading={resolving} testID="withdrawal-continue" />
-            {Platform.OS !== 'web' ? <Button variant="ghost" icon={<ScanLine size={20} color={colors.primary} />} label={t('cashOut.scanInstead')} onPress={() => setStep('scan')} /> : null}
+            <Button variant="ghost" icon={<ScanLine size={20} color={colors.primary} />} label={t('cashOut.scanInstead')} onPress={() => setStep('scan')} />
           </>
         )}
         {resolving ? <Text variant="label" color="textMuted" align="center">{t('cashOut.checking')}</Text> : null}

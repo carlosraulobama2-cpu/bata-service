@@ -1,5 +1,4 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
@@ -16,6 +15,7 @@ import { Screen } from '../../../components/Screen';
 import { Text } from '../../../components/Text';
 import { errorMessage } from '../../../features/errors';
 import { useMe } from '../../../features/queries';
+import { useAvatarPicker } from '../../../features/useAvatarPicker';
 import { useSettings } from '../../../state/settings';
 import { space } from '../../../theme/tokens';
 import { money } from '../../../utils/format';
@@ -27,7 +27,8 @@ export default function SettingsScreen() {
   const me = useMe();
   const prefs = useQuery({ queryKey: ['preferences'], queryFn: endpoints.preferences });
   const apply = useSettings((s) => s.apply);
-  const [busy, setBusy] = useState(false);
+  const avatar = useAvatarPicker();
+  const busy = avatar.busy;
   const [message, setMessage] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
   const user = me.data?.user;
@@ -42,24 +43,7 @@ export default function SettingsScreen() {
       setMessage({ tone: 'danger', text: errorMessage(err, t) });
     }
   };
-  const photo = async (from: 'camera' | 'library') => {
-    const permission = from === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return;
-    const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.8, exif: false, allowsEditing: true, aspect: [1, 1] };
-    const picked = from === 'camera' ? await ImagePicker.launchCameraAsync({ ...options, cameraType: ImagePicker.CameraType.front }) : await ImagePicker.launchImageLibraryAsync(options);
-    if (picked.canceled || !picked.assets[0]) return;
-    setBusy(true);
-    setMessage(null);
-    try {
-      await endpoints.uploadAvatar(picked.assets[0]);
-      await qc.invalidateQueries({ queryKey: ['me'] });
-      setMessage({ tone: 'success', text: t('settings.saved') });
-    } catch (err) {
-      setMessage({ tone: 'danger', text: errorMessage(err, t) });
-    } finally {
-      setBusy(false);
-    }
-  };
+  const photo = (from: 'camera' | 'library') => avatar.pick(from);
   const p = prefs.data;
   const toggle = (label: string, value: boolean, onChange?: (v: boolean) => void) => (
     <View style={styles.toggle}>
@@ -74,6 +58,7 @@ export default function SettingsScreen() {
     <Screen header={<Header leading="close" onLeading={close} title={t('settings.title')} />} scroll>
       <View style={styles.content}>
         {message ? <Banner tone={message.tone}>{message.text}</Banner> : null}
+        {avatar.message ? <Banner tone={avatar.message.tone}>{avatar.message.text}</Banner> : null}
         <Card style={styles.photoCard}>
           {user ? <Avatar name={user.name} version={user.avatar_version} size={96} /> : null}
           <Text variant="bodyStrong">{user?.name}</Text>
@@ -87,7 +72,7 @@ export default function SettingsScreen() {
               <Button
                 variant="ghost"
                 label={t('settings.removePhoto')}
-                onPress={() => void endpoints.removeAvatar().then(() => qc.invalidateQueries({ queryKey: ['me'] }))}
+                onPress={() => void avatar.remove()}
                 disabled={busy}
               />
             ) : null}

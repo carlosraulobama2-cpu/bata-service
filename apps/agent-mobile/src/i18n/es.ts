@@ -18,7 +18,7 @@ export const es = {
     offline: 'Sin conexión. Mostrando los últimos datos guardados.',
     needConnection: 'Necesitas conexión para operar.',
     customer: 'Cliente',
-    commission: 'Comisión',
+    commission: 'Tu ganancia',
     amount: 'Importe',
     reference: 'Referencia',
     date: 'Fecha',
@@ -108,19 +108,19 @@ export const es = {
     cashIn: 'Depósitos',
     cashOut: 'Retiros',
     netCash: 'Efectivo en caja (neto)',
-    commissions: 'Comisiones',
+    commissions: 'Ganancias',
     recent: 'Últimas operaciones',
     noOperations: 'Todavía no hay operaciones hoy.',
     pinMissing: 'Crea tu PIN de pagos para empezar a operar.',
     lowFloat: 'Tu saldo operativo es bajo. Compra saldo a Velynt para seguir haciendo depósitos.',
     balancesInfoTitle: '¿Qué significa cada saldo?',
     balancesInfoFloat: 'Saldo operativo: dinero electrónico para hacer depósitos a clientes. Baja con cada depósito y sube con cada retiro.',
-    balancesInfoCommissions: 'Comisiones: Velynt te las abona al momento en tu saldo operativo con cada operación.',
+    balancesInfoCommissions: 'Ganancias: Velynt te las abona al momento en tu saldo operativo con cada operación.',
     balancesInfoCash: 'Efectivo en caja: Velynt no ve el efectivo físico. «Efectivo en caja (neto)» es lo que debería haber entrado hoy: depósitos menos retiros.'
   },
   apply: {
     title: 'Ser agente Velynt',
-    intro: 'Cuéntanos dónde atenderás a los clientes. Velynt revisará tu solicitud; necesitas tener tu identidad verificada en la app Velynt.',
+    intro: 'Cuéntanos dónde atenderás a los clientes. Después te pediremos los datos del negocio, fotos de tu documento por las dos caras, una selfie y fotos del local.',
     business: 'Nombre del negocio',
     businessPlaceholder: 'Tienda Nsue',
     city: 'Ciudad',
@@ -216,7 +216,7 @@ export const es = {
     days30: '30 días',
     deposits: 'Depósitos',
     withdrawals: 'Retiros',
-    commissions: 'Comisiones',
+    commissions: 'Ganancias',
     operations: 'Operaciones',
     perDay: 'Por día',
     best: 'Mejor día: {{date}}'
@@ -374,7 +374,7 @@ export const es = {
     scanTitle: 'Escanea el QR del cliente',
     scanHint: 'QR de recarga (depósito) o QR de retiro, que el cliente genera en su app Velynt.',
     notForAgents: 'Este QR de Velynt no es de recarga ni de retiro. Pide al cliente el QR de recarga o el de retiro.',
-    webNoCamera: 'El escáner solo está disponible en la app del teléfono. Pega aquí el contenido del QR.'
+    webNoCamera: '¿No se lee? Pega aquí el contenido del QR.'
   },
   support: {
     title: 'Ayuda y soporte',
@@ -399,7 +399,7 @@ export const es = {
   },
   lock: {
     title: 'Sesión bloqueada',
-    body: 'Por seguridad, la app se bloquea cuando vuelves después de unos minutos o al abrirla. Usa tu PIN de pagos.',
+    body: 'Por seguridad, la app se bloquea al abrirla o cuando vuelves después de unos minutos. Escribe tu PIN de pagos: si creaste tu cuenta con una contraseña de 4 números, son esos mismos 4 números.',
     notMe: 'No soy yo · Cerrar sesión',
     biometricPrompt: 'Desbloquea VELYNT SERVICES'
   },
@@ -481,17 +481,17 @@ export const es = {
     doneBody: 'Usa este PIN para confirmar tus operaciones. Es el mismo PIN de pagos que en la app Velynt.'
   },
   commissions: {
-    title: 'Mis comisiones',
+    title: 'Mis ganancias',
     today: 'Hoy',
     week: 'Últimos 7 días',
     month: 'Este mes',
     paidAtOnce: 'Velynt te las abona al momento en tu saldo operativo.',
-    note: 'Las comisiones se calculan con los porcentajes vigentes en el momento de cada operación.',
+    note: 'Las ganancias se calculan con los porcentajes vigentes en el momento de cada operación.',
     byType: 'Por tipo de operación · este mes',
     operations_one: '{{count}} operación',
     operations_other: '{{count}} operaciones',
-    noneThisMonth: 'Aún no hay comisiones este mes.',
-    latest: 'Últimas comisiones',
+    noneThisMonth: 'Aún no hay ganancias este mes.',
+    latest: 'Últimas ganancias',
     onAmount: 'sobre {{amount}}'
   },
   profile: {

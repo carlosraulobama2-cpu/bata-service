@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
-import { Home, List, Percent, QrCode, UserRound } from 'lucide-react-native';
+import { Coins, Home, List, QrCode, UserRound } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../components/Text';
@@ -11,7 +11,7 @@ const ITEMS = [
   { name: 'home', label: 'Inicio', Icon: Home },
   { name: 'operations', label: 'Operaciones', Icon: List },
   { name: 'qr', label: 'QR', Icon: QrCode },
-  { name: 'commissions', label: 'Comisiones', Icon: Percent },
+  { name: 'commissions', label: 'Ganancias', Icon: Coins },
   { name: 'profile', label: 'Perfil', Icon: UserRound }
 ] as const;
 

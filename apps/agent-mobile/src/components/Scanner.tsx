@@ -13,7 +13,7 @@ export function Scanner({ onCode, paused }: { onCode: (data: string) => void; pa
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
-  const last = useRef<string | null>(null);
+  const last = useRef<{ data: string; at: number } | null>(null);
 
   if (!permission) return <View style={[styles.frame, { backgroundColor: '#000' }]} />;
 
@@ -42,8 +42,10 @@ export function Scanner({ onCode, paused }: { onCode: (data: string) => void; pa
           paused
             ? undefined
             : ({ data }) => {
-                if (data === last.current) return;
-                last.current = data;
+                // Same code again only after a few seconds: a failed first try (no network, wrong agent) can be retried.
+                const now = Date.now();
+                if (last.current && last.current.data === data && now - last.current.at < 3000) return;
+                last.current = { data, at: now };
                 onCode(data);
               }
         }

@@ -6,32 +6,52 @@ import * as SecureStore from 'expo-secure-store';
  * expo-secure-store (Android Keystore / iOS Keychain), readable only by
  * this app and only on this device.
  *
- * The web build is for UI development only: values are kept in memory and
- * disappear on reload. Operations from web are not a supported channel
- * (docs/01-arquitectura.md §5).
+ * The web build has no keystore: values go to localStorage so a reload keeps the session
+ * (the app still asks for the PIN on start when the agent has one, and signing out removes
+ * the token). If localStorage is blocked (private window), they live in memory only.
  */
 const memory = new Map<string, string>();
 const isWeb = Platform.OS === 'web';
+
+const web = {
+  get(key: string): string | null {
+    try {
+      return globalThis.localStorage?.getItem(key) ?? memory.get(key) ?? null;
+    } catch {
+      return memory.get(key) ?? null;
+    }
+  },
+  set(key: string, value: string): void {
+    memory.set(key, value);
+    try {
+      globalThis.localStorage?.setItem(key, value);
+    } catch {
+      /* memory only */
+    }
+  },
+  remove(key: string): void {
+    memory.delete(key);
+    try {
+      globalThis.localStorage?.removeItem(key);
+    } catch {
+      /* memory only */
+    }
+  }
+};
 
 const OPTIONS: SecureStore.SecureStoreOptions = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
 
 export const secureStorage = {
   async get(key: string): Promise<string | null> {
-    if (isWeb) return memory.get(key) ?? null;
+    if (isWeb) return web.get(key);
     return SecureStore.getItemAsync(key, OPTIONS);
   },
   async set(key: string, value: string): Promise<void> {
-    if (isWeb) {
-      memory.set(key, value);
-      return;
-    }
+    if (isWeb) return web.set(key, value);
     await SecureStore.setItemAsync(key, value, OPTIONS);
   },
   async remove(key: string): Promise<void> {
-    if (isWeb) {
-      memory.delete(key);
-      return;
-    }
+    if (isWeb) return web.remove(key);
     await SecureStore.deleteItemAsync(key, OPTIONS);
   },
   /** Value that can only be read after a biometric check (native only). */

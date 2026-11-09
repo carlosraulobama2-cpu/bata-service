@@ -3,11 +3,13 @@ import { Redirect, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { endpoints } from '../../api/endpoints';
 import { useSettings } from '../../state/settings';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { LockScreen } from '../../components/LockScreen';
 import { usePushListeners } from '../../features/push';
+import { useMe } from '../../features/queries';
 import { useInactivityLock } from '../../features/useInactivityLock';
 import { useSession } from '../../state/session';
+import { useTheme } from '../../theme/ThemeProvider';
 
 export default function AppLayout() {
   const status = useSession((s) => s.status);
@@ -25,6 +27,13 @@ function SignedIn() {
     if (prefs.data) apply(prefs.data);
   }, [prefs.data, apply]);
   const locked = useSession((s) => s.locked);
+  const me = useMe();
+  const { colors } = useTheme();
+  const hasPin = me.data?.user.has_pin;
+  // No payment PIN yet: nothing to unlock with, so the app opens (the agent creates it in Seguridad).
+  useEffect(() => {
+    if (locked && hasPin === false) useSession.getState().setLocked(false);
+  }, [locked, hasPin]);
   return (
     <View style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }}>
@@ -47,7 +56,9 @@ function SignedIn() {
         <Stack.Screen name="security/pin" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       </Stack>
       {/* Over the app (navigation state is kept) until PIN/biometrics are confirmed. */}
-      {locked ? <LockScreen /> : null}
+      {locked && (hasPin || me.isError) ? <LockScreen /> : null}
+      {/* Locked while the account is still loading: cover the balances until we know. */}
+      {locked && hasPin === undefined && !me.isError ?<View style={[StyleSheet.absoluteFill, { backgroundColor: colors.hero, zIndex: 1000 }]} /> : null}
     </View>
   );
 }
