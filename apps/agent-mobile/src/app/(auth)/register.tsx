@@ -32,14 +32,27 @@ export default function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState<Field | null>(null);
 
-  const digits = phone.replace(/\D/g, '');
-  const valid = name.trim().length >= 2 && digits.length >= 6 && EMAIL.test(email.trim()) && password.length >= 8 && accepted;
+  const digits = phone.replace(/\D/g, '').replace(/^(00)?240(?=\d{9}$)/, '');
+  // Velynt's password: 4 numbers, as in the customer app (the server takes them), or at least 8 characters.
+  const passwordOk = /^\d{4}$/.test(password) || password.length >= 8;
+  // What is still missing, said when the button is pressed: a button that only stayed dim looked broken.
+  const missing = name.trim().length < 2 ? t('register.missingName')
+    : digits.length !== 9 ? t('register.missingPhone')
+    : !EMAIL.test(email.trim()) ? t('register.missingEmail')
+    : !passwordOk ? t('register.missingPassword')
+    : !accepted ? t('register.missingTerms')
+    : null;
+  const valid = missing === null;
   const submit = async () => {
-    if (!valid || busy) return;
+    if (busy) return;
+    if (missing) {
+      setError(missing);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      await signUp({ name, email, phoneNumber: `+240${digits.replace(/^240/, '')}`, password });
+      await signUp({ name, email, phoneNumber: `+240${digits}`, password });
       // Signed in: the auth layout takes the agent to the dashboard (and from there to the application).
     } catch (err) {
       setError(errorMessage(err, t));
@@ -57,7 +70,13 @@ export default function RegisterScreen() {
   return (
     <Screen
       header={<Header leading="back" onLeading={close} />}
-      footer={<Button label={t('register.submit')} onPress={() => void submit()} disabled={!valid} loading={busy} testID="register-submit" />}
+      footer={
+        <>
+          {/* Right above the button, where the eye is when it is pressed (lower in the form it could be out of sight). */}
+          {error ? <Banner tone="danger">{error}</Banner> : null}
+          <Button label={t('register.submit')} onPress={() => void submit()} loading={busy} style={valid ? undefined : { opacity: 0.6 }} testID="register-submit" />
+        </>
+      }
       scroll
     >
       <View style={styles.intro}>
@@ -138,7 +157,6 @@ export default function RegisterScreen() {
         <Button variant="ghost" label={t('legal.privacy')} onPress={() => router.push('/legal/privacy')} testID="register-read-privacy" />
       </View>
 
-      {error ? <Banner tone="danger">{error}</Banner> : null}
       <Button variant="ghost" label={t('register.haveAccount')} onPress={close} />
     </Screen>
   );

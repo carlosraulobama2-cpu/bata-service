@@ -26,16 +26,26 @@ export default function LoginScreen() {
   useNoScreenCapture();
 
   useEffect(() => {
-    void rememberedEmail().then((e) => e && setEmail((current) => current || e));
+    // A phone-only account has an internal address (…@id.velynt.app): not shown as if it were the customer's email.
+    void rememberedEmail().then((e) => e && !e.endsWith('@id.velynt.app') && setEmail((current) => current || e));
   }, []);
 
-  const valid = EMAIL.test(email.trim()) && password.length > 0;
+  // The phone or the email: many Velynt accounts have no email (they signed up with the phone and 4 numbers).
+  const phoneDigits = email.replace(/\D/g, '').replace(/^(00)?240(?=\d{9}$)/, '');
+  const isPhone = !email.includes('@') && phoneDigits.length === 9;
+  const identifier = isPhone ? `+240${phoneDigits}` : email.trim();
+  const missing = !(isPhone || EMAIL.test(email.trim())) ? t('auth.missingIdentifier') : password.length === 0 ? t('auth.missingPassword') : null;
+  const valid = missing === null;
   const submit = async () => {
-    if (!valid || busy) return;
+    if (busy) return;
+    if (missing) {
+      setError(missing);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      await signIn(email, password);
+      await signIn(identifier, password);
       // Signed in: the auth layout redirects to the dashboard.
     } catch (err) {
       setError(errorMessage(err, t));
@@ -51,7 +61,7 @@ export default function LoginScreen() {
   ];
 
   return (
-    <Screen footer={<Button label={t('auth.signIn')} onPress={() => void submit()} disabled={!valid} loading={busy} testID="login-submit" />} scroll>
+    <Screen footer={<Button label={t('auth.signIn')} onPress={() => void submit()} loading={busy} style={valid ? undefined : { opacity: 0.6 }} testID="login-submit" />} scroll>
       <View style={styles.brand}>
         <View style={[styles.logo, { backgroundColor: colors.primary }]}>
           <Text variant="title" style={{ color: colors.onPrimary }}>
@@ -77,11 +87,11 @@ export default function LoginScreen() {
           onChangeText={setEmail}
           onFocus={() => setFocused('email')}
           onBlur={() => setFocused(null)}
-          placeholder="nombre@correo.com"
+          placeholder="222 000 000 o nombre@correo.com"
           placeholderTextColor={colors.textMuted}
-          keyboardType="email-address"
+          keyboardType="default"
           textContentType="username"
-          autoComplete="email"
+          autoComplete="username"
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="next"
