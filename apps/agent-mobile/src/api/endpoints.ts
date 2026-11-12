@@ -257,6 +257,13 @@ export const endpoints = {
     }).then((r) => ({ movement: toMovement(r.movement), float: r.float_minor })),
   // The server sends the latest 50 by default: older movements were never shown.
   floatMovements: () => api<{ movements: FloatMovementOut[] }>('/agent/v1/float-movements?limit=200').then((r) => r.movements.map(toMovement)),
+  /** Customers this agent brought in (opened at the counter or with its code) and what it earned from them. */
+  referrals: () =>
+    api<{
+      commission_per_customer_minor: number;
+      earned_minor: number;
+      customers: { name: string; phone_number: string | null; joined_at: string; status: 'paid' | 'paying' | 'waiting_first_deposit' }[];
+    }>('/agent/v1/referrals'),
   /** Today's figures for the end-of-day close, and the close itself once done. */
   cashClose: () =>
     api<{

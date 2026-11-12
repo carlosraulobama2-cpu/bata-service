@@ -1,7 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { endpoints } from '../../../api/endpoints';
 import type { CommissionSummary, Transaction } from '../../../api/types';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -22,6 +24,9 @@ export default function CommissionsScreen() {
   const { colors } = useTheme();
   const summary = useCommissionSummary();
   const lines = useCommissionLines();
+  // Earned per customer brought in: paid by the worker after their first deposit, not an operation, so
+  // it never showed in the operation totals.
+  const referrals = useQuery({ queryKey: ['referrals'], queryFn: endpoints.referrals, staleTime: 60_000 });
   const s = summary.data;
   const me = useMe();
   // Not an active agent yet: the API answers agent_not_active and the cards would stay as skeletons.
@@ -93,6 +98,44 @@ export default function CommissionsScreen() {
       ) : lines.isFetchingNextPage ? (
         <ActivityIndicator color={colors.primary} />
       ) : null}
+
+      <Text variant="overline" color="textMuted" style={styles.section}>
+        Clientes nuevos
+      </Text>
+      <Card style={{ gap: space.sm }}>
+        {referrals.data ? (
+          <>
+            <Text variant="headline" numeric color="success">
+              {money(referrals.data.earned_minor)}
+            </Text>
+            <Text variant="caption" color="textMuted">
+              {`Ganas ${money(referrals.data.commission_per_customer_minor)} por cada cliente que abres, cuando hace su primer depósito.`}
+            </Text>
+            {referrals.data.customers.slice(0, 10).map((c) => (
+              <View key={`${c.name}-${c.joined_at}`} style={styles.referral}>
+                <View style={{ flex: 1 }}>
+                  <Text variant="body">{c.name}</Text>
+                  <Text variant="caption" color="textMuted">
+                    {[c.phone_number, formatDateTime(c.joined_at)].filter(Boolean).join(' · ')}
+                  </Text>
+                </View>
+                <Text variant="caption" color={c.status === 'paid' ? 'success' : 'textMuted'}>
+                  {c.status === 'paid' ? 'Cobrado' : c.status === 'paying' ? 'Pagando' : 'Falta su primer depósito'}
+                </Text>
+              </View>
+            ))}
+            {referrals.data.customers.length === 0 ? (
+              <Text variant="body" color="textMuted">
+                Aún no has abierto cuentas a clientes.
+              </Text>
+            ) : null}
+          </>
+        ) : referrals.error ? (
+          <ErrorState error={referrals.error} onRetry={() => referrals.refetch()} />
+        ) : (
+          <Skeleton height={48} />
+        )}
+      </Card>
 
       <Text variant="caption" color="textMuted" style={{ marginTop: space.lg }}>
         {t('commissions.note')}
@@ -178,6 +221,7 @@ function Line({ tx, last }: { tx: Transaction; last: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  referral: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs },
   title: { paddingTop: space.lg, paddingBottom: space.lg },
   hero: { borderRadius: radius.xl, padding: space.xl, gap: space.xs, marginBottom: space.lg },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },

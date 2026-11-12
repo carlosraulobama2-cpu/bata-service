@@ -60,7 +60,8 @@ export function Scanner({ onCode, paused }: { onCode: (data: string) => void; pa
         canvas.height = Math.round(v.videoHeight * scale);
         ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
         const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(image.data, image.width, image.height, { inversionAttempts: 'dontInvert' });
+        // Both ways: the customer app in dark mode draws its QR light on dark.
+        const code = jsQR(image.data, image.width, image.height, { inversionAttempts: 'attemptBoth' });
         if (code?.data) {
           const now = Date.now();
           if (!last.current || last.current.data !== code.data || now - last.current.at > 3000) {
