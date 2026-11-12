@@ -136,6 +136,7 @@ export default function RegisterScreen() {
           textContentType="newPassword"
           autoCapitalize="none"
           style={inputStyle('password')}
+          onSubmitEditing={() => void submit()}
           testID="register-password"
         />
         <Text variant="caption" color="textMuted">

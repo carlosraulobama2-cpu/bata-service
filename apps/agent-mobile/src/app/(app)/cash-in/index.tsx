@@ -204,6 +204,7 @@ export default function CashInScreen() {
                   placeholderTextColor={colors.textMuted}
                   style={[styles.phoneInput, { color: colors.text }]}
                   accessibilityLabel={t('cashIn.customerPhoneLabel')}
+                  onSubmitEditing={() => digits.length === 9 && !customer && void lookup()}
                   testID="cashin-phone"
                 />
               </View>
@@ -225,6 +226,7 @@ export default function CashInScreen() {
                 placeholderTextColor={colors.textMuted}
                 style={[styles.textInput, { color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }]}
                 accessibilityLabel={t('cashIn.customerNumberLabel')}
+                onSubmitEditing={() => /\d/.test(number) && !customer && void lookup()}
                 testID="cashin-number"
               />
             </>

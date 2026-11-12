@@ -156,7 +156,7 @@ export default function ChangePinScreen() {
           ) : null}
         </View>
       </View>
-      <Keypad disabled={busy} onDigit={add} onDelete={() => setValue((p) => p.slice(0, -1))} />
+      <Keypad disabled={busy} onDigit={add} onDelete={() => setValue((p) => p.slice(0, -1))} onClear={() => setValue('')} />
     </Screen>
   );
 }

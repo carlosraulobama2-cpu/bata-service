@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Camera, CheckCircle2, Circle, Clock, Image as ImageIcon, RotateCcw, XCircle } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { endpoints } from '../../../api/endpoints';
 import type { RequirementStatus } from '../../../api/types';
@@ -45,10 +45,14 @@ export default function VerificationScreen() {
 
   const pick = async (kind: string, from: 'camera' | 'library') => {
     setMessage(null);
-    const permission = from === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setMessage({ tone: 'danger', text: t('verification.cameraDenied') });
-      return;
+    // On the web the file picker opens (with the camera on a phone browser): asking for the camera first
+    // failed on computers without one, with a message about the phone settings.
+    if (Platform.OS !== 'web') {
+      const permission = from === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setMessage({ tone: 'danger', text: from === 'camera' ? t('verification.cameraDenied') : 'Sin permiso para ver tus fotos. Actívalo en los ajustes del teléfono.' });
+        return;
+      }
     }
     const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.8, exif: false, allowsEditing: false };
     const result = from === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);

@@ -69,6 +69,7 @@ export function ConfirmSheet({ visible, summary, busy, error, onSubmit, onClose 
             disabled={busy}
             onDigit={add}
             onDelete={() => setPin((p) => p.slice(0, -1))}
+            onClear={() => setPin('')}
             extra={
               biometricEnabled
                 ? { icon: <Fingerprint size={30} color={colors.primary} />, accessibilityLabel: t('confirm.useBiometrics'), onPress: () => onSubmit({ method: 'biometric' }) }

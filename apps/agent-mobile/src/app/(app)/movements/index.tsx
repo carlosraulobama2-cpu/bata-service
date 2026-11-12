@@ -8,7 +8,7 @@ import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
-import { EmptyState, ErrorState } from '../../../components/States';
+import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { space } from '../../../theme/tokens';
@@ -26,6 +26,7 @@ export default function MovementsScreen() {
         <Button variant="secondary" label={t('movements.seeOperations')} onPress={() => router.push('/operations')} />
         <Text variant="title">{t('movements.float')}</Text>
         {list.error ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
+        {list.isLoading ? <Skeleton height={72} /> : null}
         {list.data && list.data.length === 0 ? <EmptyState message={t('movements.empty')} /> : null}
         {list.data?.map((m) => (
           <Card key={m.id}>

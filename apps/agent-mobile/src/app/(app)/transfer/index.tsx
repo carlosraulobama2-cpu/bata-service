@@ -109,6 +109,7 @@ export default function TransferScreen() {
           placeholder="AG-000123"
           placeholderTextColor={colors.textMuted}
           style={input}
+          onSubmitEditing={() => code.replace(/\D/g, '').length > 0 && !receiver && void find()}
           testID="transfer-code"
         />
         {!receiver ? (

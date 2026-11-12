@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { Delete } from 'lucide-react-native';
+import { useEffect, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { radius, space } from '../theme/tokens';
@@ -14,14 +15,49 @@ interface Props {
   /** Optional key bottom-left (e.g. "000" for amounts, biometrics icon for PIN). */
   extra?: { label?: string; icon?: React.ReactNode; onPress: () => void; accessibilityLabel: string };
   disabled?: boolean;
+  /** Long press on delete: clear everything (the default repeats onDelete, which a stale value can't). */
+  onClear?: () => void;
+}
+
+/**
+ * On a computer the agent types with the keyboard: digits, Backspace, Delete (clears). Only the keypad
+ * mounted last listens (the PIN sheet or the lock screen over an amount screen must not type into both).
+ */
+const webKeypads: { current: { onKey: (e: KeyboardEvent) => void } }[] = [];
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  window.addEventListener('keydown', (e) => {
+    const target = e.target as HTMLElement | null;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+    webKeypads[webKeypads.length - 1]?.current.onKey(e);
+  });
 }
 
 /**
  * Own numeric keypad: big keys (≥ 64dp), no system keyboard jumping around,
  * and PIN digits never pass through the OS keyboard or autocorrect.
  */
-export function Keypad({ onDigit, onDelete, extra, disabled }: Props) {
+export function Keypad({ onDigit, onDelete, extra, disabled, onClear }: Props) {
   const { colors } = useTheme();
+  const keys = useRef({
+    onKey: (_e: KeyboardEvent) => undefined as void
+  });
+  keys.current.onKey = (e: KeyboardEvent) => {
+    if (disabled || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (/^[0-9]$/.test(e.key)) onDigit(e.key);
+    else if (e.key === 'Backspace') onDelete();
+    else if (e.key === 'Delete' && onClear) onClear();
+    else return;
+    e.preventDefault();
+  };
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const entry = keys;
+    webKeypads.push(entry);
+    return () => {
+      const i = webKeypads.lastIndexOf(entry);
+      if (i >= 0) webKeypads.splice(i, 1);
+    };
+  }, []);
   const compact = useCompact();
   const keyHeight = compact ? 52 : 64;
   const tap = (fn: () => void) => () => {
@@ -41,7 +77,8 @@ export function Keypad({ onDigit, onDelete, extra, disabled }: Props) {
             accessibilityLabel={label}
             onPress={tap(k === 'del' ? onDelete : k === 'extra' ? extra!.onPress : () => onDigit(k))}
             onLongPress={k === 'del' ? tap(() => {
-              for (let i = 0; i < 12; i++) onDelete();
+              if (onClear) onClear();
+              else for (let i = 0; i < 12; i++) onDelete();
             }) : undefined}
             style={({ pressed }) => [styles.key, { height: keyHeight, backgroundColor: pressed ? colors.neutralSoft : 'transparent', opacity: disabled ? 0.4 : 1 }]}
           >

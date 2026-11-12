@@ -255,7 +255,21 @@ export const endpoints = {
       body: { to_agent_code: input.toAgentCode, amount_minor: input.amount, reason: input.reason },
       money: money(input)
     }).then((r) => ({ movement: toMovement(r.movement), float: r.float_minor })),
-  floatMovements: () => api<{ movements: FloatMovementOut[] }>('/agent/v1/float-movements').then((r) => r.movements.map(toMovement)),
+  // The server sends the latest 50 by default: older movements were never shown.
+  floatMovements: () => api<{ movements: FloatMovementOut[] }>('/agent/v1/float-movements?limit=200').then((r) => r.movements.map(toMovement)),
+  /** Today's figures for the end-of-day close, and the close itself once done. */
+  cashClose: () =>
+    api<{
+      date: string;
+      cash_in: { count: number; volume_minor: number };
+      cash_out: { count: number; volume_minor: number };
+      net_cash_minor: number;
+      commission_minor: number;
+      closed: { counted_minor: number; expected_minor: number | null; difference_minor: number | null; closed_at: string } | null;
+    }>('/agent/v1/cash-close'),
+  /** Close the day with the cash counted in the till (once a day; a big difference alerts Velynt). */
+  closeDay: (countedMinor: number, note: string) =>
+    api<{ close: { difference_minor: number | null; mismatch_alert: boolean } }>('/agent/v1/cash-close', { body: { counted_minor: countedMinor, note } }).then((r) => r.close),
   customers: (offset = 0) =>
     api<{ customers: CustomerOut[]; next_offset: number | null }>(`/agent/v1/customers?limit=30&offset=${offset}`).then((r) => ({
       customers: r.customers.map((c) => ({ ...c, deposits: c.deposits_minor, withdrawals: c.withdrawals_minor })),

@@ -52,6 +52,7 @@ export function AmountEntry({ value, onChange, hint, error }: { value: number; o
           set(digits + d);
         }}
         onDelete={() => set(digits.slice(0, -1))}
+        onClear={() => onChange(0)}
         extra={{ label: '000', accessibilityLabel: 'Tres ceros', onPress: () => digits && digits.length + 3 <= MAX_DIGITS && set(`${digits}000`) }}
       />
     </View>
