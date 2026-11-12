@@ -8,12 +8,41 @@ type Photo = { uri: string; mimeType?: string | null; fileName?: string | null; 
  * Adds a picked photo to a form. React Native's FormData takes { uri, name, type }; a browser needs a real
  * Blob (the picker gives a blob: or data: uri, or the File itself), or the photo is sent as "[object Object]".
  */
+/**
+ * Browsers send the photo as it is (the picker's quality option does not apply there), and a phone camera
+ * photo can pass the server's 8 MB limit. Big photos are scaled to 2000 px and re-encoded as JPEG, which
+ * keeps documents readable. Anything the browser cannot draw is sent untouched.
+ */
+async function shrinkForUpload(blob: Blob): Promise<Blob> {
+  const MAX_SIDE = 2000;
+  if (blob.size <= 1_500_000 || typeof document === 'undefined') return blob;
+  try {
+    const url = URL.createObjectURL(blob);
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    });
+    URL.revokeObjectURL(url);
+    const scale = Math.min(1, MAX_SIDE / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(image.naturalWidth * scale);
+    canvas.height = Math.round(image.naturalHeight * scale);
+    canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+    return out && out.size < blob.size ? out : blob;
+  } catch {
+    return blob;
+  }
+}
+
 async function appendPhoto(form: FormData, photo: Photo, fallbackName: string): Promise<void> {
   const name = photo.fileName || fallbackName;
   const type = photo.mimeType || 'image/jpeg';
   if (Platform.OS === 'web') {
-    const blob = photo.file ?? (await (await fetch(photo.uri)).blob());
-    form.append('file', blob, name);
+    const blob = await shrinkForUpload(photo.file ?? (await (await fetch(photo.uri)).blob()));
+    form.append('file', blob, blob.type === 'image/jpeg' && !/\.jpe?g$/i.test(name) ? `${name.replace(/\.[^.]+$/, '')}.jpg` : name);
     return;
   }
   form.append('file', { uri: photo.uri, name, type } as unknown as Blob);

@@ -8,7 +8,7 @@ import { Card } from '../../../components/Card';
 import { Chips } from '../../../components/Chips';
 import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
-import { ErrorState } from '../../../components/States';
+import { ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
@@ -31,6 +31,7 @@ export default function StatsScreen() {
       <View style={styles.content}>
         <Chips<'7' | '30'> value={days} onChange={setDays} options={[{ value: '7', label: t('stats.days7') }, { value: '30', label: t('stats.days30') }]} />
         {stats.error ? <ErrorState error={stats.error} onRetry={() => stats.refetch()} /> : null}
+        {stats.isLoading ? <Skeleton height={120} /> : null}
         <View style={styles.grid}>
           {[
             { label: t('stats.deposits'), value: money(total((d) => d.cash_in.volume)) },
