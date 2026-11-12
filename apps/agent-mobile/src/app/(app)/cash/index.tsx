@@ -44,7 +44,10 @@ export default function CashScreen() {
       const done = await endpoints.closeDay(amount, note.trim());
       const d = done.difference_minor;
       setResult(
-        d === null || d === 0
+        // null: no earlier count to compare with, so there is nothing that "cuadra" yet.
+        d === null
+          ? { tone: 'success', text: 'Día cerrado. Es tu primer recuento: desde ahora Velynt comparará cada cierre con lo que cobres y pagues.' }
+          : d === 0
           ? { tone: 'success', text: 'Día cerrado. La caja cuadra.' }
           : { tone: done.mismatch_alert ? 'danger' : 'warning', text: `Día cerrado con una diferencia de ${money(d)}.${done.mismatch_alert ? ' Velynt lo revisará.' : ''}` }
       );
