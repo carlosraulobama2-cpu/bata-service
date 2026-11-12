@@ -218,7 +218,8 @@ export interface AgentTerms {
 
 export interface BusinessProfileInput {
   legal_form: LegalForm;
-  license_number: string;
+  /** No longer asked for (November 2026). */
+  license_number?: string;
   activity: Activity;
   years_in_business: number;
   opening_hours: string;

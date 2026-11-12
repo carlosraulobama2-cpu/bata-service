@@ -120,7 +120,7 @@ export const es = {
   },
   apply: {
     title: 'Ser agente Velynt',
-    intro: 'Cuéntanos dónde atenderás a los clientes. Después te pediremos los datos del negocio, fotos de tu documento por las dos caras, una selfie y fotos del local.',
+    intro: 'Cuéntanos dónde atenderás a los clientes. Después te pediremos los datos del negocio, fotos de tu documento por las dos caras y una selfie.',
     business: 'Nombre del negocio',
     businessPlaceholder: 'Tienda Nsue',
     city: 'Ciudad',
@@ -132,7 +132,7 @@ export const es = {
     again: 'Volver a solicitar',
     notAnAgent: 'Esta cuenta todavía no es de agente. Solicítalo para empezar a operar.',
     pending: 'Tu solicitud ({{code}}) está en revisión. Te avisaremos cuando Velynt la apruebe.',
-    next: 'Ahora completa la verificación de agente: datos del negocio y fotos de tus documentos y del local.',
+    next: 'Ahora completa la verificación de agente: datos del negocio, tu documento por las dos caras y una selfie.',
     continue: 'Continuar con la verificación',
     rejected: 'Velynt no aprobó tu solicitud.'
   },
@@ -246,7 +246,7 @@ export const es = {
   },
   verification: {
     title: 'Verificación de agente',
-    intro: 'Como agente guardarás dinero de otras personas. Por eso Velynt verifica tu negocio, tu local y tus antecedentes, además de tu identidad.',
+    intro: 'Como agente guardarás dinero de otras personas. Por eso Velynt verifica tu identidad y tu negocio.',
     progress: '{{done}} de {{total}} pasos completados',
     banner: 'Completa tu verificación de agente: {{missing}} paso(s) pendientes.',
     bannerReview: 'Velynt está revisando tu verificación. Te avisaremos.',
@@ -268,7 +268,7 @@ export const es = {
     uploading: 'Enviando foto…',
     uploaded: 'Foto enviada. Velynt la revisará.',
     cameraDenied: 'Sin permiso de cámara. Actívalo en los ajustes del teléfono para hacer las fotos.',
-    allSent: 'Lo has enviado todo. Velynt revisará tus documentos y visitará tu local antes de aprobarte.',
+    allSent: 'Lo has enviado todo. Velynt revisará tus datos y tus fotos antes de aprobarte.',
     closed: 'Tu verificación está cerrada. Para cambiar algo, contacta con Velynt.',
     nextReview: 'Próxima revisión: {{date}}',
     form: {
@@ -276,7 +276,6 @@ export const es = {
       legalForm: 'Forma jurídica',
       individual: 'Persona física (autónomo)',
       company: 'Sociedad',
-      license: 'Licencia de actividad o nº de registro mercantil',
       activity: 'Tipo de negocio',
       years: 'Años con el negocio',
       hours: 'Horario de apertura',

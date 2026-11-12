@@ -162,7 +162,7 @@ export default function VerificationScreen() {
         <Text variant="caption" color="textMuted">
           {t('verification.photoHint')}
         </Text>
-        {data.documents.map((slot) => {
+        {data.documents.filter((slot) => slot.required).map((slot) => {
           const status: RequirementStatus = !slot.document
             ? 'missing'
             : slot.document.status === 'approved'

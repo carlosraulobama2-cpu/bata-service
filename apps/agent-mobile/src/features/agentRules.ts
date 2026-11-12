@@ -36,8 +36,7 @@ export function rulesDocument(terms: AgentTerms = DEFAULT_TERMS): { title: strin
           'Ser mayor de edad.',
           'Teléfono verificado y PIN de pagos creado.',
           'Fotos de tu documento de identidad por delante y por detrás, y una selfie tuya: así verificamos tu identidad.',
-          'Un local físico con licencia de actividad: fotos de la fachada y del interior.',
-          'Recibo de luz o agua (o contrato de alquiler) del local y certificado de antecedentes penales.',
+          'Un comercio o local donde atender a los clientes.',
           'Dinero propio para tu saldo operativo y efectivo suficiente en caja.'
         ]
       },

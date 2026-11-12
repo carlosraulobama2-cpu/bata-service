@@ -41,7 +41,6 @@ export default function BusinessScreen() {
   const qc = useQueryClient();
   const { data } = useOnboarding();
   const [legalForm, setLegalForm] = useState<LegalForm>('individual');
-  const [license, setLicense] = useState('');
   const [activity, setActivity] = useState<Activity>('shop');
   const [years, setYears] = useState('');
   const [hours, setHours] = useState('');
@@ -61,7 +60,6 @@ export default function BusinessScreen() {
     if (!p || loaded) return;
     setLoaded(true);
     if (p.legal_form) setLegalForm(p.legal_form);
-    setLicense(p.license_number);
     if (p.activity) setActivity(p.activity);
     setYears(p.years_in_business ? String(p.years_in_business) : '');
     setHours(p.opening_hours);
@@ -74,22 +72,29 @@ export default function BusinessScreen() {
   }, [data, loaded]);
 
   const volumeNumber = Number(volume.replace(/\D/g, '')) || 0;
-  const valid =
-    license.trim().length >= 3 &&
-    hours.trim().length >= 3 &&
-    volumeNumber > 0 &&
-    floatSource.trim().length >= 10 &&
-    (pep === 'no' || pepDetails.trim().length >= 5) &&
-    noRecord;
+  // Say what is missing instead of a dim button that does nothing.
+  const missing =
+    hours.trim().length < 3
+      ? 'Escribe tu horario de apertura.'
+      : volumeNumber <= 0
+        ? 'Escribe cuánto dinero prevés mover al día.'
+        : floatSource.trim().length < 10
+          ? 'Explica de dónde sale el dinero de tu saldo operativo (al menos 10 letras).'
+          : pep === 'yes' && pepDetails.trim().length < 5
+            ? 'Indica el cargo público.'
+            : !noRecord
+              ? 'Marca la declaración de que no tienes antecedentes penales.'
+              : null;
+  const valid = missing === null;
 
   const save = async () => {
     if (!data) return;
+    if (missing) return setError(missing);
     setBusy(true);
     setError(null);
     try {
       const updated = await endpoints.saveBusinessProfile({
         legal_form: legalForm,
-        license_number: license.trim(),
         activity,
         years_in_business: Number(years) || 0,
         opening_hours: hours.trim(),
@@ -121,7 +126,7 @@ export default function BusinessScreen() {
   return (
     <Screen
       header={<Header leading="back" onLeading={() => (router.canGoBack() ? router.back() : router.replace('/verification'))} title={t('verification.form.title')} />}
-      footer={<Button label={t('verification.form.save')} onPress={() => void save()} disabled={!valid} loading={busy} testID="business-save" />}
+      footer={<Button label={t('verification.form.save')} onPress={() => void save()} loading={busy} style={valid ? undefined : { opacity: 0.6 }} testID="business-save" />}
       scroll
     >
       <View style={styles.content}>
@@ -136,7 +141,6 @@ export default function BusinessScreen() {
             ]}
           />
         )}
-        {field(t('verification.form.license'), <TextInput value={license} onChangeText={setLicense} autoCapitalize="characters" style={input} maxLength={64} testID="business-license" />)}
         {field(
           t('verification.form.activity'),
           <Chips<Activity> value={activity} onChange={setActivity} options={ACTIVITIES.map((a) => ({ value: a, label: t(`verification.activities.${a}`) }))} />
