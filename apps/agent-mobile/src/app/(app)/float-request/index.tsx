@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { endpoints } from '../../../api/endpoints';
 import type { FloatRequest } from '../../../api/types';
@@ -13,7 +13,7 @@ import { Header } from '../../../components/Header';
 import { InfoRow } from '../../../components/InfoRow';
 import { MoneyInput } from '../../../components/MoneyInput';
 import { Screen } from '../../../components/Screen';
-import { EmptyState } from '../../../components/States';
+import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { errorMessage } from '../../../features/errors';
 import { useTheme } from '../../../theme/ThemeProvider';
@@ -50,8 +50,14 @@ export default function FloatRequestScreen() {
     }
   };
   const addProof = async (request: FloatRequest) => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return;
+    // The browser asks by itself; on the phone, say why nothing opens instead of doing nothing.
+    if (Platform.OS !== 'web') {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setMessage({ tone: 'danger', text: 'Sin permiso para ver tus fotos. Actívalo en los ajustes del teléfono.' });
+        return;
+      }
+    }
     const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, exif: false });
     if (picked.canceled || !picked.assets[0]) return;
     await run(() => endpoints.uploadFloatProof(request.id, picked.assets[0]!), t('floatRequest.proofAdded'));
@@ -64,6 +70,8 @@ export default function FloatRequestScreen() {
         <Text variant="body" color="textMuted">
           {t('floatRequest.intro')}
         </Text>
+        {list.error ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
+        {list.isLoading ? <Skeleton height={96} /> : null}
         {list.data ? (
           <Card>
             <InfoRow label={t('floatRequest.current')} value={money(list.data.float)} />
@@ -82,7 +90,7 @@ export default function FloatRequestScreen() {
             {!pending.has_proof ? <Button variant="secondary" label={t('floatRequest.addProof')} onPress={() => void addProof(pending)} disabled={busy} /> : null}
             <Button variant="danger" label={t('floatRequest.cancel')} onPress={() => void run(() => endpoints.cancelFloatRequest(pending.id), t('floatRequest.status.cancelled'))} disabled={busy} />
           </Card>
-        ) : (
+        ) : !list.data ? null : (
           <>
             <Text variant="label">{t('floatRequest.amount')}</Text>
             <MoneyInput value={amount} onChange={setAmount} testID="float-amount" />

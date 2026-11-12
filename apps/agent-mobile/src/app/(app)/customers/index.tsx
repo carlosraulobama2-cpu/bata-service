@@ -8,7 +8,7 @@ import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Header } from '../../../components/Header';
 import { Screen } from '../../../components/Screen';
-import { EmptyState, ErrorState } from '../../../components/States';
+import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { space } from '../../../theme/tokens';
@@ -35,6 +35,7 @@ export default function CustomersScreen() {
           {t('customers.intro')}
         </Text>
         {customers.error ? <ErrorState error={customers.error} onRetry={() => customers.refetch()} /> : null}
+        {customers.isLoading ? <Skeleton height={72} /> : null}
         {customers.data && rows.length === 0 ? <EmptyState message={t('customers.empty')} /> : null}
         {rows.map((c, index) => (
           <Card key={`${c.customer_id}-${index}`}>
@@ -57,7 +58,7 @@ export default function CustomersScreen() {
             </View>
           </Card>
         ))}
-        {customers.hasNextPage ? <Button variant="ghost" label={t('common.seeAll')} onPress={() => void customers.fetchNextPage()} loading={customers.isFetchingNextPage} /> : null}
+        {customers.hasNextPage ? <Button variant="ghost" label={t('common.loadMore')} onPress={() => void customers.fetchNextPage()} loading={customers.isFetchingNextPage} /> : null}
 
         <Text variant="title" style={{ marginTop: space.lg }}>
           {t('customers.nearby')}
@@ -65,6 +66,7 @@ export default function CustomersScreen() {
         <Text variant="caption" color="textMuted">
           {t('customers.nearbyHint')}
         </Text>
+        {nearby.error ? <ErrorState error={nearby.error} onRetry={() => nearby.refetch()} /> : null}
         {nearby.data && nearby.data.length === 0 ? <EmptyState message={t('customers.noNearby')} /> : null}
         {nearby.data?.map((a) => (
           <Card key={a.code}>

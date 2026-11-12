@@ -49,13 +49,16 @@ export default function SecurityScreen() {
             onPress={() => router.push('/security/pin')}
             testID="security-change-pin"
           />
-          <Row
-            icon={<Fingerprint size={20} color={colors.text} />}
-            label={t('security.biometrics')}
-            caption={biometricEnabled ? t('security.biometricsOn') : t('security.biometricsOff')}
-            onPress={biometricEnabled ? () => void turnOffBiometrics() : undefined}
-            action={biometricEnabled ? t('security.turnOff') : undefined}
-          />
+          {/* Fingerprint/face only exist on the phone: on the web the row could never be turned on. */}
+          {Platform.OS !== 'web' ? (
+            <Row
+              icon={<Fingerprint size={20} color={colors.text} />}
+              label={t('security.biometrics')}
+              caption={biometricEnabled ? t('security.biometricsOn') : t('security.biometricsOff')}
+              onPress={biometricEnabled ? () => void turnOffBiometrics() : undefined}
+              action={biometricEnabled ? t('security.turnOff') : undefined}
+            />
+          ) : null}
           <Row icon={<Smartphone size={20} color={colors.text} />} label={t('security.oneSession')} caption={t('security.oneSessionBody')} last />
         </Card>
         <Text variant="caption" color="textMuted">

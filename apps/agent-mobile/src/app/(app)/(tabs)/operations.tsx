@@ -12,6 +12,7 @@ import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { TransactionRow } from '../../../components/TransactionRow';
 import { useMe, useTransactionList } from '../../../features/queries';
+import { useSettings } from '../../../state/settings';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space, tintBg, tints } from '../../../theme/tokens';
 import { formatDate, formatTime, money } from '../../../utils/format';
@@ -25,6 +26,10 @@ export default function OperationsScreen() {
   const { colors } = useTheme();
   const me = useMe();
   const active = me.data?.agent?.status === 'active';
+  // Deposit and withdraw need the payment PIN (the home screen asks to create it).
+  const canOperate = active && !!me.data?.user.has_pin;
+  const hidden = useSettings((s) => s.hideBalance);
+  const show = (amount: number) => (hidden ? t('dashboard.hidden') : money(amount));
   const [period, setPeriod] = useState<Period>('today');
   const [type, setType] = useState<TypeFilter>('all');
   const q = useTransactionList(period, type === 'all' ? undefined : type);
@@ -71,14 +76,14 @@ export default function OperationsScreen() {
         </View>
         {totals ? (
           <Text variant="display" numeric style={{ color: colors.heroText }} numberOfLines={1} adjustsFontSizeToFit>
-            {money(totals.commission)}
+            {show(totals.commission)}
           </Text>
         ) : (
           <Skeleton width={180} height={40} />
         )}
         <View style={styles.heroTiles}>
-          <HeroTile Icon={ArrowDownToLine} tint="#7BE0A6" label={t('operations.filterIn')} count={totals?.cash_in.count} value={totals ? money(inVol) : '—'} />
-          <HeroTile Icon={ArrowUpFromLine} tint="#FFB48F" label={t('operations.filterOut')} count={totals?.cash_out.count} value={totals ? money(outVol) : '—'} />
+          <HeroTile Icon={ArrowDownToLine} tint="#7BE0A6" label={t('operations.filterIn')} count={totals?.cash_in.count} value={totals ? show(inVol) : '—'} />
+          <HeroTile Icon={ArrowUpFromLine} tint="#FFB48F" label={t('operations.filterOut')} count={totals?.cash_out.count} value={totals ? show(outVol) : '—'} />
         </View>
         {/* Share of deposits vs withdrawals in the period. */}
         <View style={styles.split} accessibilityLabel={`${Math.round(inShare * 100)} % depósitos`}>
@@ -87,7 +92,7 @@ export default function OperationsScreen() {
         </View>
       </LinearGradient>
 
-      {active ? (
+      {canOperate ? (
         <View style={styles.actions}>
           <ActionPill Icon={ArrowDownToLine} tint={tints.green} label="Depositar" onPress={() => router.push('/cash-in')} />
           <ActionPill Icon={ArrowUpFromLine} tint={tints.orange} label="Retirar" onPress={() => router.push('/cash-out')} />
@@ -143,6 +148,18 @@ export default function OperationsScreen() {
       </View>
     </View>
   );
+
+  // Not an active agent yet: the operations API answers agent_not_active, so say what it means instead.
+  if (me.data && !active) {
+    return (
+      <Screen edges={['top']}>
+        <Text variant="title" style={{ paddingTop: space.lg }} accessibilityRole="header">
+          {t('operations.title')}
+        </Text>
+        <EmptyState message="Cuando Velynt te dé de alta como agente, aquí verás tus depósitos, retiros y ganancias." />
+      </Screen>
+    );
+  }
 
   return (
     <Screen edges={['top']} padded={false}>

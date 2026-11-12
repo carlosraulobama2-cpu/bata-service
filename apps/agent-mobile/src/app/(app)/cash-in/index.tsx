@@ -146,7 +146,7 @@ export default function CashInScreen() {
 
   if (op.phase.kind === 'error') {
     return (
-      <Screen header={<Header leading="close" onLeading={close} />} footer={<Button label={t('common.back')} onPress={topup ? restart : () => { op.reset(); setStep('amount'); }} />}>
+      <Screen header={<Header leading="close" onLeading={close} />} footer={<Button label={t('common.back')} onPress={() => { op.reset(); setStep(topup ? 'review' : 'amount'); }} />}>
         <ResultView tone="failure" title={t('cashIn.notCompletedTitle')} instruction={`${op.phase.message} ${t('cashIn.notCompletedBody')}`} />
       </Screen>
     );
@@ -196,6 +196,7 @@ export default function CashInScreen() {
                   onChangeText={(v) => {
                     setDigits(v.replace(/\D/g, '').slice(0, 9));
                     setCustomer(null);
+                    setError(null);
                   }}
                   keyboardType="phone-pad"
                   autoFocus
@@ -215,6 +216,7 @@ export default function CashInScreen() {
                 onChangeText={(v) => {
                   setNumber(v.toUpperCase().slice(0, 20));
                   setCustomer(null);
+                  setError(null);
                 }}
                 autoCapitalize="characters"
                 autoCorrect={false}

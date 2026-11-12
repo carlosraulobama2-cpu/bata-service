@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { endpoints } from '../../api/endpoints';
@@ -13,6 +13,7 @@ import { ResultView } from '../../components/ResultView';
 import { Screen } from '../../components/Screen';
 import { Text } from '../../components/Text';
 import { errorMessage } from '../../features/errors';
+import { useMe } from '../../features/queries';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
 
@@ -20,8 +21,9 @@ import { radius, space } from '../../theme/tokens';
 const CITIES =['Malabo', 'Bata', 'Ebebiyín', 'Mongomo', 'Luba', 'Evinayong', 'Aconibe', 'Añisok', 'Mbini', 'Cogo', 'Riaba', 'Nsok-Nsomo', 'Micomeseng', 'Niefang', 'Annobón'] as const;
 
 /**
- * Ask to become a Velynt agent: shop name, city and address. Velynt reviews it in the control
- * panel; the account needs a verified identity in the Velynt app first.
+ * Ask to become a Velynt agent: shop name, city and address. Then the verification asks for the
+ * business data and the photos (ID card, selfie, premises); Velynt reviews it in the control panel.
+ * A rejected applicant applies again from here, starting from what they sent before.
  */
 export default function ApplyScreen() {
   const { t } = useTranslation();
@@ -34,9 +36,22 @@ export default function ApplyScreen() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<AgentProfile | null>(null);
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
+  const me = useMe();
+  const previous = me.data?.agent;
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (prefilled || !previous) return;
+    setPrefilled(true);
+    setBusiness(previous.business_name);
+    if ((CITIES as readonly string[]).includes(previous.city)) setCity(previous.city);
+    setAddress(previous.address);
+  }, [previous, prefilled]);
 
   const valid = business.trim().length >= 3 && address.trim().length >= 5;
   const submit = async () => {
+    // Say what is missing instead of a button that does nothing.
+    if (business.trim().length < 3) return setError('Escribe el nombre de tu negocio (al menos 3 letras).');
+    if (address.trim().length < 5) return setError('Escribe la dirección del local: calle y barrio.');
     setBusy(true);
     setError(null);
     try {
@@ -69,7 +84,7 @@ export default function ApplyScreen() {
   return (
     <Screen
       header={<Header leading="close" onLeading={close} title={t('apply.title')} />}
-      footer={<Button label={t('apply.send')} onPress={() => void submit()} disabled={!valid} loading={busy} testID="apply-send" />}
+      footer={<Button label={t('apply.send')} onPress={() => void submit()} loading={busy} style={valid ? undefined : { opacity: 0.6 }} testID="apply-send" />}
       scroll
     >
       <View style={styles.content}>

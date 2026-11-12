@@ -35,8 +35,19 @@ export default function OpenCustomerScreen() {
   const [focused, setFocused] = useState<Field | null>(null);
   const [opened, setOpened] = useState<Opened | null>(null);
 
-  const digits = phone.replace(/\D/g, '');
-  const valid = name.trim().length >= 2 && digits.length >= 6 && /^\d{4}$/.test(pin) && accepted;
+  // Guinea numbers have 9 digits; "240" typed in front is the country code, already shown.
+  const national = phone.replace(/\D/g, '').replace(/^240(?=\d{9}$)/, '');
+  const valid = name.trim().length >= 2 && national.length === 9 && /^\d{4}$/.test(pin) && accepted;
+  const missing =
+    name.trim().length < 2
+      ? 'Escribe el nombre y apellidos del cliente.'
+      : national.length !== 9
+        ? 'El teléfono debe tener 9 números, por ejemplo 222 123 456.'
+        : !/^\d{4}$/.test(pin)
+          ? 'Elige 4 números para la contraseña del cliente.'
+          : !accepted
+            ? 'El cliente tiene que aceptar los Términos y la Política de privacidad.'
+            : null;
   const close = () => (router.canGoBack() ? router.back() : router.replace('/home'));
   const reset = () => {
     setName('');
@@ -47,11 +58,12 @@ export default function OpenCustomerScreen() {
     setOpened(null);
   };
   const submit = async () => {
-    if (!valid || busy) return;
+    if (busy) return;
+    if (!valid) return setError(missing);
     setBusy(true);
     setError(null);
     try {
-      const res = await endpoints.openCustomer({ name: name.trim(), phone_number: `+240${digits.replace(/^240/, '')}`, pin, accept_terms: true });
+      const res = await endpoints.openCustomer({ name: name.trim(), phone_number: `+240${national}`, pin, accept_terms: true });
       setPin('');
       setOpened(res.customer);
       void queryClient.invalidateQueries({ queryKey: ['customers'] });
@@ -87,7 +99,7 @@ export default function OpenCustomerScreen() {
   return (
     <Screen
       header={<Header leading="close" onLeading={close} title={t('openCustomer.title')} />}
-      footer={<Button label={t('openCustomer.submit')} onPress={() => void submit()} disabled={!valid} loading={busy} testID="open-customer-submit" />}
+      footer={<Button label={t('openCustomer.submit')} onPress={() => void submit()} loading={busy} style={valid ? undefined : { opacity: 0.6 }} testID="open-customer-submit" />}
       scroll
     >
       <Text variant="body" color="textMuted" style={{ marginBottom: space.lg }}>

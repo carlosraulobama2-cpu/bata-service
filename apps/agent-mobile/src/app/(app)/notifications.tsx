@@ -11,6 +11,7 @@ import { Screen } from '../../components/Screen';
 import { EmptyState, ErrorState, Skeleton } from '../../components/States';
 import { Text } from '../../components/Text';
 import { useNotifications } from '../../features/queries';
+import { routeForNotice } from '../../features/push';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
 import { formatRelative } from '../../utils/format';
@@ -36,7 +37,9 @@ export default function NotificationsScreen() {
   const open = async (n: AppNotification) => {
     if (!n.read_at) await endpoints.readNotification(n.id).catch(() => undefined);
     void refreshBadge();
-    if (n.related_operation_id) router.push(`/transaction/${n.related_operation_id}`);
+    // Every notice opens its screen (before, only those about an operation did anything).
+    const route = routeForNotice(n.type, n.related_operation_id);
+    if (route) router.push(route as never);
   };
 
   const text = (n: AppNotification, part: 'title' | 'body') => n[part] || (part === 'title' ? t('notifications.fallbackTitle') : '');

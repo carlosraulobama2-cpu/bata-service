@@ -11,6 +11,7 @@ import { Header } from '../../../components/Header';
 import { InfoRow } from '../../../components/InfoRow';
 import { MoneyInput } from '../../../components/MoneyInput';
 import { Screen } from '../../../components/Screen';
+import { ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
 import { errorMessage } from '../../../features/errors';
 import { useTheme } from '../../../theme/ThemeProvider';
@@ -62,8 +63,11 @@ export default function CashScreen() {
         <Text variant="body" color="textMuted">
           {t('cash.intro')}
         </Text>
+        {cash.error ? <ErrorState error={cash.error} onRetry={() => cash.refetch()} /> : null}
+        {/* Only say "never counted" when the server said so, not while loading or after an error. */}
+        {cash.isLoading ? <Skeleton height={96} /> : !c ? null : (
         <Card>
-          {c && c.declared !== null ? (
+          {c.declared !== null ? (
             <>
               <InfoRow label={t('cash.declared')} value={`${money(c.declared)} · ${formatDateTime(c.declared_at!)}`} />
               <InfoRow label={t('cash.expected')} value={money(c.expected ?? c.declared)} strong last />
@@ -77,6 +81,7 @@ export default function CashScreen() {
             </Text>
           )}
         </Card>
+        )}
         {result ? <Banner tone={result.tone}>{result.text}</Banner> : null}
         <Text variant="title">{t('cash.count')}</Text>
         <Text variant="label">{t('cash.amount')}</Text>

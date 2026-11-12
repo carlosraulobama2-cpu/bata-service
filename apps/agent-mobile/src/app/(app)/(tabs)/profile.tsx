@@ -77,7 +77,7 @@ export default function ProfileScreen() {
         { Icon: Store, tint: tints.orange, label: 'Solicitar ser agente', caption: 'Rellena la solicitud', href: '/apply', show: !agent },
         { Icon: BadgeCheck, tint: tints.green, label: t('verification.title'), caption: agent ? t(`profile.agentStatus.${agent.status}`, { defaultValue: agent.status }) : undefined, href: '/verification', show: !!agent },
         { Icon: FileText, tint: tints.purple, label: 'Normas y ganancias del agente', caption: 'Lo que ganas tú y lo que gana Velynt', href: '/verification/rules', show: !!agent },
-        { Icon: Gauge, tint: tints.blue, label: t('profile.limits'), caption: agent ? t(`levels.${agent.level}`, { defaultValue: agent.level }) : undefined, href: '/limits' }
+        { Icon: Gauge, tint: tints.blue, label: t('profile.limits'), caption: agent ? t(`levels.${agent.level}`, { defaultValue: agent.level }) : undefined, href: '/limits', show: active }
       ]
     },
     {

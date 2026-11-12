@@ -137,7 +137,7 @@ export default function Dashboard() {
                 {t('dashboard.incomeToday')}
               </Text>
               <Text variant="bodyStrong" numeric style={{ color: colors.heroText }}>
-                {today.data ? money(today.data.totals.cash_in.volume) : '—'}
+                {hidden ? t('dashboard.hidden') : today.data ? money(today.data.totals.cash_in.volume) : '—'}
               </Text>
             </View>
             <View style={styles.heroStat}>
@@ -145,7 +145,7 @@ export default function Dashboard() {
                 {t('dashboard.withdrawalsToday')}
               </Text>
               <Text variant="bodyStrong" numeric style={{ color: colors.heroText }}>
-                {today.data ? money(today.data.totals.cash_out.volume) : '—'}
+                {hidden ? t('dashboard.hidden') : today.data ? money(today.data.totals.cash_out.volume) : '—'}
               </Text>
             </View>
           </View>
@@ -189,10 +189,10 @@ export default function Dashboard() {
               </Text>
               {today.data ? (
                 <View style={styles.grid}>
-                  <Stat label={t('dashboard.cashIn')} value={money(today.data.totals.cash_in.volume)} />
-                  <Stat label={t('dashboard.cashOut')} value={money(today.data.totals.cash_out.volume)} />
-                  <Stat label={t('dashboard.netCash')} value={money(today.data.totals.cash_in.volume - today.data.totals.cash_out.volume)} />
-                  <Stat label={t('dashboard.commissions')} value={money(today.data.totals.commission)} accent />
+                  <Stat label={t('dashboard.cashIn')} value={hidden ? t('dashboard.hidden') : money(today.data.totals.cash_in.volume)} />
+                  <Stat label={t('dashboard.cashOut')} value={hidden ? t('dashboard.hidden') : money(today.data.totals.cash_out.volume)} />
+                  <Stat label={t('dashboard.netCash')} value={hidden ? t('dashboard.hidden') : money(today.data.totals.cash_in.volume - today.data.totals.cash_out.volume)} />
+                  <Stat label={t('dashboard.commissions')} value={hidden ? t('dashboard.hidden') : money(today.data.totals.commission)} accent />
                 </View>
               ) : today.error && !offline ? (
                 <ErrorState error={today.error} onRetry={() => today.refetch()} />

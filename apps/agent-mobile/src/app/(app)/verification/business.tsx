@@ -101,7 +101,8 @@ export default function BusinessScreen() {
         no_criminal_record: noRecord
       });
       qc.setQueryData(['onboarding'], updated);
-      router.back();
+      if (router.canGoBack()) router.back();
+      else router.replace('/verification');
     } catch (err) {
       setError(errorMessage(err, t));
     } finally {
@@ -119,7 +120,7 @@ export default function BusinessScreen() {
 
   return (
     <Screen
-      header={<Header leading="back" onLeading={() => router.back()} title={t('verification.form.title')} />}
+      header={<Header leading="back" onLeading={() => (router.canGoBack() ? router.back() : router.replace('/verification'))} title={t('verification.form.title')} />}
       footer={<Button label={t('verification.form.save')} onPress={() => void save()} disabled={!valid} loading={busy} testID="business-save" />}
       scroll
     >

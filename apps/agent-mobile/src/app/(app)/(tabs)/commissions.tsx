@@ -6,9 +6,9 @@ import type { CommissionSummary, Transaction } from '../../../api/types';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Screen } from '../../../components/Screen';
-import { ErrorState, Skeleton } from '../../../components/States';
+import { EmptyState, ErrorState, Skeleton } from '../../../components/States';
 import { Text } from '../../../components/Text';
-import { useCommissionLines, useCommissionSummary } from '../../../features/queries';
+import { useCommissionLines, useCommissionSummary, useMe } from '../../../features/queries';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { radius, space } from '../../../theme/tokens';
 import { formatDateTime, money } from '../../../utils/format';
@@ -23,6 +23,18 @@ export default function CommissionsScreen() {
   const summary = useCommissionSummary();
   const lines = useCommissionLines();
   const s = summary.data;
+  const me = useMe();
+  // Not an active agent yet: the API answers agent_not_active and the cards would stay as skeletons.
+  if (me.data && me.data.agent?.status !== 'active') {
+    return (
+      <Screen scroll edges={['top']}>
+        <Text variant="title" style={styles.title} accessibilityRole="header">
+          {t('commissions.title')}
+        </Text>
+        <EmptyState message="Cuando Velynt te dé de alta como agente, aquí verás lo que ganas con cada depósito, retiro y cliente nuevo." />
+      </Screen>
+    );
+  }
   const rows = (lines.data?.pages.flatMap((p) => p.data) ?? []).filter((tx) => tx.commission > 0);
 
   return (

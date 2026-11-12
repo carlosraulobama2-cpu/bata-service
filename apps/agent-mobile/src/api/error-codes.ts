@@ -79,6 +79,7 @@ export const API_ERROR_CODES = [
   'session_expired',
   'unauthenticated',
   'account_frozen',
+  'account_not_active',
   'https_required',
   // By HTTP status, when no fragment matched
   'bad_request',

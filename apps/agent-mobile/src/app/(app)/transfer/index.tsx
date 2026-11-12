@@ -65,8 +65,14 @@ export default function TransferScreen() {
       setDone(result.movement);
       void qc.invalidateQueries();
     } catch (err) {
-      if (err instanceof ApiError && (err.code === 'wrong_pin' || err.code === 'biometric_cancelled' || err.isNetwork)) {
+      if (err instanceof ApiError && (err.code === 'wrong_pin' || err.code === 'biometric_cancelled')) {
         setSheet({ busy: false, error: err.code === 'biometric_cancelled' ? null : errorMessage(err, t) });
+        return;
+      }
+      // No answer, or the server failed: the transfer may have happened. Keep the same key so trying
+      // again returns that transfer instead of sending the money twice.
+      if (err instanceof ApiError && (err.isNetwork || err.status >= 500)) {
+        setSheet({ busy: false, error: 'No sabemos si la transferencia se hizo. Pulsa otra vez para comprobarlo: no se enviará dos veces.' });
         return;
       }
       key.current = null;
@@ -96,6 +102,8 @@ export default function TransferScreen() {
           onChangeText={(v) => {
             setCode(v.toUpperCase());
             setReceiver(null);
+            setError(null);
+            key.current = null; // another agent: another transfer
           }}
           autoCapitalize="characters"
           placeholder="AG-000123"
@@ -103,18 +111,38 @@ export default function TransferScreen() {
           style={input}
           testID="transfer-code"
         />
-        {!receiver ? <Button variant="secondary" label={t('transfer.find')} onPress={() => void find()} disabled={code.replace(/\D/g, '').length < 1} loading={busy} testID="transfer-find" /> : null}
+        {!receiver ? (
+          <Button
+            variant="secondary"
+            label={t('transfer.find')}
+            onPress={() => (code.replace(/\D/g, '').length < 1 ? setError('Escribe el código del otro agente, por ejemplo AG-000123.') : void find())}
+            loading={busy}
+            testID="transfer-find"
+          />
+        ) : null}
         {receiver ? (
           <>
             <Banner tone="info">{t('transfer.confirmName', { name: receiver.business_name, city: receiver.city })}</Banner>
             <Text variant="label">{t('transfer.amount')}</Text>
-            <MoneyInput value={amount} onChange={setAmount} testID="transfer-amount" />
+            <MoneyInput
+              value={amount}
+              onChange={(v) => {
+                setAmount(v);
+                key.current = null; // another amount: another transfer (the old key would be refused)
+              }}
+              testID="transfer-amount"
+            />
             <Text variant="caption" color={amount > float ? 'danger' : 'textMuted'}>
               {t('floatRequest.current')}: {money(float)}
             </Text>
             <Text variant="label">{t('transfer.reason')}</Text>
             <TextInput value={reason} onChangeText={setReason} maxLength={280} style={input} />
-            <Button label={t('transfer.review')} onPress={() => setSheet({ busy: false, error: null })} disabled={!amount || amount > float} testID="transfer-review" />
+            <Button
+              label={t('transfer.review')}
+              onPress={() => (!amount ? setError('Escribe cuánto saldo quieres pasar.') : amount > float ? setError(`Solo tienes ${money(float)} de saldo operativo.`) : (setError(null), setSheet({ busy: false, error: null })))}
+              style={!amount || amount > float ? { opacity: 0.6 } : undefined}
+              testID="transfer-review"
+            />
           </>
         ) : null}
         {error ? <Banner tone="danger">{error}</Banner> : null}

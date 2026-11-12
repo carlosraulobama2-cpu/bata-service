@@ -94,7 +94,7 @@ export default function ChangePinScreen() {
 
   if (done) {
     return (
-      <Screen header={<Header leading="close" onLeading={() => router.back()} />} footer={<Button label={t('common.done')} onPress={() => router.back()} testID="pin-change-done" />}>
+      <Screen header={<Header leading="close" onLeading={() => (router.canGoBack() ? router.back() : router.replace('/security'))} />} footer={<Button label={t('common.done')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/security'))} testID="pin-change-done" />}>
         <ResultView tone="success" title={creating ? t('pinChange.createdTitle') : t('pinChange.doneTitle')} instruction={t('pinChange.doneBody')} />
       </Screen>
     );
@@ -103,7 +103,7 @@ export default function ChangePinScreen() {
   if (step === 'password') {
     return (
       <Screen
-        header={<Header leading="close" onLeading={() => router.back()} title={title} />}
+        header={<Header leading="close" onLeading={() => (router.canGoBack() ? router.back() : router.replace('/security'))} title={title} />}
         footer={<Button label={t('common.continue')} disabled={!password} onPress={() => { setError(null); setStep('next'); }} testID="pin-password-continue" />}
       >
         <View style={styles.form}>
@@ -132,7 +132,7 @@ export default function ChangePinScreen() {
   }
 
   return (
-    <Screen header={<Header leading="close" onLeading={() => router.back()} title={title} />}>
+    <Screen header={<Header leading="close" onLeading={() => (router.canGoBack() ? router.back() : router.replace('/security'))} title={title} />}>
       <View style={styles.top}>
         <Text variant="caption" color="textMuted" align="center">
           {step === 'next' ? '2 / 3' : '3 / 3'}

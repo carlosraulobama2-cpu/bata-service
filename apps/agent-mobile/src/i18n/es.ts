@@ -595,6 +595,7 @@ export const es = {
     unauthenticated: 'Tu sesión no es válida. Vuelve a entrar.',
     wrong_client: 'Entra con la app de agentes.',
     account_frozen: 'Tu cuenta está congelada. Contacta con soporte.',
+    account_not_active: 'Tu cuenta Velynt está bloqueada o cerrada. Contacta con soporte.',
     rate_limited: 'Demasiados intentos. Espera un momento.',
     // Requests
     idempotency_key_required: 'No hemos podido enviar la operación. Inténtalo de nuevo.',

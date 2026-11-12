@@ -1,7 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Lock } from 'lucide-react-native';
-import { Share, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Platform, Share, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Banner } from '../../../components/Banner';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Header } from '../../../components/Header';
@@ -23,11 +25,11 @@ export default function TransactionDetail() {
   const q = useTransaction(id);
   const tx = q.data;
 
-  const share = () => {
+  const [shared, setShared] = useState<string | null>(null);
+  const share = async () => {
     if (!tx) return;
     // Receipt text keeps the customer masked.
-    void Share.share({
-      message: [
+    const message = [
         config.appName,
         `${t(`types.${tx.type}`)}: ${money(tx.amount)}`,
         `${t('common.reference')}: ${tx.reference}`,
@@ -35,8 +37,18 @@ export default function TransactionDetail() {
         `${t('common.agent')}: ${tx.agent_code} · ${tx.agent_name}`,
         `${formatDateTime(tx.created_at)}`,
         `${t('common.status')}: ${t(`status.${tx.status}`)}`
-      ].join('\n')
-    });
+      ].join('\n');
+    // A computer browser has no share sheet (Share.share did nothing there): copy the receipt instead.
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && !navigator.share) {
+      try {
+        await navigator.clipboard.writeText(message);
+        setShared('Recibo copiado. Pégalo donde quieras enviarlo.');
+      } catch {
+        setShared('No se pudo copiar el recibo en este navegador.');
+      }
+      return;
+    }
+    await Share.share({ message }).catch(() => undefined);
   };
 
   return (
@@ -46,13 +58,14 @@ export default function TransactionDetail() {
       footer={
         tx ? (
           <>
-            <Button variant="secondary" label={t('operations.receipt')} onPress={share} />
+            <Button variant="secondary" label={t('operations.receipt')} onPress={() => void share()} />
             <Button variant="ghost" label={t('support.report')} onPress={() => router.push({ pathname: '/help', params: { tx: tx.id } })} testID="tx-report-problem" />
           </>
         ) : undefined
       }
     >
       {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : null}
+      {shared ? <Banner tone="info">{shared}</Banner> : null}
       {!tx && q.isLoading ? (
         <View style={{ gap: space.md, paddingTop: space.xl }}>
           <Skeleton height={40} width="60%" />

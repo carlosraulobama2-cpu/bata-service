@@ -55,6 +55,7 @@ export async function enablePush(ask: boolean): Promise<PushStatus> {
 }
 
 let registeredToken: string | null = null;
+let handledLaunchPush: string | null = null;
 
 /** On sign-out: this phone stops receiving this account's notices. */
 export async function forgetPushToken(): Promise<void> {
@@ -64,10 +65,29 @@ export async function forgetPushToken(): Promise<void> {
   await endpoints.unregisterPushToken(token);
 }
 
-/** Where a tapped notification takes the agent (Velynt sends the operation as `transfer_id`). */
+/** Screen for each kind of notice the agents app receives (types from the server). */
+const NOTICE_ROUTES: Record<string, string> = {
+  agent_active: '/home',
+  agent_rejected: '/apply',
+  agent_suspended: '/help',
+  agent_document_rejected: '/verification',
+  agent_low_float: '/float-request',
+  agent_float_request: '/float-request',
+  agent_float: '/movements',
+  agent_referral_paid: '/commissions',
+  agent_fraud_check: '/operations',
+  security_pin_changed: '/security'
+};
+
+/** Where a notice takes the agent: its operation when it has one, else the screen for its type. */
+export function routeForNotice(type: string | undefined, operationId: unknown): string | null {
+  if (typeof operationId === 'string' && /^[0-9a-f-]{36}$/i.test(operationId)) return `/transaction/${operationId}`;
+  return (type && NOTICE_ROUTES[type]) || null;
+}
+
+/** Where a tapped push notification takes the agent (Velynt sends the operation as `transfer_id`). */
 export function routeForNotification(data: Record<string, unknown> | undefined): string {
-  const tx = data?.transfer_id ?? data?.transaction_id;
-  return typeof tx === 'string' && /^[0-9a-f-]{36}$/i.test(tx) ? `/transaction/${tx}` : '/notifications';
+  return routeForNotice(typeof data?.type === 'string' ? data.type : undefined, data?.transfer_id ?? data?.transaction_id) ?? '/notifications';
 }
 
 /** Status of push on this phone and a way to turn it on (for banners and settings). */
@@ -106,6 +126,14 @@ export function usePushListeners(): void {
     const tapped = Notifications.addNotificationResponseReceivedListener((response) => {
       router.push(routeForNotification(response.notification.request.content.data as Record<string, unknown>) as never);
     });
+    // A push tapped while the app was closed opened it cold: the listener above was not there yet.
+    void Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (!response || handledLaunchPush === response.notification.request.identifier) return;
+        handledLaunchPush = response.notification.request.identifier;
+        router.push(routeForNotification(response.notification.request.content.data as Record<string, unknown>) as never);
+      })
+      .catch(() => undefined);
     return () => {
       received.remove();
       tapped.remove();
